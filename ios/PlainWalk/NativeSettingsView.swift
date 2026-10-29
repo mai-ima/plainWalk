@@ -3,6 +3,7 @@ import SwiftUI
 @MainActor struct NativeSettingsView: View {
     @State private var config: [String: Any]
     @State private var notice: String?
+    @State private var notificationBusy = false
     let onChange: ([String: Any]) -> Void
     let onAction: (String) -> Void
     let onClose: () -> Void
@@ -31,6 +32,39 @@ import SwiftUI
     private func unsupported(_ label: String) -> some View {
         Button { notice = "この機能の自動検知との接続はまだ完了していません。手動で「軌跡を残す」を使えます。" } label: { HStack { Text(label); Spacer(); Image(systemName: "chevron.right").foregroundStyle(.tertiary).font(.caption) }.foregroundStyle(.primary).padding(.vertical, 14) }.buttonStyle(.plain)
     }
+    private func notificationBinding(_ key: String) -> Binding<Bool> {
+        Binding(get: { config[key] as? Bool ?? false }, set: { value in
+            guard !notificationBusy else { return }; notificationBusy=true
+            Task { defer { notificationBusy=false }; var next=config; next[key]=value
+                do { try await NotificationService.configure(next); config=next; onChange(next) }
+                catch { notice=error.localizedDescription }
+            }
+        })
+    }
+    private var morningTime: Binding<Date> {
+        Binding(get: { let parts=(config["morningTime"] as? String ?? "07:45").split(separator:":").compactMap {Int($0)}; return Calendar.current.date(from:DateComponents(hour:parts.first ?? 7,minute:parts.count>1 ? parts[1] : 45)) ?? Date() }, set: { value in
+            guard !notificationBusy else { return }; notificationBusy=true
+            let parts=Calendar.current.dateComponents([.hour,.minute],from:value); var next=config; next["morningTime"]=String(format:"%02d:%02d",parts.hour ?? 7,parts.minute ?? 45)
+            Task { defer { notificationBusy=false }; do { try await NotificationService.configure(next); config=next; onChange(next) } catch { notice=error.localizedDescription } }
+        })
+    }
+    private var notificationSection: some View {
+        section("通知",description:"出かける前に、そっとひと声かけます。いつでもオフにできます。") {
+            Toggle("朝の通知",isOn:notificationBinding("morningNotification")).tint(.green).padding(.vertical,10)
+            Divider(); DatePicker("通知する時刻",selection:morningTime,displayedComponents:.hourAndMinute).padding(.vertical,10)
+            Divider(); Toggle("週間ふりかえりの通知",isOn:notificationBinding("weeklyNotification")).tint(.green).padding(.vertical,10)
+            Divider(); Toggle("さんぽが途切れたら知らせる",isOn:notificationBinding("interruptionNotification")).tint(.green).padding(.vertical,10)
+        }.disabled(notificationBusy)
+    }
+    private var healthSection: some View {
+        section("Apple ヘルスケア",description:"許可した歩数や屋外ワークアウトを読み込みます。読み取り未許可とデータなしは区別できません。Playgrounds 版では利用できません。") {
+            Toggle("ヘルスケアを使う",isOn:Binding(get:{config["healthEnabled"] as? Bool ?? false},set:{value in
+                if !value {config["healthEnabled"]=false;onChange(config);return}
+                Task {do {try await HealthService().authorize();config["healthEnabled"]=true;onChange(config)}catch{notice=error.localizedDescription}}
+            })).tint(.green).padding(.vertical,10)
+            Divider(); row("ワークアウトを選んで描く",icon:"figure.walk",action:"healthImport")
+        }
+    }
     var body: some View {
         VStack(spacing: 0) {
             HStack { Button(action: onClose) { Image(systemName: "chevron.left").font(.title2.weight(.medium)).frame(width: 44, height: 44).background(.regularMaterial, in: Circle()).shadow(color: .black.opacity(0.07), radius: 16, y: 8) }.tint(.primary).accessibilityLabel("戻る"); Spacer(); Text("設定").font(.headline); Spacer(); Color.clear.frame(width: 44, height: 44) }.padding(.horizontal, 16).padding(.vertical, 14).background(page)
@@ -47,13 +81,14 @@ import SwiftUI
                     section { Picker("単位", selection: choice("units", fallback: "auto")) { Text("地域に合わせる (km)").tag("auto"); Text("キロメートル").tag("km"); Text("マイル").tag("mi") }.pickerStyle(.menu).padding(.vertical, 8) }
                     section("歩数") { row("1 日の歩数の目標", icon: "target", action: "steps") }
                     section("カメラ") { row("LUT", icon: "camera.filters", action: "lutSettings") }
-                    section("通知", description: "許可と時刻を含む通知設定を開きます。") { row("朝・週間ふりかえりの通知", icon: "bell", action: "notificationSettings") }
-                    section("Apple ヘルスケア", description: "許可したデータだけを読み込みます。Playgrounds 版では利用できません。") { row("ワークアウトを選んで描く", icon: "figure.walk", action: "healthImport") }
+                    notificationSection
+                    healthSection
                     section("取り込み") { row("ファイルからさんぽを取り込む", icon: "square.and.arrow.down", action: "nativeImport") }
                     section("書き出し") { row("すべてのさんぽを GPX で書き出す", icon: "square.and.arrow.up", action: "gpxExportAll") }
                     section("バックアップ", description: "共有シートの「ファイルに保存」から自分の iCloud Drive も選べます。") { row("バックアップを書き出す", icon: "arrow.up.doc", action: "backup"); Divider(); row("バックアップを取り込む", icon: "arrow.down.doc", action: "nativeRestore") }
                     section("アプリについて") { row("バージョン 0.3.0", action: "about"); Divider(); row("対応範囲", action: "limitations") }
                     section("beta") { Toggle("beta 機能", isOn: binding("beta")).padding(.vertical, 10); if config["beta"] as? Bool == true { Divider(); Toggle("画面をスリープさせない", isOn: binding("wake")).padding(.vertical, 10); Divider(); Toggle("GPS 精度を表示", isOn: binding("accuracy")).padding(.vertical, 10) } }
+                    section { Button("データをリセット",role:.destructive) {onAction("resetData")}.frame(maxWidth:.infinity,alignment:.leading).padding(.vertical,14) }
                     section("開発者向け", description: "座標や写真を含めない診断情報で、権限・保存・実機の動作を確認します。") { Toggle("開発者モード", isOn: binding("developerMode")).padding(.vertical, 10); if config["developerMode"] as? Bool == true { Divider(); row("実機検証・診断ログ", icon: "stethoscope", action: "nativeDeveloper") } }
                 }.padding(.horizontal, 16).padding(.top, 10).padding(.bottom, 30)
             }
@@ -66,7 +101,7 @@ import SwiftUI
                 try? Data("{\"nativeSettings\":true}".utf8).write(to:folder.appendingPathComponent("native-settings-ready.json"),options:.atomic)
             }
             #endif
-        }.alert("実装状況", isPresented: Binding(get: { notice != nil }, set: { if !$0 { notice = nil } })) { Button("わかりました", role: .cancel) {} } message: { Text(notice ?? "") }
+        }.alert("お知らせ", isPresented: Binding(get: { notice != nil }, set: { if !$0 { notice = nil } })) { Button("わかりました", role: .cancel) {} } message: { Text(notice ?? "") }
     }
     private func tab(_ title: String, icon: String, action: String) -> some View {
         Button { onAction(action) } label: { VStack(spacing: 4) { Image(systemName: icon).font(.system(size: 21)); Text(title).font(.system(size: 10)) }.frame(maxWidth: .infinity).foregroundStyle(action == "tab:profile" ? Color.primary : Color.secondary) }.buttonStyle(.plain).accessibilityLabel(title)

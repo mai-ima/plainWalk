@@ -748,6 +748,7 @@ async function stopWalk() {
     data.walks.pop();
     return;
   }
+  trace.record("recording", { status: "saved", points: walk.points.length });
   active = null;
   paused = false;
   await persistActive();
@@ -786,6 +787,10 @@ function recordMenu() {
 }
 async function pauseToggle() {
   paused = !paused;
+  trace.record("recording", {
+    status: paused ? "paused" : "resumed",
+    points: active.points.length,
+  });
   if (paused) {
     active.paused = true;
     active.pauseAt = Date.now();

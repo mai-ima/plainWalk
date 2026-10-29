@@ -1,0 +1,259 @@
+{
+  "inspected": "2026-10-29",
+  "sourcePage": "https://apkpure.net/plainwalk-draw-your-own-map/com.kanta.plainwalk/download",
+  "containerBytes": 16955113,
+  "containerSHA256": "d312e1d16f99a6fb280b4b736803c5fe9993e5ebcfb00abbeb4f2dbe4a57ae1e",
+  "binaryManifest": {
+    "source": "APK binary AndroidManifest.xml",
+    "package": "com.kanta.plainwalk",
+    "version": "1.1.0",
+    "version_code": "4",
+    "min_sdk": "29",
+    "target_sdk": "36",
+    "permissions": [
+      "android.permission.health.READ_EXERCISE_ROUTES",
+      "com.android.vending.BILLING",
+      "android.permission.health.READ_EXERCISE",
+      "android.permission.ACCESS_NETWORK_STATE",
+      "android.permission.ACCESS_COARSE_LOCATION",
+      "android.permission.health.READ_STEPS",
+      "android.permission.WAKE_LOCK",
+      "android.permission.CAMERA",
+      "android.permission.health.READ_HEART_RATE",
+      "android.permission.ACCESS_BACKGROUND_LOCATION",
+      "android.permission.FOREGROUND_SERVICE",
+      "android.permission.INTERNET",
+      "android.permission.RECORD_AUDIO",
+      "android.permission.ACTIVITY_RECOGNITION",
+      "com.android.vending.CHECK_LICENSE",
+      "android.permission.FOREGROUND_SERVICE_LOCATION",
+      "android.permission.POST_NOTIFICATIONS",
+      "android.permission.ACCESS_FINE_LOCATION",
+      "android.permission.RECEIVE_BOOT_COMPLETED",
+      "com.kanta.plainwalk.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION",
+      "android.permission.health.READ_ACTIVE_CALORIES_BURNED"
+    ],
+    "main_activity": "com.kanta.plainwalk.MainActivity",
+    "activities": [
+      "com.kanta.plainwalk.MainActivity",
+      "com.google.android.play.core.common.PlayCoreDialogWrapperActivity",
+      "com.android.billingclient.api.ProxyBillingActivity",
+      "androidx.glance.appwidget.action.InvisibleActionTrampolineActivity",
+      "com.revenuecat.purchases.amazon.purchasing.ProxyAmazonBillingActivity",
+      "com.pairip.licensecheck.LicenseActivity",
+      "androidx.glance.appwidget.action.ActionTrampolineActivity",
+      "com.android.billingclient.api.ProxyBillingActivityV2",
+      "com.revenuecat.purchases.SimulatedStoreErrorDialogActivity",
+      "com.kanta.plainwalk.HealthRationaleActivity",
+      "com.google.android.gms.common.api.GoogleApiActivity"
+    ],
+    "services": [
+      "com.google.android.datatransport.runtime.backends.TransportBackendDiscovery",
+      "com.kanta.plainwalk.walk.WalkRecorderService",
+      "androidx.health.platform.client.impl.sdkservice.HealthDataSdkService",
+      "androidx.room.MultiInstanceInvalidationService",
+      "com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService",
+      "androidx.camera.core.impl.MetadataHolderService",
+      "com.google.mlkit.common.internal.MlKitComponentDiscoveryService",
+      "androidx.work.impl.foreground.SystemForegroundService",
+      "androidx.glance.appwidget.GlanceRemoteViewsService",
+      "androidx.work.impl.background.systemjob.SystemJobService",
+      "androidx.core.widget.RemoteViewsCompatService",
+      "androidx.work.impl.background.systemalarm.SystemAlarmService"
+    ],
+    "receivers": [
+      "com.google.android.datatransport.runtime.scheduling.jobscheduling.AlarmManagerSchedulerBroadcastReceiver",
+      "com.kanta.plainwalk.widget.StartWidgetReceiver",
+      "androidx.profileinstaller.ProfileInstallReceiver",
+      "com.kanta.plainwalk.walk.ActivityReceiver",
+      "com.kanta.plainwalk.walk.PlaceReceiver",
+      "com.kanta.plainwalk.notify.BootReceiver",
+      "androidx.glance.appwidget.action.ActionCallbackBroadcastReceiver",
+      "androidx.work.impl.utils.ForceStopRunnable$BroadcastReceiver",
+      "androidx.glance.appwidget.UnmanagedSessionReceiver",
+      "androidx.glance.appwidget.MyPackageReplacedReceiver",
+      "androidx.work.impl.background.systemalarm.ConstraintProxy$BatteryChargingProxy",
+      "androidx.work.impl.background.systemalarm.ConstraintProxy$BatteryNotLowProxy",
+      "androidx.work.impl.background.systemalarm.RescheduleReceiver",
+      "androidx.work.impl.background.systemalarm.ConstraintProxy$StorageNotLowProxy",
+      "androidx.work.impl.background.systemalarm.ConstraintProxy$NetworkStateProxy",
+      "androidx.work.impl.background.systemalarm.ConstraintProxyUpdateReceiver",
+      "com.kanta.plainwalk.widget.StatsWidgetReceiver",
+      "androidx.work.impl.diagnostics.DiagnosticsReceiver",
+      "com.kanta.plainwalk.notify.ReminderReceiver",
+      "com.kanta.plainwalk.walk.MovementReceiver"
+    ],
+    "providers": [
+      "com.google.mlkit.common.internal.MlKitInitProvider",
+      "androidx.core.content.FileProvider",
+      "androidx.startup.InitializationProvider"
+    ],
+    "signature_v2": true,
+    "signature_v3": true,
+    "executed": false
+  },
+  "apkStructure": [
+    {
+      "file": "com.kanta.plainwalk.apk",
+      "bytes": 16500038,
+      "sha256": "e67ff4630b07b389e544d4a8f25f162c2b05baf2bf276676026e2478394461d2",
+      "dex": [
+        {
+          "file": "classes.dex",
+          "classes": 9692
+        }
+      ],
+      "class_groups": {
+        "app": 80,
+        "compose": 107,
+        "room": 1,
+        "health_connect": 122,
+        "google_maps": 4,
+        "billing": 3,
+        "mlkit": 5,
+        "kotlin": 0,
+        "work_manager": 23
+      },
+      "app_class_count": 80,
+      "app_class_examples": [
+        "com.kanta.plainwalk.HealthRationaleActivity",
+        "com.kanta.plainwalk.MainActivity",
+        "com.kanta.plainwalk.PlainWalkApp",
+        "com.kanta.plainwalk.data.Doodle",
+        "com.kanta.plainwalk.data.DoodleCoord",
+        "com.kanta.plainwalk.data.DoodleStroke",
+        "com.kanta.plainwalk.data.ModeSpan",
+        "com.kanta.plainwalk.data.MotionMark",
+        "com.kanta.plainwalk.data.PersistedData",
+        "com.kanta.plainwalk.data.RailRun",
+        "com.kanta.plainwalk.data.SomedayPlace",
+        "com.kanta.plainwalk.data.TrackPoint",
+        "com.kanta.plainwalk.data.TrackSession",
+        "com.kanta.plainwalk.data.WalkFlag",
+        "com.kanta.plainwalk.data.WalkPhoto",
+        "com.kanta.plainwalk.data.a",
+        "com.kanta.plainwalk.data.b",
+        "com.kanta.plainwalk.notify.BootReceiver",
+        "com.kanta.plainwalk.notify.ReminderReceiver",
+        "com.kanta.plainwalk.photo.CustomLut",
+        "com.kanta.plainwalk.photo.Sticker",
+        "com.kanta.plainwalk.photo.StickerGift",
+        "com.kanta.plainwalk.photo.a",
+        "com.kanta.plainwalk.photo.b",
+        "com.kanta.plainwalk.walk.ActivityReceiver",
+        "com.kanta.plainwalk.walk.AreaBoundary",
+        "com.kanta.plainwalk.walk.AreaFile",
+        "com.kanta.plainwalk.walk.MovementReceiver",
+        "com.kanta.plainwalk.walk.PlaceReceiver",
+        "com.kanta.plainwalk.walk.TriggerPlace",
+        "com.kanta.plainwalk.walk.WalkRecorderService",
+        "com.kanta.plainwalk.walk.WidgetSnapshot",
+        "com.kanta.plainwalk.walk.a",
+        "com.kanta.plainwalk.walk.b",
+        "com.kanta.plainwalk.walk.c",
+        "com.kanta.plainwalk.widget.StartWidgetReceiver",
+        "com.kanta.plainwalk.widget.StatsWidgetReceiver"
+      ],
+      "native_libraries": [],
+      "asset_count": 22,
+      "resource_count": 1130,
+      "signing_certificates": [
+        {
+          "sha1": "1363454100089df700824ff9c117ce9bd46d8506",
+          "sha256": "021102dff80814b4418872285c060859b5450c4b7cb120e60e92428decebcf44"
+        }
+      ]
+    },
+    {
+      "file": "config.arm64_v8a.apk",
+      "bytes": 111202,
+      "sha256": "f8793a716d733c6e17232fbb41056b5234b3088212c7714a9feee10b7b2de4fe",
+      "dex": [],
+      "class_groups": {
+        "app": 0,
+        "compose": 0,
+        "room": 0,
+        "health_connect": 0,
+        "google_maps": 0,
+        "billing": 0,
+        "mlkit": 0,
+        "kotlin": 0,
+        "work_manager": 0
+      },
+      "app_class_count": 0,
+      "app_class_examples": [],
+      "native_libraries": [
+        "lib/arm64-v8a/libandroidx.graphics.path.so",
+        "lib/arm64-v8a/libimage_processing_util_jni.so",
+        "lib/arm64-v8a/libsurface_util_jni.so"
+      ],
+      "asset_count": 0,
+      "resource_count": 0,
+      "signing_certificates": [
+        {
+          "sha1": "1363454100089df700824ff9c117ce9bd46d8506",
+          "sha256": "021102dff80814b4418872285c060859b5450c4b7cb120e60e92428decebcf44"
+        }
+      ]
+    },
+    {
+      "file": "config.en.apk",
+      "bytes": 94617,
+      "sha256": "ada6074620285f1d52bb2c0a6fa56bbbbed77dee990c8b2d94feb1e8cf0c50b5",
+      "dex": [],
+      "class_groups": {
+        "app": 0,
+        "compose": 0,
+        "room": 0,
+        "health_connect": 0,
+        "google_maps": 0,
+        "billing": 0,
+        "mlkit": 0,
+        "kotlin": 0,
+        "work_manager": 0
+      },
+      "app_class_count": 0,
+      "app_class_examples": [],
+      "native_libraries": [],
+      "asset_count": 0,
+      "resource_count": 0,
+      "signing_certificates": [
+        {
+          "sha1": "1363454100089df700824ff9c117ce9bd46d8506",
+          "sha256": "021102dff80814b4418872285c060859b5450c4b7cb120e60e92428decebcf44"
+        }
+      ]
+    },
+    {
+      "file": "config.mdpi.apk",
+      "bytes": 79144,
+      "sha256": "549161e0df28d3c907754a795a6d271c7d84aee3bbef0fcc8b02b7c80996b7cd",
+      "dex": [],
+      "class_groups": {
+        "app": 0,
+        "compose": 0,
+        "room": 0,
+        "health_connect": 0,
+        "google_maps": 0,
+        "billing": 0,
+        "mlkit": 0,
+        "kotlin": 0,
+        "work_manager": 0
+      },
+      "app_class_count": 0,
+      "app_class_examples": [],
+      "native_libraries": [],
+      "asset_count": 0,
+      "resource_count": 48,
+      "signing_certificates": [
+        {
+          "sha1": "1363454100089df700824ff9c117ce9bd46d8506",
+          "sha256": "021102dff80814b4418872285c060859b5450c4b7cb120e60e92428decebcf44"
+        }
+      ]
+    }
+  ],
+  "executed": false,
+  "decompiledSourcePublished": false,
+  "originalAssetsCopiedIntoApp": false
+}

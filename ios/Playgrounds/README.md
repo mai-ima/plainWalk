@@ -30,3 +30,5 @@ Playgrounds 版は前面で記録する構成です。HealthKit、Live Activity 
 ## 検証
 
 GitHub Actions 40898218214 の `playgrounds` ジョブで `.swiftpm` のアプリを iOS Simulator 向けにコンパイルしました。iPad / Mac の Swift Playgrounds 上の実行試験とは区別します。
+
+設定と実機診断の SwiftUI 画面も、同じ正本から生成して同梱します。HealthKit の操作には Playgrounds の利用範囲を説明します。通知やメディア・モーションの権限は端末で個別に確認してください。

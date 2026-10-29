@@ -64,3 +64,7 @@ https://plainwalk.app/assets/lang-menu-Bx17NVHy.js の公開配色定義を確�
 ## iOS 起動検証
 
 GitHub Actions 40888890524 にて、iOS 本体と Live Activity 拡張のビルド、iPhone Simulator 上でのアプリ起動、Web からネイティブ保存への接続、位置ジャーナルの復旧と重複防止の自己テストが通過。起動画像も生成。実機の GPS・HealthKit・電池消費・署名は未検証。
+
+## APK と SwiftUI の追加
+
+Android 1.1.0 の XAPK を取得し、binary manifest・DEX の型の構成・署名証明書の指紋を静的解析した。コードや素材は取り込まず、[解析結果](apk-static-analysis.md) に構成と限界を記録。Google Play 由来の AppBrain 公開画像 8 枚も個別に確認。iOS の設定と実機診断は SwiftUI で追加し、外観・単位・通知・HealthKit・ファイルの入口へ接続。完全な SwiftUI 化と本家の完全一致は未達。

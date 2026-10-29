@@ -12,6 +12,8 @@ PlainWalk の公開情報と提供された画面を参考にした非公式の�
 - [確定したユーザー要件](docs/requirements.md)
 - [提供画像 16 枚の分析](docs/app-analysis.md)
 - [追加の画像・一次資料の分析](docs/research-deep-dive.md)
+- [APK の静的解析と Android 画像](docs/apk-static-analysis.md)
+- [実機検証用の開発者機能](docs/device-testing.md)
 - [実装範囲と残差](docs/reproduction-audit.md)
 - [Xcode 版の起動・署名](ios/README.md)
 - [Swift Playgrounds 版の開き方](ios/Playgrounds/README.md)
@@ -57,10 +59,12 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-16 件の単体テストと、Chromium / Linux WebKit の主要画面・保存復旧・操作が通過。テストは `tests/unit/` と `tests/browser/`、画像や動画は `artifacts/previews/` に分離しました。
+19 件の単体テストと、Chromium / Linux WebKit の主要画面・保存復旧・操作が通過。テストは `tests/unit/` と `tests/browser/`、画像や動画は `artifacts/previews/` に分離しました。
 
 通常の iOS 版は [GitHub Actions 40888890524](https://github.com/mai-ima/plainWalk/actions/runs/40888890524) で本体・拡張のコンパイル、iPhone Simulator 起動、Web/native 接続、位置ジャーナル復旧が通過。実機の背景 GPS・HealthKit・電池消費・配布署名は未検証で、署名済み IPA はありません。Playgrounds 版の検証は通常版と区別します。
 
 Watch アプリ、通常のウィジェット、自動開始、共有の自動同期、日本以外の区域、公式と同じ立体バッジ、道路へのスナップ、写真の深度ぼかし、動画ピンへのフィルム、公式と同じ近接交換は未実装です。Web の傾斜表示は建物の 3D 表示ではありません。
 
 端末やブラウザのデータ消去に備え、バックアップを保存してください。インポートは 45 MB、動画は 15 MB / 2.6 秒以内。写真は読み込み後に圧縮します。外観設定はバックアップに含みません。
+
+設定画面と実機検証画面を SwiftUI に追加。外観・単位・通知・ファイル・診断を接続します。地図と多くのコレクションは同梱 Web UI を使う構成を維持し、全画面の SwiftUI 化・完全一致とはしていません。

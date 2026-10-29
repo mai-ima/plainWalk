@@ -12,7 +12,7 @@ private struct DiagnosticExport: Identifiable { let id = UUID(); let url: URL }
     @AppStorage("plainwalk-device-checks") private var checksJSON = "{}"
     private let checks = [("launch","起動と初回表示"),("location","位置情報の許可・拒否"),("record","記録・一時停止・再開"),("background","画面ロック中の記録"),("recovery","再起動後の復元"),("media","写真・動画と共有"),("backup","バックアップの入出力"),("offline","オフライン表示"),("accessibility","VoiceOver・文字サイズ")]
     private var checkValues: [String: Int] { (try? JSONSerialization.jsonObject(with: Data(checksJSON.utf8)) as? [String: Int]) ?? [:] }
-    private func record(_ code: String) { events.append(["time": ISO8601DateFormatter().string(from: Date()),"code":code]); if events.count > 100 { events.removeFirst(events.count - 100) } }
+    private func record(_ code: String, count: Int? = nil) { var item=["time": ISO8601DateFormatter().string(from: Date()),"code":code];if let count {item["count"]=String(count)}; events.append(item); if events.count > 100 { events.removeFirst(events.count - 100) } }
     private func value(_ key: String) -> String { report[key].map { String(describing: $0) } ?? "不明" }
     private func refresh() async { report = await DiagnosticService.snapshot(recorder: recorder); record("snapshotRead") }
     var body: some View {
@@ -44,6 +44,8 @@ private struct DiagnosticExport: Identifiable { let id = UUID(); let url: URL }
                 }
             }.navigationTitle("実機検証").navigationBarTitleDisplayMode(.inline).toolbar { ToolbarItem(placement: .topBarTrailing) {Button("閉じる") {dismiss()} } }.task {await refresh()}
         }.sheet(item:$export,onDismiss:{if let exportFolder {try? FileManager.default.removeItem(at:exportFolder)};exportFolder=nil;export=nil}) { item in DiagnosticShareSheet(url:item.url) }
+        .onChange(of:recorder.session?.points.count) { _, value in if let value {record("locationUpdate",count:value)} }
+        .onChange(of:recorder.session?.recording) { _, value in record(value == true ? "recording" : "pausedOrStopped") }
         .onReceive(NotificationCenter.default.publisher(for:UIApplication.didEnterBackgroundNotification)) {_ in record("background")}
         .onReceive(NotificationCenter.default.publisher(for:UIApplication.didBecomeActiveNotification)) {_ in record("foreground");Task {await refresh()} }
     }
