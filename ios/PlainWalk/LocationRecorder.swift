@@ -23,7 +23,7 @@ struct NativeSession: Codable {
     var json: [String: Any] { ["id": id, "start": start, "points": points.map(\.json), "recording": recording, "distance": distance] }
 }
 
-@MainActor final class LocationRecorder: NSObject, CLLocationManagerDelegate, ObservableObject {
+@MainActor final class LocationRecorder: NSObject, @preconcurrency CLLocationManagerDelegate, ObservableObject {
     let manager = CLLocationManager()
     let motion = MotionService()
     private var heading: Double = 0

@@ -60,7 +60,7 @@ import MapKit
                     reply(id)
                 case "locationStop": try recorder.stop(end: payload["end"] as? Bool ?? false); reply(id)
                 case "openSettings":
-                    if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }; reply(id)
+                    if let url = URL(string: UIApplication.openSettingsURLString) { _ = await UIApplication.shared.open(url) }; reply(id)
                 case "notificationsConfigure": try await NotificationService.configure(payload); reply(id)
                 case "pedometerSteps": let total = try await recorder.motion.steps(); reply(id, result: ["steps": total.map { $0 as Any } ?? NSNull()])
                 case "photoCutout":
