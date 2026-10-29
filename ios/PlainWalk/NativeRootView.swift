@@ -16,12 +16,12 @@ import UniformTypeIdentifiers
     var body: some View {
         TabView(selection:$model.tab) {
             NavigationStack {NativeMyMapView(model:model).toolbar(.hidden,for:.navigationBar)}.tabItem{Label("マイマップ",systemImage:"sparkles")}.tag(NativeTab.map)
-            NavigationStack {NativeRecordsView(model:model).onAppear{markScreen("records")}}.tabItem{Label("記録",systemImage:"chart.bar.fill")}.tag(NativeTab.records)
-            NavigationStack {NativeProfileView(model:model).onAppear{markScreen("profile")}}.tabItem{Label("プロフィール",systemImage:"person")}.tag(NativeTab.profile)
+            NavigationStack {NativeRecordsView(model:model).background { smokeProbe("records") }}.tabItem{Label("記録",systemImage:"chart.bar.fill")}.tag(NativeTab.records)
+            NavigationStack {NativeProfileView(model:model).background { smokeProbe("profile") }}.tabItem{Label("プロフィール",systemImage:"person")}.tag(NativeTab.profile)
         }
         .tint(.primary).preferredColorScheme(model.colorScheme)
         .sheet(item:$model.sheet,onDismiss:model.sheetDismissed) {item in
-            sheetContent(item).preferredColorScheme(model.colorScheme).onAppear{markScreen(item.id)}
+            sheetContent(item).preferredColorScheme(model.colorScheme).background { smokeProbe(item.id) }
                 .alert("お知らせ",isPresented:Binding(get:{model.errorMessage != nil && model.sheet != nil},set:{if !$0{model.errorMessage=nil}})){Button("閉じる",role:.cancel){model.errorMessage=nil}}message:{Text(model.errorMessage ?? "")}
         }
         .fileImporter(isPresented:$model.importing,allowedContentTypes:[.json,.xml,UTType(filenameExtension:"gpx") ?? .data,UTType(filenameExtension:"tcx") ?? .data],allowsMultipleSelection:false,onCompletion:model.handleImport)
@@ -44,6 +44,12 @@ import UniformTypeIdentifiers
         case .replay(let id): NativeReplayView(model:model,walkID:id)
         case .share(let url): NativeShareView(url:url)
         case .health: NativeHealthImportView(model:model)
+        }
+    }
+    @ViewBuilder private func smokeProbe(_ name: String) -> some View {
+        if isSmoke {
+            NativeSmokeAppearanceProbe(onReady: { markScreen(name) })
+                .frame(width: 1, height: 1).allowsHitTesting(false)
         }
     }
     private func markScreen(_ name: String) {
@@ -88,7 +94,10 @@ import UniformTypeIdentifiers
                 default: break
                 }
             }
-        } catch { model.showError("Native smoke check: " + error.localizedDescription) }
+        } catch {
+            NSLog("PlainWalk native smoke failed: %@", error.localizedDescription)
+            model.showError("Native smoke check: " + error.localizedDescription)
+        }
         #endif
     }
 }
@@ -102,4 +111,25 @@ struct NativeShareView:UIViewControllerRepresentable {
         return controller
     }
     func updateUIViewController(_ uiViewController:UIActivityViewController,context:Context){}
+}
+
+/// The DEBUG smoke route waits for UIKit presentation completion, rather than
+/// SwiftUI onAppear, which can run before the sheet is visible on a slow Simulator.
+private struct NativeSmokeAppearanceProbe: UIViewControllerRepresentable {
+    let onReady: () -> Void
+    func makeUIViewController(context: Context) -> Controller { Controller(onReady: onReady) }
+    func updateUIViewController(_ controller: Controller, context: Context) { controller.onReady = onReady }
+    final class Controller: UIViewController {
+        var onReady: () -> Void
+        init(onReady: @escaping () -> Void) { self.onReady = onReady; super.init(nibName: nil, bundle: nil) }
+        required init?(coder: NSCoder) { fatalError("init(coder:) is unavailable") }
+        override func loadView() { let content = UIView(); content.backgroundColor = .clear; view = content }
+        override func viewDidAppear(_ animated: Bool) {
+            super.viewDidAppear(animated)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                guard let self, self.viewIfLoaded?.window != nil, !self.isBeingDismissed else { return }
+                self.onReady()
+            }
+        }
+    }
 }

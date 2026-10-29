@@ -9,6 +9,7 @@ xcrun simctl boot "$PW_SIM_DEVICE" || true
 xcrun simctl bootstatus "$PW_SIM_DEVICE" -b
 PW_APP_PATH="$PWD/.build/ios/Build/Products/Debug-iphonesimulator/PlainWalk.app"
 xcrun simctl install "$PW_SIM_DEVICE" "$PW_APP_PATH"
+mkdir -p .build/screenshots
 xcrun simctl launch "$PW_SIM_DEVICE" org.example.plainwalkweb -PlainWalkSmokeTest
 PW_APP_CONTAINER=$(xcrun simctl get_app_container "$PW_SIM_DEVICE" org.example.plainwalkweb data)
 PW_READY_FILE="$PW_APP_CONTAINER/Library/Application Support/PlainWalk/native-ready.json"
@@ -20,7 +21,7 @@ for PW_ATTEMPT in $(seq 1 30); do
     xcrun simctl terminate "$PW_SIM_DEVICE" org.example.plainwalkweb
     xcrun simctl launch "$PW_SIM_DEVICE" org.example.plainwalkweb -PlainWalkSmokeTest -PlainWalkNativeSettingsSmokeTest
     for PW_SETTINGS_ATTEMPT in $(seq 1 20); do
-      if [[ -f "$PW_APP_CONTAINER/Library/Application Support/PlainWalk/native-settings-ready.json" ]]; then
+      if [[ -f "$PW_APP_CONTAINER/Library/Application Support/PlainWalk/native-settings-ready.json" && -f "$PW_APP_CONTAINER/Library/Application Support/PlainWalk/screen-settings.ready" ]]; then
         xcrun simctl io "$PW_SIM_DEVICE" screenshot .build/screenshots/ios-native-settings.png
         for PW_SCREEN in records profile layers answer spots doodles menu stepGoal developer; do
           xcrun simctl terminate "$PW_SIM_DEVICE" org.example.plainwalkweb
@@ -33,8 +34,12 @@ for PW_ATTEMPT in $(seq 1 30); do
             if [[ -f "$PW_SCREEN_FILE" ]]; then break; fi
             sleep 1
           done
-          test -f "$PW_SCREEN_FILE"
-          sleep 1
+          if [[ ! -f "$PW_SCREEN_FILE" ]]; then
+            xcrun simctl io "$PW_SIM_DEVICE" screenshot ".build/screenshots/ios-failed-$PW_SCREEN.png"
+            echo "Native screen did not finish appearing: $PW_SCREEN"
+            exit 1
+          fi
+          if [[ "$PW_SCREEN" == "developer" ]]; then sleep 5; else sleep 2; fi
           xcrun simctl io "$PW_SIM_DEVICE" screenshot ".build/screenshots/ios-native-$PW_SCREEN.png"
         done
         exit 0
@@ -47,5 +52,6 @@ for PW_ATTEMPT in $(seq 1 30); do
   sleep 1
 done
 xcrun simctl spawn "$PW_SIM_DEVICE" log show --last 2m --style compact --predicate 'process == "PlainWalk"' || true
+xcrun simctl io "$PW_SIM_DEVICE" screenshot .build/screenshots/ios-failed-startup.png || true
 echo "The native UI did not reach its ready state."
 exit 1

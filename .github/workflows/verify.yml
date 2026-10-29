@@ -50,6 +50,8 @@ jobs:
           CODE_SIGNING_ALLOWED=NO build
       - name: Launch bundled app on iPhone Simulator
         run: bash scripts/ios-simulator-smoke.sh
+      - name: Verify diagnostic screen capture
+        run: swift scripts/check-native-screenshot.swift .build/screenshots/ios-native-developer.png
       - uses: actions/upload-artifact@v4
         if: always()
         with:
