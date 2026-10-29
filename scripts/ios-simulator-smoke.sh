@@ -10,20 +10,22 @@ xcrun simctl bootstatus "$PW_SIM_DEVICE" -b
 PW_APP_PATH="$PWD/.build/ios/Build/Products/Debug-iphonesimulator/PlainWalk.app"
 xcrun simctl install "$PW_SIM_DEVICE" "$PW_APP_PATH"
 mkdir -p .build/screenshots
-xcrun simctl launch "$PW_SIM_DEVICE" org.example.plainwalkweb -PlainWalkSmokeTest
 PW_APP_CONTAINER=$(xcrun simctl get_app_container "$PW_SIM_DEVICE" org.example.plainwalkweb data)
 PW_READY_FILE="$PW_APP_CONTAINER/Library/Application Support/PlainWalk/native-ready.json"
+rm -f "$PW_READY_FILE" "$PW_APP_CONTAINER/Library/Application Support/PlainWalk/native-settings-ready.json" "$PW_APP_CONTAINER/Library/Application Support/PlainWalk"/screen-*.ready
+xcrun simctl launch "$PW_SIM_DEVICE" org.example.plainwalkweb -PlainWalkSmokeTest
 for PW_ATTEMPT in $(seq 1 30); do
   if [[ -f "$PW_READY_FILE" ]]; then
-    python3 -c 'import json,sys; data=json.load(open(sys.argv[1])); assert data.get("ready") is True and data.get("recordingPersistence") is True and data.get("nativeUI") is True and data.get("storage") is True and data.get("trackMath") is True and data.get("trackIO") is True and data.get("importCompatibility") is True and data.get("modelState") is True and data.get("mapCamera") is True; print("Native SwiftUI application, storage, track import and recorder recovery checks passed on iOS Simulator.")' "$PW_READY_FILE"
+    python3 -c 'import json,sys; data=json.load(open(sys.argv[1])); assert data.get("ready") is True and data.get("recordingPersistence") is True and data.get("nativeUI") is True and data.get("storage") is True and data.get("trackMath") is True and data.get("trackIO") is True and data.get("importCompatibility") is True and data.get("modelState") is True and data.get("mapCamera") is True and data.get("trackEditor") is True and data.get("photoEffects") is True and data.get("boundaryGeometry") is True; print("Native SwiftUI application, storage, track import and recorder recovery checks passed on iOS Simulator.")' "$PW_READY_FILE"
     mkdir -p .build/screenshots
+    sleep 2
     xcrun simctl io "$PW_SIM_DEVICE" screenshot .build/screenshots/ios-native-map.png
     xcrun simctl terminate "$PW_SIM_DEVICE" org.example.plainwalkweb
     xcrun simctl launch "$PW_SIM_DEVICE" org.example.plainwalkweb -PlainWalkSmokeTest -PlainWalkNativeSettingsSmokeTest
     for PW_SETTINGS_ATTEMPT in $(seq 1 20); do
       if [[ -f "$PW_APP_CONTAINER/Library/Application Support/PlainWalk/native-settings-ready.json" && -f "$PW_APP_CONTAINER/Library/Application Support/PlainWalk/screen-settings.ready" ]]; then
         xcrun simctl io "$PW_SIM_DEVICE" screenshot .build/screenshots/ios-native-settings.png
-        for PW_SCREEN in records profile layers answer spots doodles menu stepGoal developer; do
+        for PW_SCREEN in records profile layers answer spots doodles menu stepGoal lut developer; do
           xcrun simctl terminate "$PW_SIM_DEVICE" org.example.plainwalkweb
           xcrun simctl launch "$PW_SIM_DEVICE" org.example.plainwalkweb -PlainWalkSmokeTest "-PlainWalkScreen=$PW_SCREEN"
           PW_SCREEN_FILE="$PW_APP_CONTAINER/Library/Application Support/PlainWalk/screen-$PW_SCREEN.ready"

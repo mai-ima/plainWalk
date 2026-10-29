@@ -4,11 +4,13 @@ import SwiftUI
     @State private var config: [String: Any]
     @State private var notice: String?
     @State private var notificationBusy = false
+    @State private var confirmingReset = false
     let onChange: ([String: Any]) -> Void
     let onAction: (String) -> Void
     let onClose: () -> Void
-    init(config: [String: Any], onChange: @escaping ([String: Any]) -> Void, onAction: @escaping (String) -> Void, onClose: @escaping () -> Void) {
-        _config = State(initialValue: config); self.onChange = onChange; self.onAction = onAction; self.onClose = onClose
+    let embedded: Bool
+    init(config: [String: Any], onChange: @escaping ([String: Any]) -> Void, onAction: @escaping (String) -> Void, onClose: @escaping () -> Void, embedded: Bool = false) {
+        _config = State(initialValue: config); self.onChange = onChange; self.onAction = onAction; self.onClose = onClose; self.embedded = embedded
     }
     private let page = Color(uiColor: .systemGroupedBackground)
     private func binding(_ key: String) -> Binding<Bool> {
@@ -88,11 +90,11 @@ import SwiftUI
                     section("バックアップ", description: "共有シートの「ファイルに保存」から自分の iCloud Drive も選べます。") { row("バックアップを書き出す", icon: "arrow.up.doc", action: "backup"); Divider(); row("バックアップを取り込む", icon: "arrow.down.doc", action: "nativeRestore") }
                     section("アプリについて") { row("バージョン 0.3.0", action: "about"); Divider(); row("対応範囲", action: "limitations") }
                     section("beta") { Toggle("beta 機能", isOn: binding("beta")).padding(.vertical, 10); if config["beta"] as? Bool == true { Divider(); Toggle("画面をスリープさせない", isOn: binding("wake")).padding(.vertical, 10); Divider(); Toggle("GPS 精度を表示", isOn: binding("accuracy")).padding(.vertical, 10) } }
-                    section { Button("データをリセット",role:.destructive) {onAction("resetData")}.frame(maxWidth:.infinity,alignment:.leading).padding(.vertical,14) }
+                    section { Button("データをリセット",role:.destructive) {confirmingReset=true}.frame(maxWidth:.infinity,alignment:.leading).padding(.vertical,14) }
                     section("開発者向け", description: "座標や写真を含めない診断情報で、権限・保存・実機の動作を確認します。") { Toggle("開発者モード", isOn: binding("developerMode")).padding(.vertical, 10); if config["developerMode"] as? Bool == true { Divider(); row("実機検証・診断ログ", icon: "stethoscope", action: "nativeDeveloper") } }
                 }.padding(.horizontal, 16).padding(.top, 10).padding(.bottom, 30)
             }
-            HStack { tab("マイマップ", icon: "sparkles", action: "tab:map"); tab("記録", icon: "chart.bar.fill", action: "tab:records"); tab("プロフィール", icon: "person", action: "tab:profile") }.padding(.top, 10).background(Color(uiColor: .systemBackground)).overlay(alignment: .top) { Divider() }
+            if !embedded { HStack { tab("マイマップ", icon: "sparkles", action: "tab:map"); tab("記録", icon: "chart.bar.fill", action: "tab:records"); tab("プロフィール", icon: "person", action: "tab:profile") }.padding(.top, 10).background(Color(uiColor: .systemBackground)).overlay(alignment: .top) { Divider() } }
         }.background(page).onAppear {
             #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("-PlainWalkNativeSettingsSmokeTest") {
@@ -101,6 +103,11 @@ import SwiftUI
                 try? Data("{\"nativeSettings\":true}".utf8).write(to:folder.appendingPathComponent("native-settings-ready.json"),options:.atomic)
             }
             #endif
+        }.confirmationDialog("この端末の記録をリセットしますか？", isPresented: $confirmingReset, titleVisibility: .visible) {
+            Button("すべての記録を削除", role: .destructive) { onAction("resetDataConfirmed") }
+            Button("キャンセル", role: .cancel) {}
+        } message: {
+            Text("さんぽ・写真・ノート・旗・らくがき・共有の白地図を削除します。この操作は取り消せません。必要な記録は先にバックアップを書き出してください。外観などの設定は残ります。")
         }.alert("お知らせ", isPresented: Binding(get: { notice != nil }, set: { if !$0 { notice = nil } })) { Button("わかりました", role: .cancel) {} } message: { Text(notice ?? "") }
     }
     private func tab(_ title: String, icon: String, action: String) -> some View {

@@ -83,12 +83,12 @@ struct NativeFlag: Identifiable {
     var json: [String: Any] { var value=point.json;value["id"]=id;value["name"]=name;return value }
 }
 enum NativeTab: Hashable { case map, records, profile }
-enum NativeCollection: String, Identifiable, CaseIterable {
+enum NativeCollection: String, Identifiable, CaseIterable, Hashable {
     case spots, stickers, badges, doodles, sharedMaps, bookmarks, notes
     var id: String { rawValue }
     var title: String { switch self { case .spots:return "ここいいな";case .stickers:return "ステッカー";case .badges:return "エリアバッジ";case .doodles:return "らくがき";case .sharedMaps:return "共有の白地図";case .bookmarks:return "気になる場所";case .notes:return "ノート" } }
 }
 enum NativeSheet: Identifiable {
-    case settings, stepGoal, developer, layers, menu, spot, answer, stats, replay(String?), walk(String), collection(NativeCollection), share(URL), health
-    var id: String { switch self {case .settings:return "settings";case .stepGoal:return "stepGoal";case .developer:return "developer";case .layers:return "layers";case .menu:return "menu";case .spot:return "spot";case .answer:return "answer";case .stats:return "stats";case .replay(let id):return "replay:"+(id ?? "all");case .walk(let id):return "walk:"+id;case .collection(let item):return "collection:"+item.rawValue;case .share(let url):return "share:"+url.absoluteString;case .health:return "health"} }
+    case settings, stepGoal, lut, developer, layers, menu, spot, answer, stats, replay(String?), walk(String), collection(NativeCollection), share(URL), health
+    var id: String { switch self {case .settings:return "settings";case .stepGoal:return "stepGoal";case .lut:return "lut";case .developer:return "developer";case .layers:return "layers";case .menu:return "menu";case .spot:return "spot";case .answer:return "answer";case .stats:return "stats";case .replay(let id):return "replay:"+(id ?? "all");case .walk(let id):return "walk:"+id;case .collection(let item):return "collection:"+item.rawValue;case .share(let url):return "share:"+url.absoluteString;case .health:return "health"} }
 }

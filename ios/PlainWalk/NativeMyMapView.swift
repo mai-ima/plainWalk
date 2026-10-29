@@ -15,6 +15,7 @@ import ImageIO
     @State private var savedTraces: [NativePaperTrace] = []
     @State private var doodleTraces: [NativePaperTrace] = []
     @State private var activeTraces: [NativePaperTrace] = []
+    @State private var boundaryGeometry: NativeBoundaryGeometry.Snapshot?
     @State private var geometryRevision = 0
     @State private var suppressTapUntil = Date.distantPast
     @State private var recordPressed = false
@@ -42,12 +43,14 @@ import ImageIO
             let dashed = model.config["line"] as? String == "dashed"
             let smooth = model.config["smooth"] as? Bool != false
             let grid = model.config["grid"] as? Bool == true
+            let outline = model.config["outline"] as? Bool == true
             let selection = focusedID
             ZStack {
                 model.paper.ignoresSafeArea()
                 NativePaperCanvas(saved: savedTraces, active: activeTraces, doodles: doodleTraces,
                     geometryRevision: geometryRevision, camera: camera, size: size, modes: modes, ink: ink,
-                    fade: fade, thicken: thicken, dashed: dashed, smooth: smooth, grid: grid, selection: selection)
+                    fade: fade, thicken: thicken, dashed: dashed, smooth: smooth, grid: grid, selection: selection,
+                    boundaries: outline ? boundaryGeometry : nil, outline: outline)
                 .equatable()
                 .contentShape(Rectangle())
                 .gesture(panGesture)
@@ -111,6 +114,14 @@ import ImageIO
                 savedTraces = traces
                 doodleTraces = sketches
                 geometryRevision += 1
+            }
+            .task(id: model.config["outline"] as? Bool == true) {
+                guard model.config["outline"] as? Bool == true, boundaryGeometry == nil else { return }
+                do {
+                    let geometry = try await NativeBoundaryGeometry.shared.load()
+                    guard !Task.isCancelled else { return }
+                    boundaryGeometry = geometry; geometryRevision += 1
+                } catch { if !Task.isCancelled { model.showError(error.localizedDescription) } }
             }
             .task(id: activeGeometryKey) {
                 // Timer updates do not reproject the entire active recording. The
@@ -437,14 +448,17 @@ private struct NativePaperCanvas: View, Equatable {
     let smooth: Bool
     let grid: Bool
     let selection: String?
+    let boundaries: NativeBoundaryGeometry.Snapshot?
+    let outline: Bool
     nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.geometryRevision == rhs.geometryRevision && lhs.camera == rhs.camera && lhs.size == rhs.size
             && lhs.modes == rhs.modes && lhs.ink == rhs.ink && lhs.fade == rhs.fade
             && lhs.thicken == rhs.thicken && lhs.dashed == rhs.dashed && lhs.smooth == rhs.smooth
-            && lhs.grid == rhs.grid && lhs.selection == rhs.selection
+            && lhs.grid == rhs.grid && lhs.selection == rhs.selection && lhs.outline == rhs.outline
     }
     var body: some View {
         Canvas(opaque: false, rendersAsynchronously: true) { context, canvasSize in
+            if let boundaries { NativePaperPainter.boundaries(boundaries, context: &context, size: canvasSize, camera: camera, color: ink.opacity(0.18)) }
             if grid { NativePaperPainter.grid(context: &context, size: canvasSize, camera: camera, color: ink.opacity(0.1)) }
             NativePaperPainter.trails(doodles, context: &context, size: canvasSize, camera: camera, color: ink.opacity(0.28), dashed: true, smooth: false, thicken: false, focusedID: nil)
             NativePaperPainter.trails(saved.filter { modes[$0.mode] != false }, context: &context, size: canvasSize, camera: camera, color: ink.opacity(fade ? 0.2 : 0.78), dashed: dashed, smooth: smooth, thicken: thicken, focusedID: selection)
@@ -453,6 +467,25 @@ private struct NativePaperCanvas: View, Equatable {
     }
 }
 private enum NativePaperPainter {
+    static func boundaries(_ snapshot: NativeBoundaryGeometry.Snapshot, context: inout GraphicsContext, size: CGSize, camera: NativePaperCamera, color: Color) {
+        let mx = camera.metersPerPixel * Double(size.width) / 2
+        let my = camera.metersPerPixel * Double(size.height) / 2
+        var path = Path()
+        for ring in snapshot.rings {
+            guard ring.bounds.intersects(minX: camera.center.x - mx, minY: camera.center.y - my,
+                maxX: camera.center.x + mx, maxY: camera.center.y + my) else { continue }
+            let points = camera.zoom < 10 ? ring.coarse : camera.zoom < 13 ? ring.medium : ring.points
+            guard let first = points.first else { continue }
+            func screen(_ point: NativeBoundaryGeometry.Point) -> CGPoint {
+                camera.screen(NativePaperPoint(x: point.x, y: point.y), size: size)
+            }
+            path.move(to: screen(first))
+            for point in points.dropFirst() { path.addLine(to: screen(point)) }
+            path.closeSubpath()
+        }
+        context.stroke(path, with: .color(color), style: StrokeStyle(lineWidth: 0.65, lineCap: .round, lineJoin: .round))
+    }
+
     static func trails(_ traces: [NativePaperTrace], context: inout GraphicsContext, size: CGSize, camera: NativePaperCamera, color: Color, dashed: Bool, smooth: Bool, thicken: Bool, focusedID: String?, active: Bool = false) {
         let mx = camera.metersPerPixel * Double(size.width) / 2, my = camera.metersPerPixel * Double(size.height) / 2
         for trace in traces {

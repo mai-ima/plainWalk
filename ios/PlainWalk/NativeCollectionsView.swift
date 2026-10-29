@@ -26,6 +26,7 @@ private func ncDate(_ ms: Double) -> String { Date(timeIntervalSince1970: ms / 1
 @MainActor struct NativeCollectionsView: View {
     @ObservedObject var model: NativeAppModel
     let collection: NativeCollection
+    var standalone = false
     @Environment(\.dismiss) private var dismiss
     @State private var creatingPaper = false
     @State private var drawing = false
@@ -35,17 +36,21 @@ private func ncDate(_ ms: Double) -> String { Date(timeIntervalSince1970: ms / 1
         switch collection { case .spots: return "ここいいな"; case .stickers: return "ステッカー"; case .badges: return "エリアバッジ"; case .doodles: return "らくがき"; case .sharedMaps: return "共有の白地図"; case .bookmarks: return "気になる場所"; case .notes: return "ノート" }
     }
     var body: some View {
-        NavigationStack {
-            content.navigationTitle(title).navigationBarTitleDisplayMode(.inline)
-                .toolbar { ToolbarItem(placement: .topBarLeading) { Button { dismiss() } label: { Image(systemName: "chevron.left").font(.title3.weight(.medium)).frame(width: 44, height: 44) }.accessibilityLabel("戻る") }
-                    if collection == .spots { ToolbarItem(placement: .topBarTrailing) { Button { model.openSpotCapture() } label: { Image(systemName: "camera") }.accessibilityLabel("ここいいなを残す") } }
-                    if collection == .notes { ToolbarItem(placement: .topBarTrailing) { Button { editingDay = ncDay() } label: { Image(systemName: "square.and.pencil") }.accessibilityLabel("今日のノートを書く") } }
-                    if collection == .doodles { ToolbarItem(placement: .topBarTrailing) { Button { drawing = true } label: { Image(systemName: "pencil.tip") }.accessibilityLabel("らくがきを描く") } }
-                }
+        Group {
+            if standalone { NavigationStack { page } } else { page }
         }.sheet(isPresented: $creatingPaper) { NCPaperEditor(model: model) }
             .sheet(isPresented: $drawing) { NCDoodleEditor(model: model) }
             .sheet(isPresented: Binding(get: { editingDay != nil }, set: { if !$0 { editingDay = nil } })) { if let day = editingDay { NCNoteEditor(model: model, day: day) } }
             .sheet(isPresented: $sharingSticker) { NCStickerPicker(model: model) }
+    }
+    private var page: some View {
+            content.navigationTitle(title).navigationBarTitleDisplayMode(.inline)
+                .navigationBarBackButtonHidden()
+                .toolbar { ToolbarItem(placement: .topBarLeading) { Button { dismiss() } label: { Image(systemName: "chevron.left").font(.title3.weight(.medium)).frame(width: 44, height: 44) }.accessibilityLabel("戻る") }
+                    if collection == .spots && model.isRecording { ToolbarItem(placement: .topBarTrailing) { Button { model.openSpotCapture() } label: { Image(systemName: "camera") }.accessibilityLabel("ここいいなを残す") } }
+                    if collection == .notes { ToolbarItem(placement: .topBarTrailing) { Button { editingDay = ncDay() } label: { Image(systemName: "square.and.pencil") }.accessibilityLabel("今日のノートを書く") } }
+                    if collection == .doodles { ToolbarItem(placement: .topBarTrailing) { Button { drawing = true } label: { Image(systemName: "pencil.tip") }.accessibilityLabel("らくがきを描く") } }
+                }
     }
     @ViewBuilder private var content: some View {
         switch collection {
@@ -99,7 +104,8 @@ private func ncDate(_ ms: Double) -> String { Date(timeIntervalSince1970: ms / 1
                     Text("答え合わせマップに絵を描いて、いつか歩いてみる。").font(.headline)
                     Text("実際の地図を 1 本指でなぞって描いた絵を、歩くまで取っておきます。移動したいときは「地図を動かす」に切り替えます。").font(.subheadline).foregroundStyle(.secondary).lineSpacing(4)
                     Button { drawing = true } label: { Label("らくがきを描く", systemImage: "pencil.tip").font(.subheadline.weight(.semibold)).padding(.horizontal, 16).padding(.vertical, 10).foregroundStyle(Color(uiColor: .systemBackground)).background(Color.primary, in: Capsule()) }.buttonStyle(.plain)
-                }.padding(18).background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 22))
+                }.padding(18).background(Color(uiColor: .systemBackground), in: RoundedRectangle(cornerRadius: 22))
+                    .overlay { RoundedRectangle(cornerRadius: 22).strokeBorder(Color.primary.opacity(0.08),lineWidth:1) }
                 ForEach(ncItems(model.library["doodles"])) { item in NavigationLink { NCDoodleDetail(model: model, itemID: item.id) } label: {
                     HStack { NCLineThumbnail(points: (item.value["points"] as? [[String: Any]] ?? []).compactMap(NativePoint.init(json:))).frame(width: 85, height: 75); VStack(alignment: .leading) { Text(item.value["name"] as? String ?? "らくがき").font(.headline); if let time = item.value["created"] as? Double { Text(ncDate(time)).font(.caption).foregroundStyle(.secondary) } }; Spacer(); Image(systemName: "chevron.right").font(.caption).foregroundStyle(.secondary) }.padding(12).background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18))
                 }.buttonStyle(.plain) }

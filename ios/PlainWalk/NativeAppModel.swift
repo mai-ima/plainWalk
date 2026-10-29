@@ -14,6 +14,9 @@ private struct NativeImportPayload: @unchecked Sendable {
 @MainActor final class NativeAppModel: ObservableObject {
     @Published var tab: NativeTab = .map
     @Published var sheet: NativeSheet?
+    @Published var profilePath: [NativeCollection] = []
+    @Published var showingSettings = false
+    @Published var showingAnswer = false
     @Published var errorMessage: String?
     @Published var importing = false
     @Published private(set) var library = NativeStore.emptyLibrary
@@ -115,6 +118,9 @@ private struct NativeImportPayload: @unchecked Sendable {
         }
         if let issue=recorder.recoveryIssue {showError(issue)}
         if runtimeServicesEnabled {
+            // Reconcile a Lock Screen activity after a crash or paused recovery.
+            // No new activity is created for a restored paused journal.
+            activity.update(recorder.session)
             clock=Timer.publish(every:1,on:.main,in:.common).autoconnect().sink { [weak self] _ in
                 guard UIApplication.shared.applicationState != .background else {return}
                 self?.tick()
@@ -125,19 +131,24 @@ private struct NativeImportPayload: @unchecked Sendable {
     func haptic() { if runtimeServicesEnabled { UIImpactFeedbackGenerator(style:.light).impactOccurred() } }
     func distanceText(_ meters:Double)->String { String(format:"%.2f",meters.isFinite ? max(0,meters)/(distanceUnit=="mi" ? 1609.344 : 1000) : 0) }
     func showError(_ value:String) {errorMessage=value}
-    func present(_ value:NativeSheet) {if sheet != nil {queuedSheet=value;sheet=nil}else{sheet=value}}
-    func closeSheet() {sheet=nil}
+    func present(_ value:NativeSheet) {if sheet != nil || showingAnswer {queuedSheet=value;sheet=nil;showingAnswer=false}else{sheet=value}}
+    func closeSheet() {sheet=nil;showingAnswer=false}
     func sheetDismissed() {if let value=queuedSheet {queuedSheet=nil;sheet=value};if let action=afterDismiss {afterDismiss=nil;action()}}
-    private func afterClosing(_ action:@escaping()->Void) {if sheet != nil {afterDismiss=action;sheet=nil}else{action()}}
-    func openAnswerMap(){present(.answer)}
+    private func afterClosing(_ action:@escaping()->Void) {if sheet != nil || showingAnswer {afterDismiss=action;sheet=nil;showingAnswer=false}else{action()}}
+    func openAnswerMap(){afterClosing { [weak self] in self?.showingAnswer=true }}
     func openLayers(){present(.layers)}
     func openMenu(){present(.menu)}
-    func openSettings(){present(.settings)}
+    func openSettings(){afterClosing { [weak self] in
+        guard let self else { return }; self.profilePath=[]; self.tab = .profile; self.showingSettings=true
+    }}
+    func closeSettings(){showingSettings=false}
     func openWalk(_ id:String){present(.walk(id))}
     func openStats(){present(.stats)}
     func openReplay(){present(.replay(nil))}
     func openReplay(walkID:String){present(.replay(walkID))}
-    func openCollection(_ item:NativeCollection){present(.collection(item))}
+    func openCollection(_ item:NativeCollection){afterClosing { [weak self] in
+        guard let self else { return }; self.showingSettings=false; self.tab = .profile; self.profilePath=[item]
+    }}
     func openSpotCapture(){guard isRecording,currentPoint != nil else{showError("記録中に位置情報を取得してから、ここいいなを残せます。");return};present(.spot)}
     func showWalkOnMap(id:String){focusedWalkID=id;mapFocus=walks.first(where:{$0.id==id})?.points.first;mapFocusRevision+=1;tab = .map;closeSheet()}
     func navigateToFlag(_ flag:NativeFlag){mapFocus=flag.point;focusedWalkID=nil;mapFocusRevision+=1;tab = .map;closeSheet()}
@@ -174,6 +185,22 @@ private struct NativeImportPayload: @unchecked Sendable {
     func updateLibrary(_ change:(inout [String:Any])->Void) throws {
         guard !readFailure else{throw NativeError.message("元の保存ファイルを保護しています。正常なバックアップを取り込んでください。")}
         var next=library;change(&next);try NativeStore.validate(next);try store.write("library",next);library=next;rebuildLibrary()
+    }
+    private func resetLibrary() throws {
+        guard active == nil, recorder.session == nil, !activeReadFailure else {
+            throw NativeError.message("記録中・一時停止中のさんぽを保存するか破棄してから、リセットしてください。")
+        }
+        let empty = NativeStore.emptyLibrary
+        // Persist first. An unavailable disk must leave the visible library intact.
+        try store.write("library", empty)
+        library = empty
+        readFailure = false
+        focusedWalkID = nil
+        mapFocus = nil
+        mapFocusRevision += 1
+        rebuildLibrary()
+        rebuildActiveExploration()
+        haptic()
     }
     private func rebuildLibrary(){
         var values=(library["walks"] as? [[String:Any]] ?? []).compactMap{NativeWalk(json:$0)}
@@ -432,6 +459,18 @@ private struct NativeImportPayload: @unchecked Sendable {
               (walk.raw["futureMetadata"] as? [String:Bool])?["keep"] == true else {
             throw NativeError.message("Retrying the final save lost metadata, duration, or duplicated the walk.")
         }
+        // A paused session must never be deleted through the reset action.
+        var pendingReset = recovery
+        pendingReset["id"] = "not-yet-saved"
+        try store.write("active", pendingReset)
+        let pausedReset = NativeAppModel(store: store, runtimeServicesEnabled: false)
+        do {
+            try pausedReset.resetLibrary()
+            throw NativeError.message("Reset accepted a recoverable session.")
+        } catch {
+            guard pausedReset.active != nil, pausedReset.walks.count == 1 else { throw error }
+        }
+        try store.write("active", nil)
         // Simulate a crash after the walk was saved and before recovery cleanup.
         try FileManager.default.removeItem(at: store.url("active"))
         try FileManager.default.createDirectory(at: store.url("active"), withIntermediateDirectories: true)
@@ -452,6 +491,24 @@ private struct NativeImportPayload: @unchecked Sendable {
         duplicate.finishRecording()
         guard duplicate.active == nil, duplicate.walks.count == 1 else {
             throw NativeError.message("Finalized recovery cleanup could not be retried safely.")
+        }
+        // Reset must be atomic and must retain independent appearance preferences.
+        let reset = NativeAppModel(store: store, runtimeServicesEnabled: false)
+        reset.updateConfig(key: "units", value: "mi")
+        try FileManager.default.removeItem(at: store.url("library"))
+        try FileManager.default.createDirectory(at: store.url("library"), withIntermediateDirectories: true)
+        do {
+            try reset.resetLibrary()
+            throw NativeError.message("Reset unexpectedly succeeded with a blocked destination.")
+        } catch {
+            guard reset.walks.count == 1 else { throw error }
+        }
+        try FileManager.default.removeItem(at: store.url("library"))
+        try reset.resetLibrary()
+        let clean = NativeAppModel(store: store, runtimeServicesEnabled: false)
+        guard clean.walks.isEmpty, clean.spots.isEmpty, clean.flags.isEmpty,
+              clean.config["units"] as? String == "mi", clean.totalPioneered == 0 else {
+            throw NativeError.message("Reset was not durable or deleted independent preferences.")
         }
         return true
     }
@@ -513,5 +570,5 @@ private struct NativeImportPayload: @unchecked Sendable {
         }
         if isRecording && Date().timeIntervalSince(lastStepRefresh) >= 30 { refreshSteps() }
     }
-    func settingsAction(_ name:String){switch name {case "tab:map":tab = .map;closeSheet();case "tab:records":tab = .records;closeSheet();case "tab:profile":tab = .profile;closeSheet();case "nativeDeveloper":present(.developer);case "nativeImport","nativeRestore":importFiles();case "backup":exportBackup();case "gpxExportAll":shareData(NativeTrackIO.gpx(walks:walks),name:"PlainWalk-all.gpx");case "healthImport":present(.health);case "resetData":showError("記録の削除は、それぞれのさんぽ詳細から行えます。バックアップを書き出してから削除してください。");case "steps":present(.stepGoal);case "lutSettings":showError("写真のLUT編集は現在未実装です。元の写真でここいいなを保存できます。");case "about":showError("PlainWalk を参考にした非公式アプリ 0.3.0。SwiftUI・MapKit・Core Locationで独立実装しています。");default:showError("手動GPS記録、写真・ノート、GPX、JSONバックアップに対応。自動開始、iCloud自動同期、近距離交換は未実装です。")}}
+    func settingsAction(_ name:String){switch name {case "tab:map":showingSettings=false;tab = .map;closeSheet();case "tab:records":showingSettings=false;tab = .records;closeSheet();case "tab:profile":showingSettings=false;tab = .profile;closeSheet();case "nativeDeveloper":present(.developer);case "nativeImport","nativeRestore":importFiles();case "backup":exportBackup();case "gpxExportAll":shareData(NativeTrackIO.gpx(walks:walks),name:"PlainWalk-all.gpx");case "healthImport":present(.health);case "resetDataConfirmed":do{try resetLibrary()}catch{showError(error.localizedDescription)};case "steps":present(.stepGoal);case "lutSettings":present(.lut);case "about":showError("PlainWalk を参考にした非公式アプリ 0.3.0。SwiftUI・MapKit・Core Locationで独立実装しています。");default:showError("手動GPS記録、写真・ノート、GPX、JSONバックアップに対応。自動開始、iCloud自動同期、近距離交換は未実装です。")}}
 }

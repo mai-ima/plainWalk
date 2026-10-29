@@ -9,6 +9,7 @@ import MapKit
     @State private var results: [NativeAnswerResult] = []
     @State private var selected: NativeAnswerPlace?
     @State private var searching = false
+    @State private var showingSearch = false
     @State private var searchError: String?
     @State private var activeSearch: MKLocalSearch?
     @State private var searchRegion = MKCoordinateRegion(center: .init(latitude: 36.5, longitude: 137.2), span: .init(latitudeDelta: 16, longitudeDelta: 16))
@@ -18,48 +19,102 @@ import MapKit
     @State private var zoomIn = true
 
     var body: some View {
-        NavigationStack {
-            ZStack(alignment: .top) {
-                NativeAnswerMapSurface(walks: model.walks, activePoints: model.activePoints, libraryRevision: model.libraryRevision,
-                    flags: model.flags, current: model.currentPoint, satellite: satellite, pitched: pitched,
-                    focus: selected, focusRevision: focusRevision, locateRevision: locateRevision,
-                    zoomRevision: zoomRevision, zoomIn: zoomIn,
-                    onRegion: { searchRegion = $0 }, onPick: select)
-                    .ignoresSafeArea(edges: .bottom)
-                if !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    searchResults
-                }
-                VStack { Spacer(); HStack { Spacer(); controls } }.padding(16)
+        ZStack {
+            NativeAnswerMapSurface(walks: model.walks, activePoints: model.activePoints, libraryRevision: model.libraryRevision,
+                flags: model.flags, current: model.currentPoint, satellite: satellite, pitched: pitched,
+                focus: selected, focusRevision: focusRevision, locateRevision: locateRevision,
+                zoomRevision: zoomRevision, zoomIn: zoomIn,
+                onRegion: { searchRegion = $0 }, onPick: select)
+                .ignoresSafeArea()
+            VStack(spacing: 0) {
+                header
+                Spacer(minLength: 0)
+                HStack { Spacer(); controls }.padding(.bottom, 18)
+                if let selected { selectionCard(selected).padding(.bottom, 12) }
+                bottomActions
             }
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                if let selected { selectionCard(selected) }
-            }
-            .navigationTitle("答え合わせマップ").navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("閉じる") { model.closeSheet() }.fontWeight(.semibold) } }
-            .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "場所や住所を検索")
-            .task(id: query) { await search() }
-            .onDisappear { activeSearch?.cancel(); activeSearch = nil }
+            .padding(.horizontal, 16).padding(.top, 10).padding(.bottom, 12)
         }
-        .presentationDragIndicator(.visible)
-        .presentationDetents([.large])
+        .sheet(isPresented: $showingSearch, onDismiss: cancelSearch) { searchSheet }
+        .onDisappear(perform: cancelSearch)
     }
 
+    private var header: some View {
+        ZStack {
+            Text("答え合わせマップ").font(.system(size: 18, weight: .semibold))
+                .padding(.horizontal, 86).lineLimit(1).minimumScaleFactor(0.7)
+            HStack {
+                Spacer()
+                Button { model.closeSheet() } label: {
+                    Text("閉じる").font(.system(size: 17, weight: .medium))
+                        .padding(.horizontal, 18).frame(height: 44)
+                        .background(.regularMaterial, in: Capsule())
+                }.buttonStyle(.plain).accessibilityLabel("答え合わせマップを閉じる")
+            }
+        }
+        .frame(minHeight: 44).foregroundStyle(.primary)
+    }
+    private var bottomActions: some View {
+        HStack(spacing: 10) {
+            Button { model.haptic(); showingSearch = true } label: {
+                Label("目的地を決める", systemImage: "flag")
+                    .padding(.horizontal, 18).frame(minHeight: 44)
+                    .background(Color.black, in: Capsule()).foregroundStyle(.white)
+            }.accessibilityHint("場所を検索します。地図の長押しでも選べます。")
+            Button { model.haptic(); model.openCollection(.doodles) } label: {
+                Label("らくがき", systemImage: "pencil.tip")
+                    .padding(.horizontal, 18).frame(minHeight: 44)
+                    .background(.regularMaterial, in: Capsule()).foregroundStyle(.primary)
+            }
+        }
+        .font(.system(size: 15, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.75)
+        .buttonStyle(.plain).frame(maxWidth: .infinity)
+    }
     private var controls: some View {
-        VStack(spacing: 10) {
-            mapButton(satellite ? "標準地図に切り替える" : "衛星写真に切り替える", symbol: satellite ? "map" : "globe.asia.australia.fill") { satellite.toggle() }
-            Button { model.haptic(); pitched.toggle() } label: { Text(pitched ? "2D" : "3D").font(.system(size: 15, weight: .semibold)).frame(width: 44, height: 44).background(.regularMaterial, in: Circle()) }
-                .buttonStyle(.plain).accessibilityLabel(pitched ? "平面表示に切り替える" : "立体表示に切り替える")
+        VStack(spacing: 14) {
+            Menu {
+                Picker("地図の表示", selection: $satellite) {
+                    Text("標準地図").tag(false)
+                    Text("航空写真").tag(true)
+                }
+                Toggle("3D 表示", isOn: $pitched)
+                Divider()
+                Button { zoomIn = true; zoomRevision += 1; model.haptic() } label: { Label("地図を拡大", systemImage: "plus.magnifyingglass") }
+                Button { zoomIn = false; zoomRevision += 1; model.haptic() } label: { Label("地図を縮小", systemImage: "minus.magnifyingglass") }
+            } label: {
+                Image(systemName: "square.3.layers.3d").font(.system(size: 25))
+                    .frame(width: 54, height: 54).background(.regularMaterial, in: Circle())
+            }.accessibilityLabel("地図レイヤー").accessibilityHint("標準地図、航空写真、3D、拡大・縮小を選べます。")
             mapButton("現在地", symbol: "scope") { model.locate(); locateRevision += 1 }
-            VStack(spacing: 0) {
-                Button { zoomIn = true; zoomRevision += 1 } label: { Image(systemName: "plus").frame(width: 44, height: 44) }.accessibilityLabel("地図を拡大")
-                Divider().frame(width: 25)
-                Button { zoomIn = false; zoomRevision += 1 } label: { Image(systemName: "minus").frame(width: 44, height: 44) }.accessibilityLabel("地図を縮小")
-            }.font(.system(size: 17, weight: .medium)).background(.regularMaterial, in: Capsule()).buttonStyle(.plain)
         }.foregroundStyle(.primary).shadow(color: .black.opacity(0.08), radius: 10, y: 5)
     }
     private func mapButton(_ label: String, symbol: String, action: @escaping () -> Void) -> some View {
-        Button { model.haptic(); action() } label: { Image(systemName: symbol).font(.system(size: 21)).frame(width: 44, height: 44).background(.regularMaterial, in: Circle()) }
+        Button { model.haptic(); action() } label: { Image(systemName: symbol).font(.system(size: 25)).frame(width: 54, height: 54).background(.regularMaterial, in: Circle()) }
             .buttonStyle(.plain).accessibilityLabel(label)
+    }
+    private var searchSheet: some View {
+        NavigationStack {
+            Group {
+                if query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    VStack(spacing: 14) {
+                        Image(systemName: "mappin.and.ellipse").font(.system(size: 42)).foregroundStyle(.tertiary)
+                        Text("行ってみたい場所を探す").font(.headline)
+                        Text("場所の名前や住所を入力してください。\n地図を長押しして目的地を選ぶこともできます。")
+                            .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                    }.padding(24).frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else { searchResults.frame(maxHeight: .infinity, alignment: .top) }
+            }
+            .background(Color(uiColor: .systemGroupedBackground))
+            .navigationTitle("目的地を決める").navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("閉じる") { showingSearch = false } } }
+            .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "場所や住所を検索")
+            .task(id: query) { await search() }
+        }
+        .presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
+    }
+    private func cancelSearch() {
+        activeSearch?.cancel(); activeSearch = nil
+        query = ""; results = []; searching = false; searchError = nil
     }
     private var searchResults: some View {
         ScrollView {
@@ -70,6 +125,7 @@ import MapKit
                 ForEach(results) { result in
                     Button {
                         select(result.place)
+                        showingSearch = false
                         query = ""
                         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                     } label: {
@@ -95,7 +151,7 @@ import MapKit
                 Button { navigate(place) } label: { Label("ここへ向かう", systemImage: "flag.fill").frame(maxWidth: .infinity).padding(.vertical, 4) }.buttonStyle(.borderedProminent).tint(.primary)
                 Button { bookmark(place) } label: { Image(systemName: "bookmark").frame(width: 36, height: 36) }.buttonStyle(.bordered).accessibilityLabel("気になる場所に保存")
             }
-        }.padding(16).background(.regularMaterial)
+        }.padding(16).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 24))
     }
     private func select(_ place: NativeAnswerPlace) { selected = place; focusRevision += 1; model.haptic() }
     private func navigate(_ place: NativeAnswerPlace) {
@@ -194,11 +250,17 @@ private struct NativeAnswerResult: Identifiable { var id: String; var place: Nat
     func makeCoordinator() -> Coordinator { Coordinator(self) }
     func makeUIView(context: Context) -> MKMapView {
         let map = MKMapView(); map.delegate = context.coordinator
-        map.showsUserLocation = true; map.showsCompass = true; map.showsBuildings = true; map.isPitchEnabled = true; map.isRotateEnabled = true
+        map.showsUserLocation = true; map.showsCompass = false; map.showsBuildings = true; map.isPitchEnabled = true; map.isRotateEnabled = true
         map.register(MKMarkerAnnotationView.self, forAnnotationViewWithReuseIdentifier: "destination")
         let scale = MKScaleView(mapView: map); scale.scaleVisibility = .adaptive; scale.translatesAutoresizingMaskIntoConstraints = false
-        map.addSubview(scale)
-        NSLayoutConstraint.activate([scale.leadingAnchor.constraint(equalTo: map.safeAreaLayoutGuide.leadingAnchor, constant: 12), scale.topAnchor.constraint(equalTo: map.safeAreaLayoutGuide.topAnchor, constant: 10)])
+        let compass = MKCompassButton(mapView: map); compass.compassVisibility = .adaptive; compass.translatesAutoresizingMaskIntoConstraints = false
+        map.addSubview(scale); map.addSubview(compass)
+        NSLayoutConstraint.activate([
+            scale.leadingAnchor.constraint(equalTo: map.safeAreaLayoutGuide.leadingAnchor, constant: 12),
+            scale.topAnchor.constraint(equalTo: map.safeAreaLayoutGuide.topAnchor, constant: 66),
+            compass.trailingAnchor.constraint(equalTo: map.safeAreaLayoutGuide.trailingAnchor, constant: -16),
+            compass.topAnchor.constraint(equalTo: map.safeAreaLayoutGuide.topAnchor, constant: 66)
+        ])
         let longPress = UILongPressGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.pick(_:))); longPress.minimumPressDuration = 0.65
         map.addGestureRecognizer(longPress)
         map.setRegion(MKCoordinateRegion(center: .init(latitude: 36.5, longitude: 137.2), span: .init(latitudeDelta: 16, longitudeDelta: 16)), animated: false)

@@ -17,15 +17,31 @@ import UniformTypeIdentifiers
         TabView(selection:$model.tab) {
             NavigationStack {NativeMyMapView(model:model).toolbar(.hidden,for:.navigationBar)}.tabItem{Label("マイマップ",systemImage:"sparkles")}.tag(NativeTab.map)
             NavigationStack {NativeRecordsView(model:model).background { smokeProbe("records") }}.tabItem{Label("記録",systemImage:"chart.bar.fill")}.tag(NativeTab.records)
-            NavigationStack {NativeProfileView(model:model).background { smokeProbe("profile") }}.tabItem{Label("プロフィール",systemImage:"person")}.tag(NativeTab.profile)
+            NavigationStack(path: $model.profilePath) {
+                NativeProfileView(model:model).background { smokeProbe("profile") }
+                    .navigationDestination(for: NativeCollection.self) { item in
+                        NativeCollectionsView(model:model,collection:item)
+                            .background { smokeProbe("collection:"+item.rawValue) }
+                    }
+                    .navigationDestination(isPresented: $model.showingSettings) {
+                        NativeSettingsView(config:model.config,onChange:model.saveConfig,onAction:model.settingsAction,onClose:model.closeSettings,embedded:true)
+                            .toolbar(.hidden,for:.navigationBar)
+                            .background { smokeProbe("settings") }
+                    }
+            }.tabItem{Label("プロフィール",systemImage:"person")}.tag(NativeTab.profile)
         }
         .tint(.primary).preferredColorScheme(model.colorScheme)
         .sheet(item:$model.sheet,onDismiss:model.sheetDismissed) {item in
             sheetContent(item).preferredColorScheme(model.colorScheme).background { smokeProbe(item.id) }
                 .alert("お知らせ",isPresented:Binding(get:{model.errorMessage != nil && model.sheet != nil},set:{if !$0{model.errorMessage=nil}})){Button("閉じる",role:.cancel){model.errorMessage=nil}}message:{Text(model.errorMessage ?? "")}
         }
+        .fullScreenCover(isPresented:$model.showingAnswer,onDismiss:model.sheetDismissed) {
+            NativeAnswerMapView(model:model).preferredColorScheme(model.colorScheme)
+                .background { smokeProbe("answer") }
+                .alert("お知らせ",isPresented:Binding(get:{model.errorMessage != nil && model.showingAnswer},set:{if !$0{model.errorMessage=nil}})){Button("閉じる",role:.cancel){model.errorMessage=nil}}message:{Text(model.errorMessage ?? "")}
+        }
         .fileImporter(isPresented:$model.importing,allowedContentTypes:[.json,.xml,UTType(filenameExtension:"gpx") ?? .data,UTType(filenameExtension:"tcx") ?? .data],allowsMultipleSelection:false,onCompletion:model.handleImport)
-        .alert("お知らせ",isPresented:Binding(get:{model.errorMessage != nil && model.sheet==nil},set:{if !$0{model.errorMessage=nil}})){Button("閉じる",role:.cancel){model.errorMessage=nil}}message:{Text(model.errorMessage ?? "")}
+        .alert("お知らせ",isPresented:Binding(get:{model.errorMessage != nil && model.sheet==nil && !model.showingAnswer},set:{if !$0{model.errorMessage=nil}})){Button("閉じる",role:.cancel){model.errorMessage=nil}}message:{Text(model.errorMessage ?? "")}
         .onChange(of:scenePhase){_,phase in if phase == .active && !isSmoke {model.refreshSteps()} }
         .task{if !isSmoke {model.refreshSteps()};runSmoke()}
     }
@@ -33,13 +49,14 @@ import UniformTypeIdentifiers
         switch item {
         case .settings: NativeSettingsView(config:model.config,onChange:{next in model.saveConfig(next)},onAction:model.settingsAction,onClose:model.closeSheet)
         case .stepGoal: NativeStepGoalView(model:model)
+        case .lut: NativeLUTView(model:model)
         case .developer: NativeDeveloperView(recorder:model.recorder)
         case .layers: NativeLayerView(model:model)
         case .menu: NativeMenuView(model:model)
         case .answer: NativeAnswerMapView(model:model)
         case .spot: NativePhotoCaptureView(model:model)
         case .walk(let id): NativeWalkDetailView(model:model,walkID:id)
-        case .collection(let item): NativeCollectionsView(model:model,collection:item)
+        case .collection(let item): NativeCollectionsView(model:model,collection:item,standalone:true)
         case .stats: NativeStatsView(model:model)
         case .replay(let id): NativeReplayView(model:model,walkID:id)
         case .share(let url): NativeShareView(url:url)
@@ -73,7 +90,10 @@ import UniformTypeIdentifiers
                 "trackIO": try NativeTrackIO.selfTest(),
                 "importCompatibility": try NativeAppModel.importSelfTest(),
                 "modelState": try NativeAppModel.stateSelfTest(),
-                "mapCamera": try NativeAnswerMapView.cameraSelfTest()
+                "mapCamera": try NativeAnswerMapView.cameraSelfTest(),
+                "trackEditor": try NativeTrackEditDraft.selfTest(),
+                "photoEffects": try NativePhotoEffects.selfTest(),
+                "boundaryGeometry": try NativeBoundaryGeometry.selfTest()
             ]
             let folder = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("PlainWalk")
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
@@ -91,6 +111,7 @@ import UniformTypeIdentifiers
                 case "menu": model.openMenu()
                 case "stepGoal": model.present(.stepGoal)
                 case "developer": model.present(.developer)
+                case "lut": model.present(.lut)
                 default: break
                 }
             }

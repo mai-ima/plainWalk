@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Preferences are the same persisted keys used by the Web library. Every control
-/// below changes native map rendering; unavailable boundary tiles are not simulated.
+/// below changes native map rendering, including bundled licensed Japan outlines.
 @MainActor struct NativeLayerView: View {
     @ObservedObject var model: NativeAppModel
     @Environment(\.dismiss) private var dismiss
@@ -61,6 +61,11 @@ import SwiftUI
                                 .frame(maxWidth: .infinity)
                             }
                         }.padding(.vertical, 4)
+                    }
+                    VStack(alignment: .leading, spacing: 10) {
+                        card { Toggle("地図の輪郭を表示", isOn: bool("outline", default: false)) }
+                        note("市区町村の境と海岸線を薄い線で表示します。日本の境界データに対応しています。")
+                        note("境界データ：国土数値情報（国土交通省）を加工。CC BY 4.0。Geo.maderaojen.me の簡略化データを使用。")
                     }
                     VStack(alignment: .leading, spacing: 10) {
                         card { Toggle("記録中は他の軌跡を薄くする", isOn: bool("fadeOther", default: true)) }

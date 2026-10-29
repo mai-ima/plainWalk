@@ -303,6 +303,7 @@ struct NativeTrailThumbnail: View {
     @State private var note = ""
     @State private var confirmingDelete = false
     @State private var selectedPhoto: NativeWalkPhotoItem?
+    @State private var editingTrack = false
     private var walk: NativeWalk? { model.walks.first { $0.id == walkID } }
     private var photos: [NativeSpot] {
         guard let walk else { return [] }
@@ -333,6 +334,15 @@ struct NativeTrailThumbnail: View {
                                 model.showWalkOnMap(id: walk.id); dismiss()
                             } label: { Label("白地図で見る", systemImage: "map").frame(maxWidth: .infinity, minHeight: 44) }
                                 .buttonStyle(.bordered)
+                            Button { editingTrack = true } label: {
+                                Label("軌跡を手で修正", systemImage: "point.topleft.down.to.point.bottomright.curvepath")
+                                    .frame(maxWidth: .infinity, minHeight: 44)
+                            }.buttonStyle(.bordered)
+                                .disabled(walk.points.count < 2 || model.isRecording || model.isPaused)
+                            if model.isRecording || model.isPaused {
+                                Text("記録を終了すると、保存した軌跡を修正できます。")
+                                    .font(.footnote).foregroundStyle(.secondary)
+                            }
                             if !walk.note.isEmpty {
                                 Text(walk.note).font(.body).frame(maxWidth: .infinity, alignment: .leading).padding(18)
                                     .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 20))
@@ -353,6 +363,8 @@ struct NativeTrailThumbnail: View {
                     Menu {
                         Button("名前を付ける", systemImage: "pencil") { name = walk?.name ?? ""; note = walk?.note ?? ""; naming = true }
                         Button("GPX で書き出す", systemImage: "square.and.arrow.up") { model.exportWalk(id: walkID) }
+                        Button("軌跡を手で修正", systemImage: "point.topleft.down.to.point.bottomright.curvepath") { editingTrack = true }
+                            .disabled((walk?.points.count ?? 0) < 2 || model.isRecording || model.isPaused)
                         Button("削除する", systemImage: "trash", role: .destructive) { confirmingDelete = true }
                     } label: { Image(systemName: "ellipsis") }.accessibilityLabel("さんぽの操作")
                 }
@@ -382,6 +394,9 @@ struct NativeTrailThumbnail: View {
         } message: { Text("この端末の記録から削除します。必要なら先にバックアップを書き出してください。") }
         .sheet(item: $selectedPhoto) { item in
             NativeWalkPhotoPreview(spot: item.spot)
+        }
+        .fullScreenCover(isPresented: $editingTrack) {
+            NativeTrackEditorView(model: model, walkID: walkID)
         }
     }
     private func detailMetrics(_ walk: NativeWalk) -> some View {

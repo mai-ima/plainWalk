@@ -11,6 +11,15 @@ import UniformTypeIdentifiers
     @Environment(\.dismiss) private var dismiss
     @State private var photoItem: PhotosPickerItem?
     @State private var imageData: Data?
+    @State private var originalImageData: Data?
+    @State private var imageRevision = UUID()
+    @State private var film = "none"
+    @State private var intensity = 1.0
+    @State private var rendering = false
+    @State private var renderedKey: String?
+    @State private var renderFailed = false
+    @State private var showLUT = false
+    @State private var customLUT: NativeCubeLUT?
     @State private var videoData: Data?
     @State private var videoURL: URL?
     @State private var mediaFolder: URL?
@@ -27,6 +36,8 @@ import UniformTypeIdentifiers
         if let capturePoint { return capturePoint }
         guard let point = model.currentPoint, abs(point.t - Date().timeIntervalSince1970 * 1000) < 120_000, (point.accuracy ?? 0) <= 1000 else { return nil }; return point
     }
+    private var renderKey: String { imageRevision.uuidString + film + String(intensity) }
+    private var busy: Bool { processing || rendering || (originalImageData != nil && renderedKey != renderKey && !renderFailed) }
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -40,8 +51,23 @@ import UniformTypeIdentifiers
                     HStack(spacing: 12) {
                         Button { Task { await openCamera() } } label: { Label(videoMode ? "動画を撮る" : "写真を撮る", systemImage: videoMode ? "video" : "camera").frame(maxWidth: .infinity).padding(.vertical, 11) }.buttonStyle(.borderedProminent).tint(.primary)
                         PhotosPicker(selection: $photoItem, matching: .images, photoLibrary: .shared()) { Label("写真を選ぶ", systemImage: "photo").frame(maxWidth: .infinity).padding(.vertical, 11) }.buttonStyle(.bordered)
-                    }.disabled(processing)
-                    if processing { ProgressView("写真・動画を準備しています…") }
+                    }.disabled(busy)
+                    if videoData == nil {
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack {
+                                Text("フィルム").font(.subheadline.weight(.semibold))
+                                Spacer()
+                                Button { showLUT = true } label: { Image(systemName: "camera.filters") }.accessibilityLabel("LUT の設定")
+                            }
+                            Picker("フィルム", selection: $film) {
+                                ForEach(NativePhotoEffects.films.filter { $0.id != "custom" || customLUT != nil }, id: \.id) { Text($0.title).tag($0.id) }
+                            }.pickerStyle(.menu).tint(.primary)
+                            if film != "none" {
+                                HStack { Text("強さ").font(.footnote); Slider(value: $intensity, in: 0...1, step: 0.05, onEditingChanged: { editing in if !editing { persistFilm() } }).accessibilityLabel("フィルムの強さ"); Text("\(Int(intensity * 100)) %").font(.footnote).monospacedDigit().foregroundStyle(.secondary) }
+                            }
+                        }.padding(16).background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 17))
+                    } else { Text("動画は元の色で保存します。").font(.footnote).foregroundStyle(.secondary) }
+                    if busy { ProgressView("写真・動画を準備しています…") }
                     TextField("どんなところでしたか？", text: $caption, axis: .vertical).lineLimit(3...6).padding(16).background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 17))
                     HStack { Text("しるし"); Spacer(); Picker("しるし", selection: $emoji) { ForEach(["♡", "☕", "🌿", "🌸", "✨", "📷"], id: \.self) { Text($0).tag($0) } }.pickerStyle(.menu) }
                     if let point = availablePoint { Label("現在地と一緒に、この端末に保存します。", systemImage: "location.fill").font(.footnote).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading).accessibilityValue("緯度 \(point.lat)、経度 \(point.lon)") }
@@ -50,9 +76,15 @@ import UniformTypeIdentifiers
                 }.padding(20)
             }.navigationTitle("ここいいな").navigationBarTitleDisplayMode(.inline).toolbar {
                 ToolbarItem(placement: .topBarLeading) { Button("キャンセル") { dismiss() } }
-                ToolbarItem(placement: .topBarTrailing) { Button("残す") { save() }.disabled(availablePoint == nil || processing || (imageData == nil && videoData == nil && caption.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)) }
+                ToolbarItem(placement: .topBarTrailing) { Button("残す") { save() }.disabled(availablePoint == nil || busy || renderFailed || (imageData == nil && videoData == nil && caption.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)) }
             }
         }.sheet(isPresented: $camera) { NCCameraPicker(video: videoMode) { result in camera = false; switch result { case .success(let media): Task { await receive(media) }; case .failure(let error): failure = error.localizedDescription } } }
+            .sheet(isPresented: $showLUT, onDismiss: {
+                customLUT = NativePhotoEffects.cube(model.config); film = NativePhotoEffects.film(model.config); intensity = NativePhotoEffects.intensity(model.config); imageRevision = UUID()
+            }) { NativeLUTView(model: model) }
+            .onAppear { customLUT = NativePhotoEffects.cube(model.config); film = NativePhotoEffects.film(model.config); intensity = NativePhotoEffects.intensity(model.config) }
+            .onChange(of: film) { _, _ in persistFilm() }
+            .task(id: renderKey) { await renderPhoto() }
             .onChange(of: photoItem) { _, item in guard let item else { return }; Task { await loadPhoto(item) } }
             .onDisappear { player?.pause(); if let mediaFolder { try? FileManager.default.removeItem(at: mediaFolder) } }
     }
@@ -68,29 +100,45 @@ import UniformTypeIdentifiers
     }
     private func loadPhoto(_ item: PhotosPickerItem) async {
         processing = true; failure = nil; defer { processing = false; photoItem = nil }
-        do { guard let bytes = try await item.loadTransferable(type: Data.self) else { throw NCCaptureError.message("写真を読み取れませんでした。") }; guard bytes.count <= 40_000_000 else { throw NCCaptureError.message("写真が大きすぎます。40 MB 以下の写真を選んでください。") }; let jpeg = try await Task.detached(priority: .userInitiated) { try ncCompressedPhoto(bytes) }.value; player?.pause(); player = nil; videoData = nil; imageData = jpeg; freezeLocation() } catch { failure = error.localizedDescription }
+        do { guard let bytes = try await item.loadTransferable(type: Data.self) else { throw NCCaptureError.message("写真を読み取れませんでした。") }; guard bytes.count <= 40_000_000 else { throw NCCaptureError.message("写真が大きすぎます。40 MB 以下の写真を選んでください。") }; let jpeg = try await Task.detached(priority: .userInitiated) { try ncCompressedPhoto(bytes) }.value; player?.pause(); player = nil; videoData = nil; originalImageData = jpeg; imageData = jpeg; imageRevision = UUID(); freezeLocation() } catch { failure = error.localizedDescription }
     }
     private func receive(_ media: NCCapturedMedia) async {
         processing = true; failure = nil; defer { processing = false }
         do {
             switch media {
-            case .photo(let bytes): let jpeg = try await Task.detached(priority: .userInitiated) { try ncCompressedPhoto(bytes) }.value; player?.pause(); player = nil; videoData = nil; imageData = jpeg
+            case .photo(let bytes): let jpeg = try await Task.detached(priority: .userInitiated) { try ncCompressedPhoto(bytes) }.value; player?.pause(); player = nil; videoData = nil; originalImageData = jpeg; imageData = jpeg; imageRevision = UUID()
             case .movie(let url):
                 defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
                 let asset = AVURLAsset(url: url); let duration = try await asset.load(.duration).seconds
                 guard duration.isFinite, duration > 0, duration <= 2.6 else { throw NCCaptureError.message("2 秒以内の短い動画を撮影してください。") }
                 let bytes = try Data(contentsOf: url); guard bytes.count <= 15_000_000 else { throw NCCaptureError.message("動画が大きすぎます。短く撮り直してください。") }
                 let folder = FileManager.default.temporaryDirectory.appendingPathComponent("plainwalk-capture-" + UUID().uuidString, isDirectory: true); try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true); let saved = folder.appendingPathComponent("clip.mov"); try bytes.write(to: saved, options: .atomic)
-                if let mediaFolder { try? FileManager.default.removeItem(at: mediaFolder) }; mediaFolder = folder; videoURL = saved; player?.pause(); player = AVPlayer(url: saved); videoData = bytes; imageData = nil
+                if let mediaFolder { try? FileManager.default.removeItem(at: mediaFolder) }; mediaFolder = folder; videoURL = saved; player?.pause(); player = AVPlayer(url: saved); videoData = bytes; imageData = nil; originalImageData = nil; renderFailed = false; imageRevision = UUID()
             }
             freezeLocation()
         } catch { failure = error.localizedDescription }
     }
+    private func persistFilm() {
+        var next = model.config; next["cameraFilm"] = film; next["cameraFilmIntensity"] = intensity; model.saveConfig(next)
+    }
+    private func renderPhoto() async {
+        guard let source = originalImageData else { rendering = false; return }
+        rendering = true; renderFailed = false
+        let selected = film, amount = intensity, cube = customLUT, key = renderKey
+        do {
+            try await Task.sleep(nanoseconds: 120_000_000)
+            let data = try await Task.detached(priority: .userInitiated) { try NativePhotoEffects.jpeg(source, film: selected, lut: cube, intensity: amount) }.value
+            try Task.checkCancellation(); imageData = data; renderedKey = key; rendering = false
+        } catch is CancellationError {} catch {
+            if !Task.isCancelled { rendering = false; renderFailed = true; failure = error.localizedDescription }
+        }
+    }
     private func freezeLocation() { captureTimestamp = Date().timeIntervalSince1970 * 1000; capturePoint = nil; if let point = availablePoint { capturePoint = point } }
     private func save() {
+        guard !busy, !renderFailed else { return }
         guard let point = availablePoint else { failure = "現在地を取得してから保存してください。"; return }
         var spot = point.json; spot["id"] = UUID().uuidString; spot["t"] = captureTimestamp ?? Date().timeIntervalSince1970 * 1000; spot["text"] = String(caption.prefix(240)); spot["emoji"] = emoji
-        if let imageData { spot["photo"] = "data:image/jpeg;base64," + imageData.base64EncodedString() }
+        if let imageData { spot["photo"] = "data:image/jpeg;base64," + imageData.base64EncodedString(); spot["film"] = film; spot["filmIntensity"] = intensity }
         if let videoData { spot["video"] = "data:video/quicktime;base64," + videoData.base64EncodedString(); spot["videoType"] = "video/quicktime" }
         do { try model.updateLibrary { library in var spots = library["spots"] as? [[String: Any]] ?? []; spots.append(spot); library["spots"] = spots }; UIImpactFeedbackGenerator(style: .light).impactOccurred(); dismiss() } catch { failure = error.localizedDescription }
     }

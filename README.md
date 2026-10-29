@@ -18,6 +18,7 @@ PlainWalk の公開情報・提供された画面・APK の静的な構造を参
 - [確定したユーザー要件](docs/requirements.md)
 - [提供画像 16 枚の分析](docs/app-analysis.md)
 - [追加の画像・一次資料の分析](docs/research-deep-dive.md)
+- [追加画像の目視・実装との比較](docs/research-parity-followup.md)
 - [APK の静的解析と Android 画像](docs/apk-static-analysis.md)
 - [APK の記録・保存・動作分類の仕組みと差分](docs/apk-mechanism-notes.md)
 - [実装範囲と残差](docs/reproduction-audit.md)
