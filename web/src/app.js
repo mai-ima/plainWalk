@@ -167,6 +167,12 @@ let data = (await read("library")) || {
   mapMode = "normal",
   replayTimer = null,
   modalFocus = null;
+// A library commit can succeed before clearing its active checkpoint. Never
+// offer that same session for recovery after a crash or a failed second write.
+if (active && data.walks.some((walk) => walk.id === active.id)) {
+  active = null;
+  await write("active", null).catch(() => {});
+}
 const trace = createDiagnostics({
   persist: (events) => {
     try {
@@ -557,8 +563,8 @@ function updateStats() {
     todayWalks.reduce((n, w) => n + (exp.byWalk[w.id] || 0), 0) + activeExp,
   );
   $("#totalNew").textContent = fmt(exp.total + activeExp);
-  const manual = Number(data.notes?.[today()]?.steps);
-  $("#steps").textContent = manual ? manual.toLocaleString("ja-JP") : "—";
+  const manual = data.notes?.[today()]?.steps;
+  $("#steps").textContent = Number.isFinite(manual) ? manual.toLocaleString("ja-JP") : "—";
   $(".map-scale").hidden = !config.beta;
   $("#recordButton").classList.toggle("active", !!active);
   $("#recordButton").innerHTML = icon(
@@ -586,14 +592,19 @@ function updateStats() {
   if (tab === "map") draw();
 }
 let lastPersist = 0;
-async function persistActive() {
+let recordingTransition = false;
+async function persistActive(value = active) {
   try {
-    await write("active", active);
+    const checkpoint = value ? { ...value, checkpointAt: Date.now() } : null;
+    await write("active", checkpoint);
+    if (value && value === active) value.checkpointAt = checkpoint.checkpointAt;
+    return true;
   } catch {
     toast(
       "記録の自動保存に失敗しました。バックアップを確認してください。",
       9000,
     );
+    return false;
   }
 }
 function acceptPosition(pos) {
@@ -608,7 +619,7 @@ function acceptPosition(pos) {
   if (follow) {
     [view.x, view.y] = project(current);
   }
-  if (active && !paused) {
+  if (active && !paused && !recordingTransition) {
     const last = active.points.at(-1);
     let ok = accuracy <= 60;
     if (last) {
@@ -701,73 +712,88 @@ async function requestWake() {
   }
 }
 async function begin() {
+  if (active || recordingTransition) return;
   if (!db) {
     toast("端末に保存できないため、記録を開始できません。");
     return;
   }
-  active = {
-    id: id(),
-    name: "さんぽ",
-    start: Date.now(),
-    end: Date.now(),
-    points: [],
-    note: "",
-    stickers: "",
-    pausedMs: 0,
-  };
-  paused = false;
-  trace.record("recording", {
-    status: "started",
-    source: native ? "native" : "web",
-  });
-  expCache = { length: -1, value: 0 };
-  follow = true;
-  await persistActive();
-  startWatch();
-  requestWake();
-  closeSheet();
-  updateStats();
-  toast(
-    native
-      ? "記録を始めました。画面を閉じても記録します。"
-      : "記録を始めました。Web 版では画面を開いたままお使いください。",
-    7000,
-  );
+  recordingTransition = true;
+  try {
+    active = {
+      id: id(),
+      name: "さんぽ",
+      start: Date.now(),
+      end: Date.now(),
+      points: [],
+      note: "",
+      stickers: "",
+      pausedMs: 0,
+    };
+    paused = false;
+    if (!(await persistActive())) {
+      active = null;
+      return;
+    }
+    trace.record("recording", {
+      status: "started",
+      source: native ? "native" : "web",
+    });
+    expCache = { length: -1, value: 0 };
+    follow = true;
+    startWatch();
+    requestWake();
+    closeSheet();
+    updateStats();
+    toast(
+      native
+        ? "記録を始めました。画面を閉じても記録します。"
+        : "記録を始めました。Web 版では画面を開いたままお使いください。",
+      7000,
+    );
+  } finally {
+    recordingTransition = false;
+  }
 }
 async function stopWalk() {
-  if (!active) return;
-  if (native) await syncNative();
-  const walk = { ...active, end: Date.now() };
-  walk.duration = Math.max(
-    0,
-    walk.end -
-      walk.start -
-      (walk.pausedMs || 0) -
-      (walk.pauseAt ? walk.end - walk.pauseAt : 0),
-  );
-  if (walk.points.length < 2) {
-    sheet(
-      "まだ道が記録されていません",
-      `<p>位置情報を取得して少し歩くと、白地図に道が描かれます。</p><button class="primary" data-action="close">記録を続ける</button><button class="secondary" data-action="discard">この記録を破棄</button>`,
-    );
-    return;
-  }
-  data.walks.push(walk);
+  if (!active || recordingTransition) return;
+  recordingTransition = true;
   try {
-    await save();
-  } catch {
-    data.walks.pop();
-    return;
+    if (native) await syncNative();
+    const walk = { ...active, points: [...active.points], end: Date.now() };
+    walk.duration = Math.max(
+      0,
+      walk.end -
+        walk.start -
+        (walk.pausedMs || 0) -
+        (walk.pauseAt ? walk.end - walk.pauseAt : 0),
+    );
+    if (walk.points.length < 2) {
+      sheet(
+        "まだ道が記録されていません",
+        `<p>位置情報を取得して少し歩くと、白地図に道が描かれます。</p><button class="primary" data-action="close">記録を続ける</button><button class="secondary" data-action="discard">この記録を破棄</button>`,
+      );
+      return;
+    }
+    const existing = data.walks.find((saved) => saved.id === walk.id);
+    if (!existing) data.walks.push(walk);
+    try {
+      await save();
+    } catch {
+      if (!existing) data.walks = data.walks.filter((saved) => saved !== walk);
+      return;
+    }
+    trace.record("recording", { status: "saved", points: walk.points.length });
+    active = null;
+    paused = false;
+    await persistActive();
+    clearWatch();
+    closeSheet();
+    switchTab("records");
+    detail(walk.id);
+    toast("今日の道を、白地図に残しました。");
+  } finally {
+    recordingTransition = false;
   }
-  trace.record("recording", { status: "saved", points: walk.points.length });
-  active = null;
-  paused = false;
-  await persistActive();
-  clearWatch();
-  closeSheet();
-  switchTab("records");
-  detail(walk.id);
-  toast("今日の道を、白地図に残しました。");
 }
 function clearWatch() {
   if (native) nativeCall("idleTimer", { enabled: false }).catch(() => {});
@@ -798,28 +824,37 @@ function recordMenu() {
   );
 }
 async function pauseToggle() {
-  paused = !paused;
-  trace.record("recording", {
-    status: paused ? "paused" : "resumed",
-    points: active.points.length,
-  });
-  if (paused) {
-    active.paused = true;
-    active.pauseAt = Date.now();
-    clearWatch();
-  } else {
-    active.pausedMs =
-      (active.pausedMs || 0) +
-      (active.pauseAt ? Date.now() - active.pauseAt : 0);
-    delete active.pauseAt;
-    active.paused = false;
-    active.nextBreak = true;
-    startWatch();
-    requestWake();
+  if (!active || recordingTransition) return;
+  recordingTransition = true;
+  try {
+    const nextPaused = !paused,
+      next = { ...active, paused: nextPaused };
+    if (nextPaused) next.pauseAt = Date.now();
+    else {
+      next.pausedMs =
+        (next.pausedMs || 0) +
+        (next.pauseAt ? Math.max(0, Date.now() - next.pauseAt) : 0);
+      delete next.pauseAt;
+      next.nextBreak = true;
+    }
+    if (!(await persistActive(next))) return;
+    active = next;
+    paused = nextPaused;
+    trace.record("recording", {
+      status: paused ? "paused" : "resumed",
+      points: active.points.length,
+    });
+    if (paused) {
+      clearWatch();
+    } else {
+      startWatch();
+      requestWake();
+    }
+    closeSheet();
+    updateStats();
+  } finally {
+    recordingTransition = false;
   }
-  await persistActive();
-  closeSheet();
-  updateStats();
 }
 function snapshotSheet() {
   const root = $("#sheetBody"),
@@ -1427,7 +1462,7 @@ function steps() {
   const d = data.notes[today()] || {};
   sheet(
     "歩数と目標",
-    `${native ? '<button class="primary" data-action="healthSteps">今日の歩数を更新</button><p class="subtle">「取得」を押すと読み取りを許可した歩数をこの端末に保存します。データがない場合と読み取り未許可は区別できません。</p>' : '<p class="subtle">Web アプリから Apple ヘルスケアの歩数は取得できません。iPhone のヘルスケアなどを見て、今日の歩数を入力できます。</p>'}<label class="form-label">今日の歩数</label><input id="manualSteps" type="number" min="0" max="100000" value="${Number(d.steps) || 0}" inputmode="numeric"><label class="form-label">1 日の目標</label><input id="stepGoal" type="number" min="100" max="100000" value="${Number(config.goal) || 5000}" inputmode="numeric"><button class="primary" data-action="stepsSave">保存</button><p class="subtle">${d.steps ? `現在 ${Math.min(100, Math.round((d.steps / config.goal) * 100))}% 達成` : "未入力の歩数は「—」と表示します。"}</p>`,
+    `${native ? '<button class="primary" data-action="healthSteps">今日の歩数を更新</button><p class="subtle">「取得」を押すと読み取りを許可した歩数をこの端末に保存します。データがない場合と読み取り未許可は区別できません。</p>' : '<p class="subtle">Web アプリから Apple ヘルスケアの歩数は取得できません。iPhone のヘルスケアなどを見て、今日の歩数を入力できます。</p>'}<label class="form-label">今日の歩数</label><input id="manualSteps" type="number" min="0" max="100000" value="${Number(d.steps) || 0}" inputmode="numeric"><label class="form-label">1 日の目標</label><input id="stepGoal" type="number" min="100" max="100000" value="${Number(config.goal) || 5000}" inputmode="numeric"><button class="primary" data-action="stepsSave">保存</button><p class="subtle">${Number.isFinite(d.steps) ? `現在 ${Math.min(100, Math.round((d.steps / config.goal) * 100))}% 達成` : "未入力の歩数は「—」と表示します。"}</p>`,
   );
 }
 let replayPoints = [],
@@ -1534,7 +1569,7 @@ async function handleImport(file) {
     id: id(),
     name: file.name.replace(/\.[^.]+$/, ""),
     start: points.reduce((n, p) => Math.min(n, p.t), Infinity),
-    end: points.reduce((n, p) => Math.max(n, p.t), 0),
+    end: points.reduce((n, p) => Math.max(n, p.t), -Infinity),
     points,
     note: "",
     stickers: "",
@@ -1549,6 +1584,9 @@ async function restore() {
   if (!pendingImport?.walks) return;
   const incoming = pendingImport;
   const prev = structuredClone(data);
+  // Retain fields written by newer or native clients without replacing current
+  // collections. Known arrays are merged below by their stable IDs.
+  data = { ...incoming, ...data };
   for (const key of [
     "walks",
     "spots",
@@ -1934,10 +1972,17 @@ const actions = {
   restore,
   importTrack: async () => {
     if (!pendingImport?.points) return;
-    data.walks.push(pendingImport);
+    const walk = pendingImport;
+    if (data.walks.some((saved) => saved.id === walk.id)) return;
+    data.walks.push(walk);
     data.walks.sort((a, b) => a.start - b.start);
-    await save();
-    fit(pendingImport.points);
+    try {
+      await save();
+    } catch (error) {
+      data.walks = data.walks.filter((saved) => saved !== walk);
+      throw error;
+    }
+    fit(walk.points);
     pendingImport = null;
     closeSheet();
     switchTab("records");
@@ -1949,12 +1994,18 @@ const actions = {
       '<p>記録中の道は保存されません。</p><button class="primary danger-button" data-action="discard">この記録を破棄</button><button class="secondary" data-action="close">戻る</button>',
     ),
   discard: async () => {
-    active = null;
-    paused = false;
-    clearWatch();
-    await persistActive();
-    closeSheet();
-    updateStats();
+    if (recordingTransition) return;
+    recordingTransition = true;
+    try {
+      if (!(await persistActive(null))) return;
+      active = null;
+      paused = false;
+      clearWatch();
+      closeSheet();
+      updateStats();
+    } finally {
+      recordingTransition = false;
+    }
   },
   tweet: () => addSpot(current),
   clearStickers: () => {
@@ -2645,7 +2696,7 @@ document.addEventListener("visibilitychange", () => {
     points: active?.points.length || 0,
   });
   if (document.visibilityState === "hidden") {
-    if (active) persistActive();
+    if (active && !recordingTransition) persistActive();
     if (!active) clearWatch();
   } else {
     if (native) {
@@ -2662,7 +2713,7 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 window.addEventListener("pagehide", () => {
-  if (active) persistActive();
+  if (active && !recordingTransition) persistActive();
 });
 let statsDate = today();
 setInterval(() => {
@@ -2678,7 +2729,7 @@ updateStats();
 draw();
 if (native) await syncNative(true);
 if (active && paused) {
-  active.pauseAt = active.pauseAt || active.points.at(-1)?.t || active.start;
+  active.pauseAt = active.pauseAt || active.checkpointAt || active.points.at(-1)?.t || active.start;
   active.paused = true;
   persistActive();
   sheet(
@@ -2762,6 +2813,10 @@ async function syncNative(initial = false) {
     const result = await nativeCall("status"),
       session = result.session;
     if (session) {
+      if (data.walks.some((walk) => walk.id === session.id)) {
+        await nativeCall("locationStop", { end: true });
+        return;
+      }
       if (!active && !data.walks.some((w) => w.id === session.id)) {
         active = {
           id: session.id,
@@ -2791,8 +2846,9 @@ async function syncNative(initial = false) {
   }
 }
 function consumeNativePoint(point, sessionID) {
-  if (!validPoint(point)) return;
+  if (!validPoint(point) || !Number.isFinite(point.t) || Math.abs(point.t) > 8640000000000000) return;
   if (sessionID && active?.id !== sessionID) return;
+  if (sessionID && (!Number.isSafeInteger(point.seq) || point.seq < 1)) return;
   if (active && sessionID && point.seq <= (active.nativeSeq || 0)) return;
   current = {
     lat: point.lat,
@@ -2850,7 +2906,7 @@ onNative((message) => {
   }
   if (message.event === "location") {
     consumeNativePoint(message.point, message.sessionID);
-    if (active && Date.now() - lastPersist > 5000) {
+    if (active && !recordingTransition && Date.now() - lastPersist > 5000) {
       persistActive();
       lastPersist = Date.now();
     }

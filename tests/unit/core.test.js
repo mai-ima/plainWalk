@@ -6,9 +6,11 @@ import {
   unproject,
   trailDistance,
   exploration,
+  cellKeys,
   validPoint,
   gpx,
   validateBackup,
+  validateNotes,
 } from "../../web/src/core.js";
 const a = { lat: 35.68, lon: 139.76, t: 1 },
   b = { lat: 35.681, lon: 139.76, t: 2 };
@@ -38,6 +40,16 @@ test("gaps do not pioneer imaginary roads", () => {
     exploration([{ id: "x", points: [a, { ...b, break: true }] }]).total,
     0,
   );
+});
+test("exploration accepts opaque IDs without prototype collisions", () => {
+  const result = exploration([{ id: "__proto__", points: [a, b] }]);
+  assert.ok(result.byWalk.__proto__ > 100);
+  assert.equal(result.total, result.byWalk.__proto__);
+});
+test("invalid and implausibly long segments cannot exhaust grid sampling", () => {
+  assert.deepEqual(cellKeys(a, { lat: NaN, lon: 139 }), []);
+  assert.deepEqual(cellKeys(a, { lat: -35, lon: -40 }), []);
+  assert.equal(exploration([{ id: "jump", points: [a, { lat: -35, lon: -40 }] }]).total, 0);
 });
 test("export escapes names and keeps gaps", () => {
   const s = gpx({ name: "A < B & C", points: [a, { ...b, break: true }] });
@@ -100,4 +112,37 @@ test("collections survive backup without sharing timestamps or private photo dat
       ],
     }),
   );
+});
+test("backup rejects duplicate IDs and dates that cannot be exported", () => {
+  const backup = {
+    version: 1,
+    walks: [{ id: "w", start: 0, end: 2, points: [a, b] }],
+    spots: [],
+    flags: [],
+  };
+  assert.throws(() => validateBackup({ ...backup, walks: [...backup.walks, ...backup.walks] }), /ID/);
+  assert.throws(() => validateBackup({ ...backup, walks: [null] }), /ID/);
+  for (const patch of [
+    { start: 3 },
+    { end: 1e20 },
+    { duration: -1 },
+    { points: [{ ...a, t: 1e20 }, b] },
+  ]) {
+    assert.throws(() => validateBackup({ ...backup, walks: [{ ...backup.walks[0], ...patch }] }));
+  }
+  assert.throws(() => validateBackup({ ...backup, bookmarks: [
+    { id: "same", name: "A", ...a }, { id: "same", name: "B", ...b },
+  ] }), /ID/);
+});
+test("backup preserves future client metadata and recorded zero steps", () => {
+  const backup = validateBackup({
+    version: 1, walks: [], spots: [], flags: [],
+    nativeMetadata: { schema: 2, device: "test" },
+    notes: { "2026-10-29": { text: "Note", steps: 0, nativeStyle: { size: 17 } } },
+  });
+  assert.deepEqual(backup.nativeMetadata, { schema: 2, device: "test" });
+  assert.deepEqual(backup.notes["2026-10-29"].nativeStyle, { size: 17 });
+  assert.equal(backup.notes["2026-10-29"].steps, 0);
+  assert.throws(() => validateNotes({ "2026-02-30": {} }), /日付/);
+  assert.throws(() => validateNotes({ "2026-13-01": {} }), /日付/);
 });

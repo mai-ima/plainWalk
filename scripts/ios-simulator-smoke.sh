@@ -9,18 +9,28 @@ xcrun simctl boot "$PW_SIM_DEVICE" || true
 xcrun simctl bootstatus "$PW_SIM_DEVICE" -b
 PW_APP_PATH="$PWD/.build/ios/Build/Products/Debug-iphonesimulator/PlainWalk.app"
 xcrun simctl install "$PW_SIM_DEVICE" "$PW_APP_PATH"
-xcrun simctl launch "$PW_SIM_DEVICE" org.example.plainwalkweb -PlainWalkSmokeTest -PlainWalkNativeSettingsSmokeTest
+xcrun simctl launch "$PW_SIM_DEVICE" org.example.plainwalkweb -PlainWalkSmokeTest
 PW_APP_CONTAINER=$(xcrun simctl get_app_container "$PW_SIM_DEVICE" org.example.plainwalkweb data)
-PW_READY_FILE="$PW_APP_CONTAINER/Library/Application Support/PlainWalk/web-ready.json"
+PW_READY_FILE="$PW_APP_CONTAINER/Library/Application Support/PlainWalk/native-ready.json"
 for PW_ATTEMPT in $(seq 1 30); do
-  if [[ -f "$PW_READY_FILE" && -f "$PW_APP_CONTAINER/Library/Application Support/PlainWalk/native-settings-ready.json" ]]; then
-    python3 -c 'import json,sys; data=json.load(open(sys.argv[1])); assert data.get("ready") is True and data.get("recordingPersistence") is True; print("Bundled web application and native storage bridge are ready on iOS Simulator.")' "$PW_READY_FILE"
+  if [[ -f "$PW_READY_FILE" ]]; then
+    python3 -c 'import json,sys; data=json.load(open(sys.argv[1])); assert data.get("ready") is True and data.get("recordingPersistence") is True and data.get("nativeUI") is True and data.get("storage") is True and data.get("trackMath") is True and data.get("trackIO") is True; print("Native SwiftUI application, storage, track import and recorder recovery checks passed on iOS Simulator.")' "$PW_READY_FILE"
     mkdir -p .build/screenshots
-    xcrun simctl io "$PW_SIM_DEVICE" screenshot .build/screenshots/ios-native-settings.png
-    exit 0
+    xcrun simctl io "$PW_SIM_DEVICE" screenshot .build/screenshots/ios-native-map.png
+    xcrun simctl terminate "$PW_SIM_DEVICE" org.example.plainwalkweb
+    xcrun simctl launch "$PW_SIM_DEVICE" org.example.plainwalkweb -PlainWalkSmokeTest -PlainWalkNativeSettingsSmokeTest
+    for PW_SETTINGS_ATTEMPT in $(seq 1 20); do
+      if [[ -f "$PW_APP_CONTAINER/Library/Application Support/PlainWalk/native-settings-ready.json" ]]; then
+        xcrun simctl io "$PW_SIM_DEVICE" screenshot .build/screenshots/ios-native-settings.png
+        exit 0
+      fi
+      sleep 1
+    done
+    echo "Native settings did not become ready."
+    exit 1
   fi
   sleep 1
 done
 xcrun simctl spawn "$PW_SIM_DEVICE" log show --last 2m --style compact --predicate 'process == "PlainWalk"' || true
-echo "The web UI did not reach its ready state."
+echo "The native UI did not reach its ready state."
 exit 1

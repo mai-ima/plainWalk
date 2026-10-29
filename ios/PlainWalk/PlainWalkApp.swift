@@ -3,7 +3,7 @@ import WebKit
 
 @main struct PlainWalkApp: App {
     var body: some Scene {
-        WindowGroup { LocalWebApp().ignoresSafeArea().onOpenURL { _ in } }
+        WindowGroup { NativeRootView() }
     }
 }
 struct LocalWebApp: UIViewRepresentable {

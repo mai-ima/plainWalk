@@ -53,9 +53,12 @@ export function trailDistance(points) {
 }
 // 12 m cells in a local latitude-scaled metric grid; crossings are sampled every 3 m.
 export function cellKeys(a, b) {
+  if (!validPoint(a) || !validPoint(b)) return [];
   const d = distance(a, b),
     n = Math.max(1, Math.ceil(d / 3)),
     keys = new Set();
+  // A location jump is a gap, not a road to sample millions of times.
+  if (d > 50000) return [];
   for (let i = 0; i <= n; i++) {
     const t = i / n,
       p = {
@@ -72,7 +75,7 @@ export function cellKeys(a, b) {
 }
 export function exploration(walks) {
   const cells = new Set(),
-    byWalk = {};
+    byWalk = Object.create(null);
   for (const walk of walks) {
     let n = 0;
     const ps = walk.points || [];
@@ -80,8 +83,9 @@ export function exploration(walks) {
       const a = ps[i - 1],
         b = ps[i];
       if (b.break) continue;
-      const ks = cellKeys(a, b),
-        fresh = ks.filter((k) => !cells.has(k)).length;
+      const ks = cellKeys(a, b);
+      if (!ks.length) continue;
+      const fresh = ks.filter((k) => !cells.has(k)).length;
       n += (distance(a, b) * fresh) / ks.length;
       ks.forEach((k) => cells.add(k));
     }
@@ -99,12 +103,14 @@ export function parseTrack(xml) {
     throw Error("XML を読み取れませんでした。");
   const points = [];
   const all = (root, name) => [...root.getElementsByTagNameNS("*", name)];
-  const segs = all(doc, "trkseg");
+  const segs = all(doc, "trkseg"),
+    tracks = all(doc, "Track"),
+    routes = all(doc, "rte");
   const groups = segs.length
     ? segs
-    : all(doc, "Track").length
-      ? all(doc, "Track")
-      : [doc];
+    : tracks.length
+      ? tracks
+      : routes.length ? routes : [doc];
   for (const g of groups) {
     let first = true;
     let nodes = all(g, "trkpt");
@@ -112,25 +118,48 @@ export function parseTrack(xml) {
     if (!nodes.length) nodes = all(g, "Trackpoint");
     for (const node of nodes) {
       const get = (name) => all(node, name)[0]?.textContent,
+        latitude = node.getAttribute("lat") ?? get("LatitudeDegrees"),
+        longitude = node.getAttribute("lon") ?? get("LongitudeDegrees"),
+        timestamp = Date.parse(get("time") || get("Time") || ""),
         p = {
-          lat: Number(node.getAttribute("lat") ?? get("LatitudeDegrees")),
-          lon: Number(node.getAttribute("lon") ?? get("LongitudeDegrees")),
-          t: Date.parse(get("time") || get("Time") || "") || Date.now(),
+          lat: Number(latitude),
+          lon: Number(longitude),
+          t: Number.isFinite(timestamp) ? timestamp : null,
         };
       if (
         !validPoint(p) ||
-        (!node.hasAttribute("lat") && !get("LatitudeDegrees"))
-      )
+        !latitude?.trim() ||
+        !longitude?.trim()
+      ) {
+        first = true;
         continue;
+      }
       if (first && points.length) p.break = true;
       points.push(p);
+      if (points.length > 100000)
+        throw Error("1 ファイルは 10 万点までです。分割して取り込んでください。");
       first = false;
     }
   }
   if (points.length < 2)
     throw Error("位置情報が 2 点以上ある GPX / TCX を選んでください。");
-  if (points.length > 100000)
-    throw Error("1 ファイルは 10 万点までです。分割して取り込んでください。");
+  // Interpolate missing times between known samples. Untimed files receive a
+  // one-second cadence ending at import time, rather than zero-duration walks.
+  const importedAt = Date.now();
+  for (let i = 0; i < points.length; i++) {
+    if (points[i].t !== null) continue;
+    const start = i;
+    while (i < points.length && points[i].t === null) i++;
+    const previous = points[start - 1]?.t,
+      next = points[i]?.t,
+      count = i - start,
+      step = previous !== undefined && next !== undefined && next >= previous
+        ? (next - previous) / (count + 1)
+        : 1000,
+      anchor = previous ?? (next !== undefined ? next - (count + 1) * step : importedAt - count * step);
+    for (let j = start; j < i; j++) points[j].t = anchor + (j - start + 1) * step;
+    i--;
+  }
   return points;
 }
 export function gpx(walk) {
@@ -163,18 +192,30 @@ export function validateBackup(v) {
   )
     throw Error("データが大きすぎます。");
   let count = 0;
+  const validTime = (t) => Number.isFinite(t) && Math.abs(t) <= 8640000000000000;
+  const uniqueIDs = (items) => {
+    const ids = new Set();
+    for (const item of items) {
+      if (!item || typeof item.id !== "string" || !item.id.length || item.id.length > 200 || ids.has(item.id))
+        throw Error("記録の ID が不正、または重複しています。");
+      ids.add(item.id);
+    }
+  };
+  for (const items of [v.walks, v.spots, v.flags]) uniqueIDs(items);
   for (const w of v.walks) {
     if (
       typeof w.id !== "string" ||
       !Array.isArray(w.points) ||
-      !Number.isFinite(w.start) ||
-      !Number.isFinite(w.end)
+      !validTime(w.start) ||
+      !validTime(w.end) ||
+      w.end < w.start ||
+      (w.duration !== undefined && (!Number.isFinite(w.duration) || w.duration < 0))
     )
       throw Error("記録の形式が不正です。");
     count += w.points.length;
     if (
       count > 300000 ||
-      w.points.some((p) => !validPoint(p) || !Number.isFinite(p.t))
+      w.points.some((p) => !validPoint(p) || !validTime(p.t))
     )
       throw Error("位置データが不正、または大きすぎます。");
     if (
@@ -199,6 +240,7 @@ export function validateBackup(v) {
     )
       throw Error("ピンの形式が不正です。");
   return {
+    ...v,
     version: 1,
     walks: v.walks.map((w) => ({
       ...w,
@@ -223,7 +265,9 @@ export function validateNotes(notes) {
     throw Error("ノートの形式が不正です。");
   const result = {};
   for (const [day, note] of Object.entries(notes)) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || !note || typeof note !== "object")
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day) ||
+      new Date(`${day}T00:00:00Z`).toJSON()?.slice(0, 10) !== day ||
+      !note || typeof note !== "object" || Array.isArray(note))
       throw Error("ノートの日付が不正です。");
     const text = String(note.text || ""),
       stickers = String(note.stickers || "");
@@ -257,6 +301,7 @@ export function validateNotes(notes) {
         throw Error("ノートの画像が不正です。");
     }
     result[day] = {
+      ...note,
       day,
       text,
       stickers,
@@ -284,6 +329,12 @@ export function validateCollections(v) {
     const items = v[key] ?? [];
     if (!Array.isArray(items) || items.length > 1000)
       throw Error("コレクションが大きすぎます。");
+    const ids = new Set();
+    for (const item of items) {
+      if (!item || typeof item.id !== "string" || !item.id.length || ids.has(item.id))
+        throw Error("コレクションの ID が不正、または重複しています。");
+      ids.add(item.id);
+    }
     return items;
   };
   const points = (ps) => {
