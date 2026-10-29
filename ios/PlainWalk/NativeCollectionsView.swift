@@ -204,9 +204,23 @@ private func ncStickers(_ library: [String: Any]) -> [NCSticker] {
     @ObservedObject var model: NativeAppModel
     var body: some View { LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 20) { ForEach(ncStickers(model.library)) { sticker in if let data = sticker.data, let image = UIImage(data: data) { Button { model.shareData(data, name: "plainwalk-sticker-\(sticker.day).png") } label: { VStack(spacing: 7) { Image(uiImage: image).resizable().scaledToFit().frame(height: 105).shadow(color: .black.opacity(0.12), radius: 4, y: 3); Text(sticker.day).font(.caption2).foregroundStyle(.secondary) } }.buttonStyle(.plain).accessibilityLabel("\(sticker.day)のステッカーを共有") } } } }
 }
+
+@MainActor private struct NCEditorError: ViewModifier {
+    @ObservedObject var model: NativeAppModel
+    @Binding var failure: String?
+    func body(content: Content) -> some View {
+        content.onChange(of: model.errorMessage) { _, message in
+            guard let message else { return }; failure = message; model.errorMessage = nil
+        }.alert("お知らせ", isPresented: Binding(get: { failure != nil }, set: { if !$0 { failure = nil } })) {
+            Button("閉じる", role: .cancel) { failure = nil }
+        } message: { Text(failure ?? "") }
+    }
+}
+
 @MainActor private struct NCStickerPicker: View {
+    @State private var failure: String?
     @ObservedObject var model: NativeAppModel; @Environment(\.dismiss) private var dismiss
-    var body: some View { NavigationStack { ScrollView { VStack(spacing: 22) { Text("渡したいステッカーを選ぶと、AirDrop などの共有先を開きます。専用の近接交換には対応していません。").font(.subheadline).foregroundStyle(.secondary); if ncStickers(model.library).isEmpty { NCEmptyView(symbol: "sparkles.rectangle.stack", title: "まだステッカーがありません", detail: "「ここいいな」の写真から被写体を切り抜いて作れます。") } else { NCStickerGrid(model: model) } }.padding(20) }.navigationTitle("ステッカーをあげる").navigationBarTitleDisplayMode(.inline).toolbar { ToolbarItem(placement: .topBarTrailing) { Button("閉じる") { dismiss() } } } } }
+    var body: some View { NavigationStack { ScrollView { VStack(spacing: 22) { Text("渡したいステッカーを選ぶと、AirDrop などの共有先を開きます。専用の近接交換には対応していません。").font(.subheadline).foregroundStyle(.secondary); if ncStickers(model.library).isEmpty { NCEmptyView(symbol: "sparkles.rectangle.stack", title: "まだステッカーがありません", detail: "「ここいいな」の写真から被写体を切り抜いて作れます。") } else { NCStickerGrid(model: model) } }.padding(20) }.navigationTitle("ステッカーをあげる").navigationBarTitleDisplayMode(.inline).toolbar { ToolbarItem(placement: .topBarTrailing) { Button("閉じる") { dismiss() } } } }.modifier(NCEditorError(model: model, failure: $failure)) }
 
 }
 
@@ -217,12 +231,13 @@ private func ncStickers(_ library: [String: Any]) -> [NCSticker] {
 }
 
 @MainActor private struct NCPaperEditor: View {
+    @State private var failure: String?
     @ObservedObject var model: NativeAppModel; @Environment(\.dismiss) private var dismiss
     @State private var name = ""; @State private var selected = Set<String>()
-    var body: some View { NavigationStack { Form { Section("紙の名前") { TextField("みんなのさんぽ", text: $name) }; Section { ForEach(model.walks) { walk in Toggle(isOn: Binding(get: { selected.contains(walk.id) }, set: { if $0 { selected.insert(walk.id) } else { selected.remove(walk.id) } })) { VStack(alignment: .leading) { Text(walk.name); Text(ncDate(walk.start)).font(.caption).foregroundStyle(.secondary) } } } } header: { Text("載せるさんぽ") } footer: { Text("日時・写真・メモを取り除き、選んだ道の線だけを入れます。") } }.navigationTitle("紙を作る").navigationBarTitleDisplayMode(.inline).toolbar { ToolbarItem(placement: .topBarLeading) { Button("キャンセル") { dismiss() } }; ToolbarItem(placement: .topBarTrailing) { Button("作る") { save() } } } } }
+    var body: some View { NavigationStack { Form { Section("紙の名前") { TextField("みんなのさんぽ", text: $name) }; Section { ForEach(model.walks) { walk in Toggle(isOn: Binding(get: { selected.contains(walk.id) }, set: { if $0 { selected.insert(walk.id) } else { selected.remove(walk.id) } })) { VStack(alignment: .leading) { Text(walk.name); Text(ncDate(walk.start)).font(.caption).foregroundStyle(.secondary) } } } } header: { Text("載せるさんぽ") } footer: { Text("日時・写真・メモを取り除き、選んだ道の線だけを入れます。") } }.navigationTitle("紙を作る").navigationBarTitleDisplayMode(.inline).toolbar { ToolbarItem(placement: .topBarLeading) { Button("キャンセル") { dismiss() } }; ToolbarItem(placement: .topBarTrailing) { Button("作る") { save() } } } }.modifier(NCEditorError(model: model, failure: $failure)) }
     private func save() {
         let chosen = model.walks.filter { selected.contains($0.id) }.map { walk -> [String: Any] in ["id": walk.id, "points": walk.points.map { p -> [String: Any] in var raw: [String: Any] = ["lat": p.lat, "lon": p.lon]; if p.isBreak { raw["break"] = true }; return raw }] }
-        do { try model.updateLibrary { library in var papers = library["sharedMaps"] as? [[String: Any]] ?? []; papers.append(["id": UUID().uuidString, "name": name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "みんなのさんぽ" : ncText(name, utf16Limit: 60), "walks": chosen]); library["sharedMaps"] = papers }; dismiss() } catch { model.showError(error.localizedDescription) }
+        do { try model.updateLibrary { library in var papers = library["sharedMaps"] as? [[String: Any]] ?? []; papers.append(["id": UUID().uuidString, "name": name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "みんなのさんぽ" : ncText(name, utf16Limit: 60), "walks": chosen]); library["sharedMaps"] = papers }; dismiss() } catch { failure = error.localizedDescription }
     }
 }
 @MainActor private struct NCPaperDetail: View {
@@ -232,6 +247,7 @@ private func ncStickers(_ library: [String: Any]) -> [NCSticker] {
 }
 
 @MainActor private struct NCNoteEditor: View {
+    @State private var failure: String?
     @ObservedObject var model: NativeAppModel
     let day: String
     @Environment(\.dismiss) private var dismiss
@@ -264,7 +280,7 @@ private func ncStickers(_ library: [String: Any]) -> [NCSticker] {
                 guard !loaded else { return }
                 text = note["text"] as? String ?? ""; paper = note["paper"] as? String ?? "plain"; font = note["font"] as? String ?? "serif"; layout = note["layout"] as? [[String: Any]] ?? []; stickers = note["stickers"] as? String ?? ""; loaded = true
             }
-        }
+        }.modifier(NCEditorError(model: model, failure: $failure))
     }
     private var insertMenu: some View {
         Menu {
@@ -296,29 +312,29 @@ private func ncStickers(_ library: [String: Any]) -> [NCSticker] {
         HStack { Text(title).font(.caption).frame(width: 65, alignment: .leading); Slider(value: Binding(get: { layout.first(where: { $0["id"] as? String == selectedID })?[key] as? Double ?? range.lowerBound }, set: { value in if let index = layout.firstIndex(where: { $0["id"] as? String == selectedID }) { layout[index][key] = value } }), in: range) }
     }
     private func append(_ raw: [String: Any]) {
-        guard layout.count < 20 else { model.showError("1 ページには 20 点まで貼れます。"); return }
+        guard layout.count < 20 else { failure = "1 ページには 20 点まで貼れます。"; return }
         let id = UUID().uuidString; var item = raw; item["id"] = id; item["x"] = 360.0; item["y"] = 500.0; item["rotation"] = -5.0; item["finish"] = "plain"; layout.append(item); selectedID = id
     }
     private func appendImage(_ bytes: Data, type: String, mime: String) {
-        guard let image = UIImage(data: bytes), bytes.count <= 3_500_000 else { model.showError("この画像はノートに貼れません。小さな画像を選んでください。"); return }
+        guard let image = UIImage(data: bytes), bytes.count <= 3_500_000 else { failure = "この画像はノートに貼れません。小さな画像を選んでください。"; return }
         let ratio = image.size.width / max(1, image.size.height)
-        guard (0.01...100).contains(ratio) else { model.showError("この画像の縦横比はノートに対応していません。"); return }
+        guard (0.01...100).contains(ratio) else { failure = "この画像の縦横比はノートに対応していません。"; return }
         let actualMime = bytes.starts(with: [137, 80, 78, 71]) ? "image/png" : bytes.starts(with: [255, 216, 255]) ? "image/jpeg" : mime
         append(["type": type, "src": "data:\(actualMime);base64," + bytes.base64EncodedString(), "width": 240.0, "ratio": ratio])
     }
     private func appendRoute(_ walk: NativeWalk) {
         let renderer = ImageRenderer(content: NCLineThumbnail(points: walk.points).padding(20).frame(width: 500, height: 400).background(Color.white)); renderer.scale = 2
-        guard let bytes = renderer.uiImage?.pngData() else { model.showError("さんぽの道を画像にできませんでした。"); return }; appendImage(bytes, type: "route", mime: "image/png")
+        guard let bytes = renderer.uiImage?.pngData() else { failure = "さんぽの道を画像にできませんでした。"; return }; appendImage(bytes, type: "route", mime: "image/png")
     }
     private func share() {
         let renderer = ImageRenderer(content: preview.frame(width: 720, height: 960)); renderer.scale = 2
-        guard let data = renderer.uiImage?.pngData() else { model.showError("ノートを画像にできませんでした。"); return }
-        do { try storeDraft(); model.shareData(data, name: "plainwalk-note-\(day).png") } catch { model.showError(error.localizedDescription) }
+        guard let data = renderer.uiImage?.pngData() else { failure = "ノートを画像にできませんでした。"; return }
+        do { try storeDraft(); model.shareData(data, name: "plainwalk-note-\(day).png") } catch { failure = error.localizedDescription }
     }
     private func storeDraft() throws {
         try model.updateLibrary { library in var notes = library["notes"] as? [String: [String: Any]] ?? [:]; var value = notes[day] ?? [:]; value["day"] = day; value["text"] = ncText(text, utf16Limit: 5000); value["paper"] = paper; value["font"] = font; value["layout"] = layout; value["stickers"] = stickers; notes[day] = value; library["notes"] = notes }
     }
-    private func save() { do { try storeDraft(); dismiss() } catch { model.showError(error.localizedDescription) } }
+    private func save() { do { try storeDraft(); dismiss() } catch { failure = error.localizedDescription } }
 }
 private struct NCNotebookPreview: View {
     let day: String; let text: String; let paper: String; let font: String; let layout: [[String: Any]]; let stickers: String
@@ -344,6 +360,7 @@ private func ncDistance(_ a: NativePoint, _ b: NativePoint) -> Double {
 }
 
 @MainActor private struct NCDoodleEditor: View {
+    @State private var failure: String?
     @ObservedObject var model: NativeAppModel
     @Environment(\.dismiss) private var dismiss
     @State private var strokes: [[NativePoint]] = []
@@ -360,12 +377,12 @@ private func ncDistance(_ a: NativePoint, _ b: NativePoint) -> Double {
                 ToolbarItem(placement: .topBarLeading) { Button("キャンセル") { dismiss() } }
                 ToolbarItem(placement: .topBarTrailing) { Button("保存") { save() }.disabled(strokes.allSatisfy { $0.count < 2 }) }
             }
-        }
+        }.modifier(NCEditorError(model: model, failure: $failure))
     }
     private func save() {
         let points = strokes.filter { $0.count >= 2 }.flatMap { stroke in stroke.enumerated().map { index, point -> [String: Any] in var raw = point.json; raw["break"] = index == 0; return raw } }
         guard !points.isEmpty else { return }
-        do { try model.updateLibrary { library in var items = library["doodles"] as? [[String: Any]] ?? []; items.append(["id": UUID().uuidString, "name": name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "らくがき" : ncText(name, utf16Limit: 60), "created": Date().timeIntervalSince1970 * 1000, "points": points]); library["doodles"] = items }; dismiss() } catch { model.showError(error.localizedDescription) }
+        do { try model.updateLibrary { library in var items = library["doodles"] as? [[String: Any]] ?? []; items.append(["id": UUID().uuidString, "name": name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "らくがき" : ncText(name, utf16Limit: 60), "created": Date().timeIntervalSince1970 * 1000, "points": points]); library["doodles"] = items }; dismiss() } catch { failure = error.localizedDescription }
     }
 }
 

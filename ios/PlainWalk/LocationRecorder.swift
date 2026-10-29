@@ -44,6 +44,7 @@ private struct LocationJournalEntry: Codable {
     private(set) var recoveryIssue: String?
     var onPoint: ((RecordedPoint, String?) -> Void)?
     var onError: ((String) -> Void)?
+    var onHeading: ((Double) -> Void)?
     var onSession: ((NativeSession?) -> Void)?
     private var heading: Double = 0
     private var interruptionSent = false
@@ -66,6 +67,7 @@ private struct LocationJournalEntry: Codable {
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyBest
         manager.distanceFilter = 3
+        manager.headingFilter = 5
         manager.activityType = .fitness
         manager.pausesLocationUpdatesAutomatically = false
         manager.showsBackgroundLocationIndicator = true
@@ -329,6 +331,7 @@ private struct LocationJournalEntry: Codable {
         let candidate = newHeading.trueHeading >= 0 ? newHeading.trueHeading : newHeading.magneticHeading
         guard newHeading.headingAccuracy >= 0, candidate.isFinite, candidate >= 0 else { return }
         heading = candidate.truncatingRemainder(dividingBy: 360)
+        onHeading?(heading)
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {

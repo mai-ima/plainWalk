@@ -1,0 +1,3 @@
+# Syntax validation on Linux; Apple SDK/API validation still requires Xcode.
+tree-sitter==0.26.0
+tree-sitter-swift==0.7.4

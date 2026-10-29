@@ -33,6 +33,7 @@ docs/                  要件、画像分析、調査根拠、実装と残差
 
 - `tests/unit/`: 距離・開拓・境界・バックアップ・LUT・単位・診断のテスト。
 - `tests/browser/`: ブラウザ操作と保存失敗・復旧の回帰テスト。`native-bridge` と `data-integrity` のネイティブ連携はモックです。
+- `scripts/check-swift-syntax.py`: Linux でも括弧・構文を検出する Swift grammar チェック。Apple API の型検査は Xcode で行います。
 - `tests/fixtures/`: 合成したテスト用動画。ユーザーの記録は置きません。
 - Swift の DEBUG 自己テスト: ジャーナル復旧、保存形式、距離計算、GPX / TCX を隔離したデータで確認するコードです。実機試験とは別です。
 

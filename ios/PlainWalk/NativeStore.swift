@@ -95,7 +95,7 @@ struct NativeStore {
                 case "bookmarks":
                     guard NativePoint(json:item) != nil else {throw NativeError.message("しおりの位置が不正です。")}
                 case "doodles":
-                    guard nativeNumber(item["created"]) != nil else {throw NativeError.message("らくがきの日付が不正です。")}
+                    guard nativeTime(item["created"]) != nil else {throw NativeError.message("らくがきの日付が不正です。")}
                     try checkPoints(item["points"])
                 default:
                     guard let walks=item["walks"] as? [[String:Any]],walks.count<=10_000 else {throw NativeError.message("共有の道が多すぎます。")}

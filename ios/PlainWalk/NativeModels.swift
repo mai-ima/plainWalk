@@ -24,7 +24,7 @@ struct NativePoint: Equatable {
     }
     init?(json: [String: Any]) {
         guard let lat=nativeNumber(json["lat"]), let lon=nativeNumber(json["lon"]), abs(lat)<=85, abs(lon)<=180 else { return nil }
-        self.init(lat:lat,lon:lon,t:nativeNumber(json["t"]) ?? 0,accuracy:nativeNumber(json["accuracy"]),isBreak:json["break"] as? Bool ?? json["gap"] as? Bool ?? false,mode:json["mode"] as? String ?? "walking",heading:nativeNumber(json["heading"]))
+        self.init(lat:lat,lon:lon,t:nativeTime(json["t"]) ?? 0,accuracy:nativeNumber(json["accuracy"]),isBreak:json["break"] as? Bool ?? json["gap"] as? Bool ?? false,mode:json["mode"] as? String ?? "walking",heading:nativeNumber(json["heading"]))
     }
     init(_ recorded: RecordedPoint) { self.init(lat:recorded.lat,lon:recorded.lon,t:recorded.t,accuracy:recorded.accuracy,isBreak:recorded.gap,mode:recorded.mode ?? "walking",heading:recorded.heading) }
     var json: [String: Any] {
@@ -89,6 +89,6 @@ enum NativeCollection: String, Identifiable, CaseIterable {
     var title: String { switch self { case .spots:return "ここいいな";case .stickers:return "ステッカー";case .badges:return "エリアバッジ";case .doodles:return "らくがき";case .sharedMaps:return "共有の白地図";case .bookmarks:return "気になる場所";case .notes:return "ノート" } }
 }
 enum NativeSheet: Identifiable {
-    case settings, developer, layers, menu, spot, answer, stats, replay(String?), walk(String), collection(NativeCollection), share(URL), health
-    var id: String { switch self {case .settings:return "settings";case .developer:return "developer";case .layers:return "layers";case .menu:return "menu";case .spot:return "spot";case .answer:return "answer";case .stats:return "stats";case .replay(let id):return "replay:"+(id ?? "all");case .walk(let id):return "walk:"+id;case .collection(let item):return "collection:"+item.rawValue;case .share(let url):return "share:"+url.absoluteString;case .health:return "health"} }
+    case settings, stepGoal, developer, layers, menu, spot, answer, stats, replay(String?), walk(String), collection(NativeCollection), share(URL), health
+    var id: String { switch self {case .settings:return "settings";case .stepGoal:return "stepGoal";case .developer:return "developer";case .layers:return "layers";case .menu:return "menu";case .spot:return "spot";case .answer:return "answer";case .stats:return "stats";case .replay(let id):return "replay:"+(id ?? "all");case .walk(let id):return "walk:"+id;case .collection(let item):return "collection:"+item.rawValue;case .share(let url):return "share:"+url.absoluteString;case .health:return "health"} }
 }

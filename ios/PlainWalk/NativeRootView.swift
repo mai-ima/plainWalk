@@ -32,6 +32,7 @@ import UniformTypeIdentifiers
     @ViewBuilder private func sheetContent(_ item:NativeSheet)->some View {
         switch item {
         case .settings: NativeSettingsView(config:model.config,onChange:{next in model.saveConfig(next)},onAction:model.settingsAction,onClose:model.closeSheet)
+        case .stepGoal: NativeStepGoalView(model:model)
         case .developer: NativeDeveloperView(recorder:model.recorder)
         case .layers: NativeLayerView(model:model)
         case .menu: NativeMenuView(model:model)
@@ -64,7 +65,8 @@ import UniformTypeIdentifiers
                 "storage": try NativeStore.selfTest(),
                 "trackMath": try NativeTrackMath.selfTest(),
                 "trackIO": try NativeTrackIO.selfTest(),
-                "importCompatibility": try NativeAppModel.importSelfTest()
+                "importCompatibility": try NativeAppModel.importSelfTest(),
+                "modelState": try NativeAppModel.stateSelfTest()
             ]
             let folder = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("PlainWalk")
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
@@ -80,6 +82,7 @@ import UniformTypeIdentifiers
                 case "spots": model.openCollection(.spots)
                 case "doodles": model.openCollection(.doodles)
                 case "menu": model.openMenu()
+                case "stepGoal": model.present(.stepGoal)
                 default: break
                 }
             }

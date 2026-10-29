@@ -9,6 +9,9 @@ text=(root/'PlainWalk.xcodeproj/project.pbxproj').read_text()
 objects=set(re.findall(r'^([A-F0-9]{24}) = \{',text,re.M));refs=set(re.findall(r'\b[A-F0-9]{24}\b',text))
 assert refs<=objects, refs-objects
 assert text.count('isa = PBXNativeTarget;')==2
+compiled_sources=set(re.findall(r'lastKnownFileType = sourcecode.swift; path = "([^"]+)"',text))
+for canonical in (root/'PlainWalk').glob('*.swift'):
+ assert str(canonical.relative_to(root)) in compiled_sources, f'Missing compiled Swift source: {canonical.name}'
 for path in re.findall(r'lastKnownFileType = sourcecode.swift; path = "([^"]+)"',text):assert (root/path).is_file(),path
 for path in root.rglob('*.xcscheme'):ET.parse(path)
 assert '../dist' in text

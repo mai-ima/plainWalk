@@ -35,8 +35,9 @@ private struct NativeImportPayload: @unchecked Sendable {
     @Published private(set) var mapFocus: NativePoint?
     @Published private(set) var mapFocusRevision = 0
     @Published private(set) var focusedWalkID: String?
-    let recorder = LocationRecorder()
-    private let store = NativeStore()
+    let recorder: LocationRecorder
+    private let store: NativeStore
+    private let runtimeServicesEnabled: Bool
     private let activity = LiveActivityService()
     private var active: [String:Any]?
     private var readFailure = false
@@ -48,6 +49,7 @@ private struct NativeImportPayload: @unchecked Sendable {
     private var activeTodayPioneered = 0.0
     private var recorderDistanceOffset = 0.0
     private var stepRefreshRevision = 0
+    private var lastStepRefresh = Date()
     private var queuedSheet: NativeSheet?
     private var afterDismiss: (() -> Void)?
     private var clock: AnyCancellable?
@@ -73,7 +75,10 @@ private struct NativeImportPayload: @unchecked Sendable {
         })
     }
     var colorScheme: ColorScheme? { switch config["dark"] as? String {case "dark":return .dark;case "light":return .light;default:return nil} }
-    init() {
+    init(store: NativeStore = NativeStore(), recorder recordingSource: LocationRecorder? = nil, runtimeServicesEnabled: Bool = true) {
+        self.store = store
+        self.recorder = recordingSource ?? LocationRecorder(storageDirectory: store.directory)
+        self.runtimeServicesEnabled = runtimeServicesEnabled
         do { let saved=try store.read("library") ?? NativeStore.emptyLibrary;try NativeStore.validate(saved);library=saved }
         catch { readFailure=true;errorMessage="保存データを読み取れません。元のファイルを残しています。バックアップを書き出すか、正常なバックアップを取り込んでください。\n"+error.localizedDescription }
         do { config=try store.read("config") ?? [:] } catch { errorMessage=error.localizedDescription }
@@ -98,17 +103,23 @@ private struct NativeImportPayload: @unchecked Sendable {
         if let id=active?["id"] as? String,walks.contains(where:{$0.id==id}) {do{try clearFinalizedRecording()}catch{showError("さんぽは保存済みです。中断記録の後片付けを再試行してください。\n"+error.localizedDescription)}}
         rebuildActiveExploration()
         recorder.onError={ [weak self] in self?.showError($0) }
+        recorder.onHeading = { [weak self] heading in self?.currentPoint?.heading = heading }
         recorder.onPoint={ [weak self] point,id in self?.receive(point,id:id) }
         recorder.onSession={ [weak self] session in
-            guard let self else{return};let wasRecording=self.isRecording;self.isRecording=session?.recording ?? false;self.isPaused=self.active != nil && !self.isRecording;if let session{self.recordingDistance=session.distance+self.recorderDistanceOffset};self.activity.update(session)
+            guard let self else{return};let wasRecording=self.isRecording;self.isRecording=session?.recording ?? false;self.isPaused=self.active != nil && !self.isRecording;if let session{self.recordingDistance=session.distance+self.recorderDistanceOffset};if self.runtimeServicesEnabled{self.activity.update(session)}
             if wasRecording && !self.isRecording && self.active != nil && self.active?["pauseAt"] == nil {self.active?["pauseAt"]=Date().timeIntervalSince1970*1000;do{try self.persistActive()}catch{self.showError(error.localizedDescription)}}
-            UIApplication.shared.isIdleTimerDisabled=self.isRecording && self.config["wake"] as? Bool == true
+            if self.runtimeServicesEnabled {UIApplication.shared.isIdleTimerDisabled=self.isRecording && self.config["wake"] as? Bool == true}
         }
         if let issue=recorder.recoveryIssue {showError(issue)}
-        clock=Timer.publish(every:1,on:.main,in:.common).autoconnect().sink { [weak self] _ in self?.tick() }
+        if runtimeServicesEnabled {
+            clock=Timer.publish(every:1,on:.main,in:.common).autoconnect().sink { [weak self] _ in
+                guard UIApplication.shared.applicationState != .background else {return}
+                self?.tick()
+            }
+        }
         tick()
     }
-    func haptic() { UIImpactFeedbackGenerator(style:.light).impactOccurred() }
+    func haptic() { if runtimeServicesEnabled { UIImpactFeedbackGenerator(style:.light).impactOccurred() } }
     func distanceText(_ meters:Double)->String { String(format:"%.2f",meters.isFinite ? max(0,meters)/(distanceUnit=="mi" ? 1609.344 : 1000) : 0) }
     func showError(_ value:String) {errorMessage=value}
     func present(_ value:NativeSheet) {if sheet != nil {queuedSheet=value;sheet=nil}else{sheet=value}}
@@ -382,6 +393,65 @@ private struct NativeImportPayload: @unchecked Sendable {
         rebuildLibrary()
     }
     #if DEBUG
+    static func stateSelfTest() throws -> Bool {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("native-state-" + UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let store = NativeStore(directory: folder)
+        try store.write("library", NativeStore.emptyLibrary)
+        let recovery: [String:Any] = [
+            "id": "recovered-walk", "name": "Preserved name", "note": "Preserved note", "futureMetadata": ["keep": true],
+            "start": 1_000.0, "pauseAt": 3_000.0, "pausedMs": 500.0,
+            "points": [["lat": 35.0, "lon": 139.0, "t": 1_000.0, "accuracy": 5.0], ["lat": 35.0001, "lon": 139.0, "t": 2_000.0, "accuracy": 5.0]]
+        ]
+        try store.write("active", recovery)
+        let model = NativeAppModel(store: store, runtimeServicesEnabled: false)
+        guard model.isPaused, model.activePoints.count == 2, model.elapsed == 1.5 else {
+            throw NativeError.message("The Web recovery snapshot did not restore as a paused native walk.")
+        }
+        try model.adoptActiveIfNeeded()
+        let restoredRecorder = LocationRecorder(storageDirectory: folder)
+        guard restoredRecorder.session?.points.count == 2 else {
+            throw NativeError.message("Web-to-native migration was not durable.")
+        }
+        // A directory at the library destination forces the same atomic-write failure
+        // as an unavailable persistence target, without touching the user's library.
+        try FileManager.default.removeItem(at: store.url("library"))
+        try FileManager.default.createDirectory(at: store.url("library"), withIntermediateDirectories: true)
+        model.finishRecording()
+        guard model.walks.isEmpty, model.activePoints.count == 2, model.isPaused, model.elapsed == 1.5,
+              model.recorder.session?.points.count == 2 else {
+            throw NativeError.message("A failed final save consumed the recovery state or counted paused time.")
+        }
+        try FileManager.default.removeItem(at: store.url("library"))
+        model.finishRecording()
+        guard model.walks.count == 1, model.activePoints.isEmpty, model.recorder.session == nil,
+              let walk = model.walks.first, walk.duration == 1.5, walk.name == "Preserved name", walk.note == "Preserved note",
+              (walk.raw["futureMetadata"] as? [String:Bool])?["keep"] == true else {
+            throw NativeError.message("Retrying the final save lost metadata, duration, or duplicated the walk.")
+        }
+        // Simulate a crash after the walk was saved and before recovery cleanup.
+        try FileManager.default.removeItem(at: store.url("active"))
+        try FileManager.default.createDirectory(at: store.url("active"), withIntermediateDirectories: true)
+        let recorder = LocationRecorder(storageDirectory: folder)
+        let points = (recovery["points"] as? [[String:Any]] ?? []).compactMap(NativePoint.init(json:)).enumerated().map { index, point in
+            RecordedPoint(lat: point.lat, lon: point.lon, t: point.t, accuracy: 5, seq: index + 1, gap: false)
+        }
+        try recorder.adoptRecoveredSession(id: "recovered-walk", start: 1_000, points: points)
+        let duplicate = NativeAppModel(store: store, recorder: recorder, runtimeServicesEnabled: false)
+        guard duplicate.activeWasSaved, duplicate.walks.count == 1, !duplicate.isRecording else {
+            throw NativeError.message("A finalized walk was resurrected while recovery cleanup failed.")
+        }
+        duplicate.togglePause()
+        guard !duplicate.isRecording, duplicate.walks.count == 1 else {
+            throw NativeError.message("An already finalized ID was allowed to resume.")
+        }
+        try FileManager.default.removeItem(at: store.url("active"))
+        duplicate.finishRecording()
+        guard duplicate.active == nil, duplicate.walks.count == 1 else {
+            throw NativeError.message("Finalized recovery cleanup could not be retried safely.")
+        }
+        return true
+    }
     nonisolated static func importSelfTest() throws -> Bool {
         let paper: [String:Any] = [
             "type": "plainwalk-white-map", "version": 1, "id": "original-paper", "name": "Shared test",
@@ -411,6 +481,8 @@ private struct NativeImportPayload: @unchecked Sendable {
     }
     #endif
     func refreshSteps() {
+        guard runtimeServicesEnabled else { return }
+        lastStepRefresh = Date()
         stepRefreshRevision += 1
         let revision = stepRefreshRevision
         Task {
@@ -435,6 +507,7 @@ private struct NativeImportPayload: @unchecked Sendable {
             rebuildActiveExploration()
             refreshSteps()
         }
+        if isRecording && Date().timeIntervalSince(lastStepRefresh) >= 30 { refreshSteps() }
     }
-    func settingsAction(_ name:String){switch name {case "tab:map":tab = .map;closeSheet();case "tab:records":tab = .records;closeSheet();case "tab:profile":tab = .profile;closeSheet();case "nativeDeveloper":present(.developer);case "nativeImport","nativeRestore":importFiles();case "backup":exportBackup();case "gpxExportAll":shareData(NativeTrackIO.gpx(walks:walks),name:"PlainWalk-all.gpx");case "healthImport":present(.health);case "resetData":showError("記録の削除は、それぞれのさんぽ詳細から行えます。バックアップを書き出してから削除してください。");case "steps":showError("今日の歩数はモーション、または許可したヘルスケアから取得します。データを取得できない場合は — と表示します。");case "lutSettings":showError("写真のLUT編集は現在未実装です。元の写真でここいいなを保存できます。");case "about":showError("PlainWalk 互換クライアント 0.3.0。SwiftUI・MapKit・Core Locationで独立実装しています。");default:showError("手動GPS記録、写真・ノート、GPX、JSONバックアップに対応。自動開始、iCloud自動同期、近距離交換は未実装です。")}}
+    func settingsAction(_ name:String){switch name {case "tab:map":tab = .map;closeSheet();case "tab:records":tab = .records;closeSheet();case "tab:profile":tab = .profile;closeSheet();case "nativeDeveloper":present(.developer);case "nativeImport","nativeRestore":importFiles();case "backup":exportBackup();case "gpxExportAll":shareData(NativeTrackIO.gpx(walks:walks),name:"PlainWalk-all.gpx");case "healthImport":present(.health);case "resetData":showError("記録の削除は、それぞれのさんぽ詳細から行えます。バックアップを書き出してから削除してください。");case "steps":present(.stepGoal);case "lutSettings":showError("写真のLUT編集は現在未実装です。元の写真でここいいなを保存できます。");case "about":showError("PlainWalk 互換クライアント 0.3.0。SwiftUI・MapKit・Core Locationで独立実装しています。");default:showError("手動GPS記録、写真・ノート、GPX、JSONバックアップに対応。自動開始、iCloud自動同期、近距離交換は未実装です。")}}
 }

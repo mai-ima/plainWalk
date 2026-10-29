@@ -22,6 +22,8 @@ jobs:
       - run: npm test
       - run: npm run check
       - run: python3 ios/validate_project.py
+      - run: python3 -m pip install -r scripts/requirements-swift.txt
+      - run: python3 scripts/check-swift-syntax.py
       - run: npx playwright install --with-deps chromium
       - name: Verify mobile browser flows
         run: |
