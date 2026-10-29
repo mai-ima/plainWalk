@@ -26,6 +26,7 @@ import SwiftUI
                                             .stroke(item.ink, style: StrokeStyle(lineWidth: 2, lineCap: .round))
                                             .padding(11).background(item.paper, in: Circle())
                                     } action: { choose("theme", index) }
+                                    .containerRelativeFrame(.horizontal, count: 5, spacing: 12)
                                 }
                             }.padding(4)
                         }

@@ -18,15 +18,17 @@ import UniformTypeIdentifiers
             NavigationStack {NativeMyMapView(model:model).toolbar(.hidden,for:.navigationBar)}.tabItem{Label("マイマップ",systemImage:"sparkles")}.tag(NativeTab.map)
             NavigationStack {NativeRecordsView(model:model).background { smokeProbe("records") }}.tabItem{Label("記録",systemImage:"chart.bar.fill")}.tag(NativeTab.records)
             NavigationStack(path: $model.profilePath) {
-                NativeProfileView(model:model).background { smokeProbe("profile") }
-                    .navigationDestination(for: NativeCollection.self) { item in
-                        NativeCollectionsView(model:model,collection:item)
-                            .background { smokeProbe("collection:"+item.rawValue) }
-                    }
-                    .navigationDestination(isPresented: $model.showingSettings) {
-                        NativeSettingsView(config:model.config,onChange:model.saveConfig,onAction:model.settingsAction,onClose:model.closeSettings,embedded:true)
-                            .toolbar(.hidden,for:.navigationBar)
-                            .background { smokeProbe("settings") }
+                NativeProfileView(model:model).background { smokeProbe("profile") }.onAppear(perform:model.profileDidAppear)
+                    .navigationDestination(for: NativeProfileDestination.self) { destination in
+                        switch destination {
+                        case .collection(let item):
+                            NativeCollectionsView(model:model,collection:item)
+                                .background { smokeProbe("collection:"+item.rawValue) }
+                        case .settings:
+                            NativeSettingsView(config:model.config,onChange:model.saveConfig,onAction:model.settingsAction,onClose:model.closeSettings,embedded:true)
+                                .toolbar(.hidden,for:.navigationBar)
+                                .background { smokeProbe("settings") }
+                        }
                     }
             }.tabItem{Label("プロフィール",systemImage:"person")}.tag(NativeTab.profile)
         }
@@ -82,7 +84,13 @@ import UniformTypeIdentifiers
         guard !smokeStarted, isSmoke else { return }
         smokeStarted = true
         do {
-            let checks: [String: Any] = [
+            let args = ProcessInfo.processInfo.arguments
+            let folder = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("PlainWalk")
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            try Data("self-tests-started".utf8).write(to:folder.appendingPathComponent("native-smoke-stage.txt"),options:.atomic)
+            var checks: [String: Any] = ["ready":true,"nativeUI":true,"screenOnly":true]
+            if !args.contains("-PlainWalkScreenOnly") {
+            checks = [
                 "ready": true, "nativeUI": true,
                 "recordingPersistence": try LocationRecorder.persistenceSelfTest(),
                 "storage": try NativeStore.selfTest(),
@@ -95,10 +103,9 @@ import UniformTypeIdentifiers
                 "photoEffects": try NativePhotoEffects.selfTest(),
                 "boundaryGeometry": try NativeBoundaryGeometry.selfTest()
             ]
-            let folder = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("PlainWalk")
-            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            }
             try JSONSerialization.data(withJSONObject: checks).write(to: folder.appendingPathComponent("native-ready.json"), options: .atomic)
-            let args = ProcessInfo.processInfo.arguments
+            try Data("self-tests-complete; routing".utf8).write(to:folder.appendingPathComponent("native-smoke-stage.txt"),options:.atomic)
             if args.contains("-PlainWalkNativeSettingsSmokeTest") { model.openSettings() }
             if let route = args.first(where: { $0.hasPrefix("-PlainWalkScreen=") })?.split(separator: "=").last {
                 switch String(route) {

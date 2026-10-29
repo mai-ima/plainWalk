@@ -47,7 +47,7 @@ jobs:
           xcodebuild -project ios/PlainWalk.xcodeproj -scheme PlainWalk
           -configuration Debug -sdk iphonesimulator
           -destination 'generic/platform=iOS Simulator' -derivedDataPath .build/ios
-          CODE_SIGNING_ALLOWED=NO build
+          ARCHS="$(uname -m)" ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=NO build
       - name: Launch bundled app on iPhone Simulator
         run: bash scripts/ios-simulator-smoke.sh
       - name: Verify diagnostic screen capture

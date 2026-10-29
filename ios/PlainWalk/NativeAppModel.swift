@@ -14,8 +14,7 @@ private struct NativeImportPayload: @unchecked Sendable {
 @MainActor final class NativeAppModel: ObservableObject {
     @Published var tab: NativeTab = .map
     @Published var sheet: NativeSheet?
-    @Published var profilePath: [NativeCollection] = []
-    @Published var showingSettings = false
+    @Published var profilePath: [NativeProfileDestination] = []
     @Published var showingAnswer = false
     @Published var errorMessage: String?
     @Published var importing = false
@@ -56,6 +55,8 @@ private struct NativeImportPayload: @unchecked Sendable {
     private var stepRefreshRevision = 0
     private var lastStepRefresh = Date()
     private var queuedSheet: NativeSheet?
+    private var profileMounted = false
+    private var pendingProfileDestination: NativeProfileDestination?
     private var afterDismiss: (() -> Void)?
     private var clock: AnyCancellable?
     private var savedToday = 0.0
@@ -138,17 +139,24 @@ private struct NativeImportPayload: @unchecked Sendable {
     func openAnswerMap(){afterClosing { [weak self] in self?.showingAnswer=true }}
     func openLayers(){present(.layers)}
     func openMenu(){present(.menu)}
-    func openSettings(){afterClosing { [weak self] in
-        guard let self else { return }; self.profilePath=[]; self.tab = .profile; self.showingSettings=true
-    }}
-    func closeSettings(){showingSettings=false}
+    private func openProfileDestination(_ destination: NativeProfileDestination) {
+        if profileMounted { profilePath=[destination] } else { pendingProfileDestination=destination }
+        tab = .profile
+    }
+    func profileDidAppear() {
+        profileMounted=true
+        guard let destination=pendingProfileDestination else { return }
+        pendingProfileDestination=nil
+        // The selected tab must register its destinations before applying a deep link.
+        DispatchQueue.main.async { [weak self] in self?.profilePath=[destination] }
+    }
+    func openSettings(){afterClosing { [weak self] in self?.openProfileDestination(.settings) }}
+    func closeSettings(){pendingProfileDestination=nil;profilePath=[]}
     func openWalk(_ id:String){present(.walk(id))}
     func openStats(){present(.stats)}
     func openReplay(){present(.replay(nil))}
     func openReplay(walkID:String){present(.replay(walkID))}
-    func openCollection(_ item:NativeCollection){afterClosing { [weak self] in
-        guard let self else { return }; self.showingSettings=false; self.tab = .profile; self.profilePath=[item]
-    }}
+    func openCollection(_ item:NativeCollection){afterClosing { [weak self] in self?.openProfileDestination(.collection(item)) }}
     func openSpotCapture(){guard isRecording,currentPoint != nil else{showError("記録中に位置情報を取得してから、ここいいなを残せます。");return};present(.spot)}
     func showWalkOnMap(id:String){focusedWalkID=id;mapFocus=walks.first(where:{$0.id==id})?.points.first;mapFocusRevision+=1;tab = .map;closeSheet()}
     func navigateToFlag(_ flag:NativeFlag){mapFocus=flag.point;focusedWalkID=nil;mapFocusRevision+=1;tab = .map;closeSheet()}
@@ -570,5 +578,5 @@ private struct NativeImportPayload: @unchecked Sendable {
         }
         if isRecording && Date().timeIntervalSince(lastStepRefresh) >= 30 { refreshSteps() }
     }
-    func settingsAction(_ name:String){switch name {case "tab:map":showingSettings=false;tab = .map;closeSheet();case "tab:records":showingSettings=false;tab = .records;closeSheet();case "tab:profile":showingSettings=false;tab = .profile;closeSheet();case "nativeDeveloper":present(.developer);case "nativeImport","nativeRestore":importFiles();case "backup":exportBackup();case "gpxExportAll":shareData(NativeTrackIO.gpx(walks:walks),name:"PlainWalk-all.gpx");case "healthImport":present(.health);case "resetDataConfirmed":do{try resetLibrary()}catch{showError(error.localizedDescription)};case "steps":present(.stepGoal);case "lutSettings":present(.lut);case "about":showError("PlainWalk を参考にした非公式アプリ 0.3.0。SwiftUI・MapKit・Core Locationで独立実装しています。");default:showError("手動GPS記録、写真・ノート、GPX、JSONバックアップに対応。自動開始、iCloud自動同期、近距離交換は未実装です。")}}
+    func settingsAction(_ name:String){switch name {case "tab:map":profilePath=[];tab = .map;closeSheet();case "tab:records":profilePath=[];tab = .records;closeSheet();case "tab:profile":profilePath=[];tab = .profile;closeSheet();case "nativeDeveloper":present(.developer);case "nativeImport","nativeRestore":importFiles();case "backup":exportBackup();case "gpxExportAll":shareData(NativeTrackIO.gpx(walks:walks),name:"PlainWalk-all.gpx");case "healthImport":present(.health);case "resetDataConfirmed":do{try resetLibrary()}catch{showError(error.localizedDescription)};case "steps":present(.stepGoal);case "lutSettings":present(.lut);case "about":showError("PlainWalk を参考にした非公式アプリ 0.3.0。SwiftUI・MapKit・Core Locationで独立実装しています。");default:showError("手動GPS記録、写真・ノート、GPX、JSONバックアップに対応。自動開始、iCloud自動同期、近距離交換は未実装です。")}}
 }

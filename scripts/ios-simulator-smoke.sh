@@ -21,13 +21,15 @@ for PW_ATTEMPT in $(seq 1 30); do
     sleep 2
     xcrun simctl io "$PW_SIM_DEVICE" screenshot .build/screenshots/ios-native-map.png
     xcrun simctl terminate "$PW_SIM_DEVICE" org.example.plainwalkweb
-    xcrun simctl launch "$PW_SIM_DEVICE" org.example.plainwalkweb -PlainWalkSmokeTest -PlainWalkNativeSettingsSmokeTest
+    rm -f "$PW_READY_FILE"
+    xcrun simctl launch "$PW_SIM_DEVICE" org.example.plainwalkweb -PlainWalkSmokeTest -PlainWalkScreenOnly -PlainWalkNativeSettingsSmokeTest
     for PW_SETTINGS_ATTEMPT in $(seq 1 20); do
       if [[ -f "$PW_APP_CONTAINER/Library/Application Support/PlainWalk/native-settings-ready.json" && -f "$PW_APP_CONTAINER/Library/Application Support/PlainWalk/screen-settings.ready" ]]; then
         xcrun simctl io "$PW_SIM_DEVICE" screenshot .build/screenshots/ios-native-settings.png
         for PW_SCREEN in records profile layers answer spots doodles menu stepGoal lut developer; do
           xcrun simctl terminate "$PW_SIM_DEVICE" org.example.plainwalkweb
-          xcrun simctl launch "$PW_SIM_DEVICE" org.example.plainwalkweb -PlainWalkSmokeTest "-PlainWalkScreen=$PW_SCREEN"
+          rm -f "$PW_READY_FILE"
+          xcrun simctl launch "$PW_SIM_DEVICE" org.example.plainwalkweb -PlainWalkSmokeTest -PlainWalkScreenOnly "-PlainWalkScreen=$PW_SCREEN"
           PW_SCREEN_FILE="$PW_APP_CONTAINER/Library/Application Support/PlainWalk/screen-$PW_SCREEN.ready"
           if [[ "$PW_SCREEN" == "spots" || "$PW_SCREEN" == "doodles" ]]; then
             PW_SCREEN_FILE="$PW_APP_CONTAINER/Library/Application Support/PlainWalk/screen-collection:$PW_SCREEN.ready"
@@ -48,6 +50,10 @@ for PW_ATTEMPT in $(seq 1 30); do
       fi
       sleep 1
     done
+    xcrun simctl io "$PW_SIM_DEVICE" screenshot .build/screenshots/ios-failed-settings.png || true
+    ls -l "$PW_APP_CONTAINER/Library/Application Support/PlainWalk"/*.ready "$PW_READY_FILE" "$PW_APP_CONTAINER/Library/Application Support/PlainWalk/native-settings-ready.json" || true
+    cat "$PW_READY_FILE" "$PW_APP_CONTAINER/Library/Application Support/PlainWalk/native-smoke-stage.txt" || true
+    xcrun simctl spawn "$PW_SIM_DEVICE" log show --last 2m --style compact --predicate 'process == "PlainWalk"' || true
     echo "Native settings did not become ready."
     exit 1
   fi
