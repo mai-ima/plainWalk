@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>ja</string>
+	<key>CFBundleDisplayName</key>
+	<string>PlainWalk Web</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>org.example.plainwalkweb</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>plainwalkweb</string>
+			</array>
+		</dict>
+	</array>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>さんぽ中の「ここいいな」を写真と短い動画に残します。</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>歩数と選んだワークアウトのルートを白地図に表示します。健康データを外部サーバーに送信しません。</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>さんぽ中に歩いた道を白地図に描くため、現在地を利用します。</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>「ここいいな」の短い動画に音を残します。</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>書き出したさんぽの画像や動画を、選択したときだけ写真ライブラリに保存します。</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>さんぽの写真と動画を選び、地図のピンに残します。</string>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+	</dict>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
+	<key>UILaunchScreen</key>
+	<dict/>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+</dict>
+</plist>

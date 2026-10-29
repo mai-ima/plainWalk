@@ -1,0 +1,9 @@
+.git
+.openai
+ios
+tests
+node_modules
+*-preview.png
+*-debug.png
+*.zip
+*.tar.gz

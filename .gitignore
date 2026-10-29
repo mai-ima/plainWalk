@@ -1,0 +1,9 @@
+*-preview.png
+node_modules/
+*.tar.gz
+*-debug.png
+dist/data/japan-municipalities.geojson
+.vercel/
+.DS_Store
+*.xcuserstate
+xcuserdata/

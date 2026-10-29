@@ -1,0 +1,1 @@
+{"name":"PlainWalk Web — 白地図","short_name":"PlainWalk","description":"歩いた道が、あなたの地図になる。非公式の無料 Web 版。","lang":"ja","start_url":"./","scope":"./","display":"standalone","background_color":"#fafbf9","theme_color":"#fafbf9","icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"},{"src":"icon.png","sizes":"512x512","type":"image/png","purpose":"any"}]}
