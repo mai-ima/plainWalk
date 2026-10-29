@@ -1,3 +1,4 @@
+import {formatDistance, distanceUnit as getDistanceUnit} from "./units.js";
 import { layersHTML, settingsHTML } from "./reference-ui.js";
 import { companionSVG } from "./companion.js";
 import { drawNotebook, hitItem, loadImage, lassoCutout } from "./notebook.js";
@@ -210,7 +211,8 @@ const themes = [
   ["オリーブ", "#bdbb74", "#1f2008"],
   ["デニム", "#93b1d8", "#0b1b30"],
 ];
-const fmt = (m) => ((m || 0) / 1000).toFixed(2),
+const fmt = (m) => formatDistance(m,config.units),
+  distanceUnit = () => getDistanceUnit(config.units),
   dateKey = (t) => {
     const d = new Date(t);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -430,7 +432,7 @@ function draw() {
       Math.cos(((current?.lat || 35.6) * Math.PI) / 180);
     $("#scaleText").textContent =
       scale >= 1000
-        ? `${(scale / 1000).toFixed(1)} km`
+        ? `${fmt(scale)} ${distanceUnit()}`
         : `${Math.round(scale)} m`;
     updateFlag();
   });
@@ -497,6 +499,7 @@ function fit(points) {
 }
 let expCache = { length: -1, value: 0 };
 function updateStats() {
+  $$(".map-stats em").slice(1).forEach(el=>el.textContent=distanceUnit());
   const todayWalks = data.walks.filter((w) => dateKey(w.start) === today());
   if (active && expCache.length !== active.points.length) {
     expCache = {
@@ -722,7 +725,7 @@ function recordMenu() {
   }
   sheet(
     "さんぽの記録",
-    `<div class="stats-row"><div><b>${fmt(trailDistance(active.points))}<span class="unit"> km</span></b><small>歩いた距離</small></div><div><b>${duration(Date.now() - active.start - (active.pausedMs || 0) - (active.pauseAt ? Date.now() - active.pauseAt : 0))}</b><small>記録時間</small></div></div><p class="subtle">${paused ? "一時停止しています。" : esc(geoError || `GPS 精度 ±${Math.round(accuracy)} m`)} · ${active.points.length} 点</p><button class="primary" data-action="finish">さんぽを保存して終了</button><button class="secondary" data-action="pause">${paused ? "記録を再開" : "一時停止"}</button><button class="secondary" data-action="tweet">今のひとことを残す</button><button class="secondary danger-button" data-action="discardConfirm">記録を破棄</button>`,
+    `<div class="stats-row"><div><b>${fmt(trailDistance(active.points))}<span class="unit"> ${distanceUnit()}</span></b><small>歩いた距離</small></div><div><b>${duration(Date.now() - active.start - (active.pausedMs || 0) - (active.pauseAt ? Date.now() - active.pauseAt : 0))}</b><small>記録時間</small></div></div><p class="subtle">${paused ? "一時停止しています。" : esc(geoError || `GPS 精度 ±${Math.round(accuracy)} m`)} · ${active.points.length} 点</p><button class="primary" data-action="finish">さんぽを保存して終了</button><button class="secondary" data-action="pause">${paused ? "記録を再開" : "一時停止"}</button><button class="secondary" data-action="tweet">今のひとことを残す</button><button class="secondary danger-button" data-action="discardConfirm">記録を破棄</button>`,
   );
 }
 async function pauseToggle() {
@@ -905,11 +908,11 @@ function renderRecords() {
     })
     .sort((a, b) => b.start - a.start);
   $("#contentPage").innerHTML =
-    `<h1 class="page-title">記録</h1><section class="card"><div class="card-heading"><strong>今週</strong><small>${weekStart.getMonth() + 1}/${weekStart.getDate()} — ${now.getMonth() + 1}/${now.getDate()}</small></div><div class="stats-row"><div><b>${week.length}</b><small>さんぽ</small></div><div><b>${fmt(week.reduce((n, w) => n + trailDistance(w.points), 0))}<span class="unit"> km</span></b><small>歩いた距離</small></div><div><b>${fmt(week.reduce((n, w) => n + (exp.byWalk[w.id] || 0), 0))}<span class="unit"> km</span></b><small>開拓した道</small></div></div><div class="card-heading" style="margin-bottom:10px"><button data-action="prevMonth" aria-label="前月">‹</button><small>${month.getFullYear()}年 ${month.getMonth() + 1}月</small><button data-action="nextMonth" aria-label="翌月">›</button></div><div class="calendar">${calendar}</div><div style="margin-top:15px">${row("notes", "今日のふりかえり", "note")}</div></section><div class="two-buttons"><button data-action="replay">${icon("play")}地図の成長を<br>再生</button><button data-action="import">${icon("upload")}歩行の記録を<br>取り込む</button></div><div class="month-label"><span>${month.getFullYear()}年 ${month.getMonth() + 1}月</span><span>距離 ${fmt(walks.reduce((n, w) => n + trailDistance(w.points), 0))} km</span></div>${walks.length ? walks.map((w) => `<button class="walk-card" data-walk="${esc(w.id)}">${miniSvg(w.points)}<span class="stack"><strong>${esc(w.name)}</strong><small>${new Date(w.start).getMonth() + 1}月${new Date(w.start).getDate()}日 ${time(w.start)} – ${time(w.end)}</small><b>開拓 ${fmt(exp.byWalk[w.id])} km <small>· ${fmt(trailDistance(w.points))} km</small></b></span><span class="subtle">›</span></button>`).join("") : `<div class="empty-state">${icon("foot")}<br>まだ、さんぽの記録がありません。<br>白地図で、最初の一歩を。</div>`}`;
+    `<h1 class="page-title">記録</h1><section class="card"><div class="card-heading"><strong>今週</strong><small>${weekStart.getMonth() + 1}/${weekStart.getDate()} — ${now.getMonth() + 1}/${now.getDate()}</small></div><div class="stats-row"><div><b>${week.length}</b><small>さんぽ</small></div><div><b>${fmt(week.reduce((n, w) => n + trailDistance(w.points), 0))}<span class="unit"> ${distanceUnit()}</span></b><small>歩いた距離</small></div><div><b>${fmt(week.reduce((n, w) => n + (exp.byWalk[w.id] || 0), 0))}<span class="unit"> ${distanceUnit()}</span></b><small>開拓した道</small></div></div><div class="card-heading" style="margin-bottom:10px"><button data-action="prevMonth" aria-label="前月">‹</button><small>${month.getFullYear()}年 ${month.getMonth() + 1}月</small><button data-action="nextMonth" aria-label="翌月">›</button></div><div class="calendar">${calendar}</div><div style="margin-top:15px">${row("notes", "今日のふりかえり", "note")}</div></section><div class="two-buttons"><button data-action="replay">${icon("play")}地図の成長を<br>再生</button><button data-action="import">${icon("upload")}歩行の記録を<br>取り込む</button></div><div class="month-label"><span>${month.getFullYear()}年 ${month.getMonth() + 1}月</span><span>距離 ${fmt(walks.reduce((n, w) => n + trailDistance(w.points), 0))} ${distanceUnit()}</span></div>${walks.length ? walks.map((w) => `<button class="walk-card" data-walk="${esc(w.id)}">${miniSvg(w.points)}<span class="stack"><strong>${esc(w.name)}</strong><small>${new Date(w.start).getMonth() + 1}月${new Date(w.start).getDate()}日 ${time(w.start)} – ${time(w.end)}</small><b>開拓 ${fmt(exp.byWalk[w.id])} ${distanceUnit()} <small>· ${fmt(trailDistance(w.points))} ${distanceUnit()}</small></b></span><span class="subtle">›</span></button>`).join("") : `<div class="empty-state">${icon("foot")}<br>まだ、さんぽの記録がありません。<br>白地図で、最初の一歩を。</div>`}`;
 }
 function renderProfile() {
   $("#contentPage").innerHTML =
-    `<h1 class="page-title">プロフィール</h1><div class="profile-avatar">${companionSVG(config.locationMark === "dot" ? "black" : config.locationMark || "black")}</div><h2 class="profile-name">あなたの白地図</h2><p class="center subtle">いつもの一歩が、ちいさな冒険に。</p><div class="center"><span class="pill">${levelName()} · 開拓 ${fmt(exp.total)} km</span></div><div class="stats-row" style="margin:28px 0"><div><b>${data.walks.length}</b><small>さんぽ</small></div><div><b>${new Set(data.walks.map((w) => dateKey(w.start))).size}</b><small>歩いた日</small></div><div><b>${fmt(exp.total)}</b><small>総開拓距離 km</small></div></div><section class="card">${row("stats", "歩行の統計", "chart")}${row("badges", "エリアと開拓のバッジ", "badge")}${row("spots", "ここいいな", "camera")}${row("flags", "目的地の旗", "flag")}${row("notes", "ノート", "note")}</section><section class="card">${row("layers", "地図の見た目", "layers", "配色・線・写真ピン・相棒を、自由に。")}${row("settings", "設定", "settings")}${row("backup", "データのバックアップ", "download")}${row("about", "この Web 版について", "info")}</section><p class="center caption-note">PlainWalk Web · 非公式・無料<br>記録はこのブラウザの中に。</p>`;
+    `<h1 class="page-title">プロフィール</h1><div class="profile-avatar">${companionSVG(config.locationMark === "dot" ? "black" : config.locationMark || "black")}</div><h2 class="profile-name">あなたの白地図</h2><p class="center subtle">いつもの一歩が、ちいさな冒険に。</p><div class="center"><span class="pill">${levelName()} · 開拓 ${fmt(exp.total)} ${distanceUnit()}</span></div><div class="stats-row" style="margin:28px 0"><div><b>${data.walks.length}</b><small>さんぽ</small></div><div><b>${new Set(data.walks.map((w) => dateKey(w.start))).size}</b><small>歩いた日</small></div><div><b>${fmt(exp.total)}</b><small>総開拓距離 ${distanceUnit()}</small></div></div><section class="card">${row("stats", "歩行の統計", "chart")}${row("badges", "エリアと開拓のバッジ", "badge")}${row("spots", "ここいいな", "camera")}${row("flags", "目的地の旗", "flag")}${row("notes", "ノート", "note")}</section><section class="card">${row("layers", "地図の見た目", "layers", "配色・線・写真ピン・相棒を、自由に。")}${row("settings", "設定", "settings")}${row("backup", "データのバックアップ", "download")}${row("about", "この Web 版について", "info")}</section><p class="center caption-note">PlainWalk Web · 非公式・無料<br>記録はこのブラウザの中に。</p>`;
 }
 function levelName() {
   const levels = [
@@ -931,7 +934,7 @@ function detail(walkId) {
   if (!w) return;
   sheet(
     w.name,
-    `${miniSvg(w.points, "walk-thumbnail")}<p class="center subtle">${new Date(w.start).toLocaleDateString("ja-JP")} ${time(w.start)} — ${time(w.end)}</p><div class="stats-row"><div><b>${fmt(trailDistance(w.points))}</b><small>歩いた距離 km</small></div><div><b>${fmt(exp.byWalk[w.id])}</b><small>開拓した道 km</small></div><div><b>${duration(w.duration ?? w.end - w.start)}</b><small>記録時間</small></div></div><label class="form-label">さんぽの名前</label><input id="walkName" maxlength="60" value="${esc(w.name)}"><label class="form-label">ひとこと</label><textarea id="walkNote" maxlength="3000">${esc(w.note || "")}</textarea><button class="primary" data-save-walk="${esc(w.id)}">変更を保存</button><div class="two-buttons" style="margin-top:15px"><button data-map-walk="${esc(w.id)}">${icon("map")}地図で見る</button><button data-replay-walk="${esc(w.id)}">${icon("play")}再生</button><button data-share-walk="${esc(w.id)}">${icon("download")}カードを保存</button><button data-gpx-walk="${esc(w.id)}">${icon("download")}GPX 書き出し</button></div><button class="secondary" data-edit-walk="${esc(w.id)}">軌跡を手で修正</button><button class="secondary danger-button" data-delete-walk="${esc(w.id)}">この記録を削除</button>`,
+    `${miniSvg(w.points, "walk-thumbnail")}<p class="center subtle">${new Date(w.start).toLocaleDateString("ja-JP")} ${time(w.start)} — ${time(w.end)}</p><div class="stats-row"><div><b>${fmt(trailDistance(w.points))}</b><small>歩いた距離 ${distanceUnit()}</small></div><div><b>${fmt(exp.byWalk[w.id])}</b><small>開拓した道 ${distanceUnit()}</small></div><div><b>${duration(w.duration ?? w.end - w.start)}</b><small>記録時間</small></div></div><label class="form-label">さんぽの名前</label><input id="walkName" maxlength="60" value="${esc(w.name)}"><label class="form-label">ひとこと</label><textarea id="walkNote" maxlength="3000">${esc(w.note || "")}</textarea><button class="primary" data-save-walk="${esc(w.id)}">変更を保存</button><div class="two-buttons" style="margin-top:15px"><button data-map-walk="${esc(w.id)}">${icon("map")}地図で見る</button><button data-replay-walk="${esc(w.id)}">${icon("play")}再生</button><button data-share-walk="${esc(w.id)}">${icon("download")}カードを保存</button><button data-gpx-walk="${esc(w.id)}">${icon("download")}GPX 書き出し</button></div><button class="secondary" data-edit-walk="${esc(w.id)}">軌跡を手で修正</button><button class="secondary danger-button" data-delete-walk="${esc(w.id)}">この記録を削除</button>`,
   );
 }
 function settings() {
@@ -949,7 +952,7 @@ function layers() {
 function flags() {
   sheet(
     "目的地の旗",
-    `<p class="subtle">行き先は決めて、道は決めない。旗を複数立てて、訪れる順に並べられます。</p>${data.flags.length ? data.flags.map((f, i) => `<div class="row"><span>${i + 1}. ⚑</span><button class="grow stack" data-flag-detail="${esc(f.id)}"><strong>${esc(f.name)}</strong><small>${f.lat.toFixed(5)}, ${f.lon.toFixed(5)}${current ? " · " + fmt(distance(current, f)) + " km" : ""}</small></button><button data-flag-up="${esc(f.id)}" aria-label="上に移動" ${i === 0 ? "disabled" : ""}>↑</button><button data-flag-remove="${esc(f.id)}" aria-label="旗を削除">×</button></div>`).join("") : '<div class="empty-state">まだ旗がありません。</div>'}<button class="primary" data-action="flagAdd">旗を立てる</button><p class="caption-note">座標を入力するか、地図上の場所を選べます。住所検索や自動の経路案内はありません。</p>`,
+    `<p class="subtle">行き先は決めて、道は決めない。旗を複数立てて、訪れる順に並べられます。</p>${data.flags.length ? data.flags.map((f, i) => `<div class="row"><span>${i + 1}. ⚑</span><button class="grow stack" data-flag-detail="${esc(f.id)}"><strong>${esc(f.name)}</strong><small>${f.lat.toFixed(5)}, ${f.lon.toFixed(5)}${current ? " · " + fmt(distance(current, f)) + " " + distanceUnit() : ""}</small></button><button data-flag-up="${esc(f.id)}" aria-label="上に移動" ${i === 0 ? "disabled" : ""}>↑</button><button data-flag-remove="${esc(f.id)}" aria-label="旗を削除">×</button></div>`).join("") : '<div class="empty-state">まだ旗がありません。</div>'}<button class="primary" data-action="flagAdd">旗を立てる</button><p class="caption-note">座標を入力するか、地図上の場所を選べます。住所検索や自動の経路案内はありません。</p>`,
   );
 }
 function flagAdd(p) {
@@ -974,7 +977,7 @@ function updateFlag() {
       Math.PI;
   const d = distance(current, f);
   $("#flagDirection").innerHTML =
-    `${d < 1000 ? Math.round(d) + " m" : (d / 1000).toFixed(2) + " km"}<span style="transform:rotate(${deg}deg)">↑</span>`;
+    `${d < 1000 ? Math.round(d) + " m" : (d / 1000).toFixed(2) + " " + distanceUnit()}<span style="transform:rotate(${deg}deg)">↑</span>`;
   $("#flagDirection").title = f.name + " · 北を上にした方角";
   $("#flagDirection").onclick = () => flagDetail(f.id);
 }
@@ -983,7 +986,7 @@ function flagDetail(flagId) {
   if (!f) return;
   sheet(
     f.name,
-    `<p>⚑ ${f.lat.toFixed(6)}, ${f.lon.toFixed(6)}</p>${current ? `<p>現在地から ${fmt(distance(current, f))} km</p>` : ""}<button class="primary" data-flag-view="${esc(f.id)}">地図で見る</button><button class="secondary" data-flag-share="${esc(f.id)}">旗の座標を共有</button><button class="secondary danger-button" data-flag-remove="${esc(f.id)}">この旗を削除</button>`,
+    `<p>⚑ ${f.lat.toFixed(6)}, ${f.lon.toFixed(6)}</p>${current ? `<p>現在地から ${fmt(distance(current, f))} ${distanceUnit()}</p>` : ""}<button class="primary" data-flag-view="${esc(f.id)}">地図で見る</button><button class="secondary" data-flag-share="${esc(f.id)}">旗の座標を共有</button><button class="secondary danger-button" data-flag-remove="${esc(f.id)}">この旗を削除</button>`,
   );
 }
 function spots() {
@@ -1253,7 +1256,7 @@ function stats() {
   )[0];
   sheet(
     "歩行の統計",
-    `<div class="stats-row"><div><b>${data.walks.length}</b><small>さんぽ</small></div><div><b>${fmt(total)}</b><small>歩いた距離 km</small></div><div><b>${days}</b><small>歩いた日</small></div></div><section class="card"><h3>最近 7 日間 · 歩いた距離</h3><div class="bars">${seven.map((d) => `<button class="bar" style="height:${Math.max(2, (d.m / max) * 100)}%" data-bar="${fmt(d.m)} km" aria-label="${d.label}曜日 ${fmt(d.m)} km"><small>${d.label}</small></button>`).join("")}</div><div style="height:15px"></div></section><section class="card"><h3>開拓レベル</h3><p>${levelName()}</p><p class="subtle">総開拓 ${fmt(exp.total)} km · 通った 12 m セルの重複を除いて算出する Web 版の近似値です。</p><progress value="${Math.min(exp.total / 42195, 1)}" max="1"></progress><small class="subtle">最初の目標：42.195 km</small></section>${best ? `<h3>いちばん長いさんぽ</h3><button class="walk-card" data-walk="${esc(best.id)}">${miniSvg(best.points)}<span class="stack">${esc(best.name)}<b>${fmt(trailDistance(best.points))} km</b></span></button>` : ""}${row("steps", "歩数の記録と目標", "foot")}`,
+    `<div class="stats-row"><div><b>${data.walks.length}</b><small>さんぽ</small></div><div><b>${fmt(total)}</b><small>歩いた距離 ${distanceUnit()}</small></div><div><b>${days}</b><small>歩いた日</small></div></div><section class="card"><h3>最近 7 日間 · 歩いた距離</h3><div class="bars">${seven.map((d) => `<button class="bar" style="height:${Math.max(2, (d.m / max) * 100)}%" data-bar="${fmt(d.m)} ${distanceUnit()}" aria-label="${d.label}曜日 ${fmt(d.m)} ${distanceUnit()}"><small>${d.label}</small></button>`).join("")}</div><div style="height:15px"></div></section><section class="card"><h3>開拓レベル</h3><p>${levelName()}</p><p class="subtle">総開拓 ${fmt(exp.total)} ${distanceUnit()} · 通った 12 m セルの重複を除いて算出する Web 版の近似値です。</p><progress value="${Math.min(exp.total / 42195, 1)}" max="1"></progress><small class="subtle">最初の目標：${fmt(42195)} ${distanceUnit()}</small></section>${best ? `<h3>いちばん長いさんぽ</h3><button class="walk-card" data-walk="${esc(best.id)}">${miniSvg(best.points)}<span class="stack">${esc(best.name)}<b>${fmt(trailDistance(best.points))} ${distanceUnit()}</b></span></button>` : ""}${row("steps", "歩数の記録と目標", "foot")}`,
   );
 }
 async function badges() {
@@ -1310,7 +1313,7 @@ function renderAreaGrid() {
           const feature = areaState.index.collection.features.find(
             (f) => f.properties.id === s.id,
           );
-          return `<button class="area-card ${config.areaFinish || "glass"}" data-area="${esc(s.id)}"><span class="area-shape">${areaSVG(feature, 100, s.cells)}</span><strong>${esc(s.name)}</strong><small>${esc(s.parent)}</small><small>${s.walks} さんぽ · ${fmt(s.distance)} km</small></button>`;
+          return `<button class="area-card ${config.areaFinish || "glass"}" data-area="${esc(s.id)}"><span class="area-shape">${areaSVG(feature, 100, s.cells)}</span><strong>${esc(s.name)}</strong><small>${esc(s.parent)}</small><small>${s.walks} さんぽ · ${fmt(s.distance)} ${distanceUnit()}</small></button>`;
         })
         .join("")
     : `<div class="empty-state" style="grid-column:1/-1">${q ? "一致する街はありません。" : "まだ街のバッジがありません。<br>日本の街を歩くと、その輪郭が集まります。"}</div>`;
@@ -1323,7 +1326,7 @@ function areaDetail(areaID) {
   if (!stat || !feature) return;
   sheet(
     stat.name,
-    `<div class="area-detail ${config.areaFinish || "glass"}"><span class="area-shape">${areaSVG(feature, 100, stat.cells)}</span></div><p class="center subtle">${esc(stat.parent)}</p><div class="stats-row"><div><b>${stat.walks}</b><small>さんぽ</small></div><div><b>${fmt(stat.distance)}</b><small>街の中の道 km</small></div></div><p class="center subtle">はじめて歩いた日 ${new Date(stat.first).toLocaleDateString("ja-JP")}<br>最近歩いた日 ${new Date(stat.last).toLocaleDateString("ja-JP")}</p><button class="primary" data-area-map="${esc(areaID)}">この街を白地図で見る</button><p class="caption-note">${stat.cells.length} 区画（500 m 四方）を歩いています。距離は軌跡を 25 m ごとに区切り、区間の中点で境界と照合した近似値です。バッジの質感は独自実装です。</p>`,
+    `<div class="area-detail ${config.areaFinish || "glass"}"><span class="area-shape">${areaSVG(feature, 100, stat.cells)}</span></div><p class="center subtle">${esc(stat.parent)}</p><div class="stats-row"><div><b>${stat.walks}</b><small>さんぽ</small></div><div><b>${fmt(stat.distance)}</b><small>街の中の道 ${distanceUnit()}</small></div></div><p class="center subtle">はじめて歩いた日 ${new Date(stat.first).toLocaleDateString("ja-JP")}<br>最近歩いた日 ${new Date(stat.last).toLocaleDateString("ja-JP")}</p><button class="primary" data-area-map="${esc(areaID)}">この街を白地図で見る</button><p class="caption-note">${stat.cells.length} 区画（500 m 四方）を歩いています。距離は軌跡を 25 m ごとに区切り、区間の中点で境界と照合した近似値です。バッジの質感は独自実装です。</p>`,
   );
 }
 
@@ -1440,7 +1443,7 @@ async function handleImport(file) {
   };
   sheet(
     "歩行の記録を取り込む",
-    `${miniSvg(points, "walk-thumbnail")}<p>${esc(file.name)}</p><div class="stats-row"><div><b>${fmt(trailDistance(points))}</b><small>距離 km</small></div><div><b>${points.length.toLocaleString()}</b><small>記録点</small></div></div><button class="primary" data-action="importTrack">この道を白地図に残す</button>`,
+    `${miniSvg(points, "walk-thumbnail")}<p>${esc(file.name)}</p><div class="stats-row"><div><b>${fmt(trailDistance(points))}</b><small>距離 ${distanceUnit()}</small></div><div><b>${points.length.toLocaleString()}</b><small>記録点</small></div></div><button class="primary" data-action="importTrack">この道を白地図に残す</button>`,
   );
 }
 let pendingImport = null;
@@ -1469,7 +1472,7 @@ async function shareCard(walkId) {
   if (!w) return;
   sheet(
     "さんぽのカード",
-    `<div id="sharePreview">${miniSvg(w.points, "walk-thumbnail")}</div><p class="center">${esc(w.name)} · ${fmt(trailDistance(w.points))} km</p><label class="form-label">サイズ</label><select id="shareSize"><option value="square">正方形</option><option value="story">ストーリー</option></select><button class="primary" data-card-download="${esc(w.id)}">画像を保存</button>`,
+    `<div id="sharePreview">${miniSvg(w.points, "walk-thumbnail")}</div><p class="center">${esc(w.name)} · ${fmt(trailDistance(w.points))} ${distanceUnit()}</p><label class="form-label">サイズ</label><select id="shareSize"><option value="square">正方形</option><option value="story">ストーリー</option></select><button class="primary" data-card-download="${esc(w.id)}">画像を保存</button>`,
   );
 }
 async function exportCard(walkId) {
@@ -1517,7 +1520,7 @@ async function exportCard(walkId) {
   ctx.fillText(w.name.slice(0, 20), 540, c.height - 190);
   ctx.font = "25px -apple-system,sans-serif";
   ctx.fillText(
-    `${new Date(w.start).toLocaleDateString("ja-JP")}   ·   ${fmt(trailDistance(w.points))} km   ·   開拓 ${fmt(exp.byWalk[w.id])} km`,
+    `${new Date(w.start).toLocaleDateString("ja-JP")}   ·   ${fmt(trailDistance(w.points))} ${distanceUnit()}   ·   開拓 ${fmt(exp.byWalk[w.id])} ${distanceUnit()}`,
     540,
     c.height - 125,
   );
@@ -1917,7 +1920,7 @@ async function handleClick(e) {
     const walks = data.walks.filter((w) => dateKey(w.start) === d.day);
     sheet(
       d.day,
-      `${walks.length ? walks.map((w) => `<button class="walk-card" data-walk="${esc(w.id)}">${miniSvg(w.points)}<span class="stack">${esc(w.name)}<b>${fmt(trailDistance(w.points))} km</b></span></button>`).join("") : '<p class="subtle">この日の記録はありません。</p>'}<button class="secondary" data-day-note="${d.day}">この日のノート</button>`,
+      `${walks.length ? walks.map((w) => `<button class="walk-card" data-walk="${esc(w.id)}">${miniSvg(w.points)}<span class="stack">${esc(w.name)}<b>${fmt(trailDistance(w.points))} ${distanceUnit()}</b></span></button>`).join("") : '<p class="subtle">この日の記録はありません。</p>'}<button class="secondary" data-day-note="${d.day}">この日のノート</button>`,
     );
     return;
   }
@@ -2474,7 +2477,7 @@ actions.healthLoad = async () => {
       ? healthWorkouts
           .map(
             (w) =>
-              `<button class="row" data-health-route="${esc(w.id)}"><span class="grow stack"><strong>${new Date(w.start).toLocaleDateString("ja-JP")} ${time(w.start)}</strong><small>${fmt(w.distance)} km · ${w.kind === "running" ? "ランニング" : w.kind === "cycling" ? "サイクリング" : "ウォーキング"}</small></span><span>›</span></button>`,
+              `<button class="row" data-health-route="${esc(w.id)}"><span class="grow stack"><strong>${new Date(w.start).toLocaleDateString("ja-JP")} ${time(w.start)}</strong><small>${fmt(w.distance)} ${distanceUnit()} · ${w.kind === "running" ? "ランニング" : w.kind === "cycling" ? "サイクリング" : "ウォーキング"}</small></span><span>›</span></button>`,
           )
           .join("")
       : "<p>読み取れるワークアウトがありません。共有の許可、ルートの有無を確認してください。</p>",
@@ -2511,7 +2514,7 @@ document.addEventListener("click", async (e) => {
     };
     sheet(
       "ワークアウトを取り込む",
-      `${miniSvg(pendingImport.points, "walk-thumbnail")}<p>${fmt(trailDistance(pendingImport.points))} km</p><button class="primary" data-action="importTrack">この道を白地図に残す</button>`,
+      `${miniSvg(pendingImport.points, "walk-thumbnail")}<p>${fmt(trailDistance(pendingImport.points))} ${distanceUnit()}</p><button class="primary" data-action="importTrack">この道を白地図に残す</button>`,
     );
   } catch (e) {
     toast(e.message);
@@ -2873,7 +2876,7 @@ actions.exportReplayVideo = async () => {
     ctx.font = "bold 32px -apple-system,sans-serif";
     ctx.fillText("歩いた道が、あなたの地図になる。", 360, 845);
     ctx.font = "19px -apple-system,sans-serif";
-    ctx.fillText(fmt(trailDistance(points.slice(0, n))) + " km", 360, 890);
+    ctx.fillText(fmt(trailDistance(points.slice(0, n))) + " " + distanceUnit(), 360, 890);
   };
   drawFrame(0);
   try {
