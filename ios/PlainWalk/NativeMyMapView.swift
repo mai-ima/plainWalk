@@ -14,6 +14,8 @@ import ImageIO
     @State private var initialized = false
     @State private var savedTraces: [NativePaperTrace] = []
     @State private var doodleTraces: [NativePaperTrace] = []
+    @State private var activeTraces: [NativePaperTrace] = []
+    @State private var geometryRevision = 0
     @State private var suppressTapUntil = Date.distantPast
     @State private var recordPressed = false
     @State private var selectedSpot: NativeSpot?
@@ -23,6 +25,7 @@ import ImageIO
     private var hasSession: Bool { model.isRecording || model.isPaused || !model.activePoints.isEmpty }
     private var visibleModes: [String: Bool] { model.config["transportVisible"] as? [String: Bool] ?? [:] }
     private var focusedID: String? { model.focusedWalkID }
+    private var activeGeometryKey: String { "\(model.activePoints.count):\(model.activePoints.first?.t ?? 0):\(model.activePoints.last?.t ?? 0)" }
     private var currentKey: String {
         guard let p = model.currentPoint else { return "none" }
         return "\(p.lat):\(p.lon):\(p.t)"
@@ -31,10 +34,7 @@ import ImageIO
     var body: some View {
         GeometryReader { geometry in
             let size = geometry.size
-            let active = NativePaperGeometry.activeTraces(model.activePoints)
             let modes = visibleModes
-            let saved = savedTraces.filter { modes[$0.mode] != false }
-            let doodles = doodleTraces
             let camera = camera
             let ink = model.ink
             let fade = hasSession && model.config["fadeOther"] as? Bool != false
@@ -45,12 +45,10 @@ import ImageIO
             let selection = focusedID
             ZStack {
                 model.paper.ignoresSafeArea()
-                Canvas(opaque: false, rendersAsynchronously: true) { context, canvasSize in
-                    if grid { NativePaperPainter.grid(context: &context, size: canvasSize, camera: camera, color: ink.opacity(0.1)) }
-                    NativePaperPainter.trails(doodles, context: &context, size: canvasSize, camera: camera, color: ink.opacity(0.28), dashed: true, smooth: false, thicken: false, focusedID: nil)
-                    NativePaperPainter.trails(saved, context: &context, size: canvasSize, camera: camera, color: ink.opacity(fade ? 0.2 : 0.78), dashed: dashed, smooth: smooth, thicken: thicken, focusedID: selection)
-                    NativePaperPainter.trails(active.filter { modes[$0.mode] != false }, context: &context, size: canvasSize, camera: camera, color: ink, dashed: dashed, smooth: smooth, thicken: false, focusedID: nil, active: true)
-                }
+                NativePaperCanvas(saved: savedTraces, active: activeTraces, doodles: doodleTraces,
+                    geometryRevision: geometryRevision, camera: camera, size: size, modes: modes, ink: ink,
+                    fade: fade, thicken: thicken, dashed: dashed, smooth: smooth, grid: grid, selection: selection)
+                .equatable()
                 .contentShape(Rectangle())
                 .gesture(panGesture)
                 .simultaneousGesture(zoomGesture(size: size))
@@ -112,6 +110,17 @@ import ImageIO
                 guard !Task.isCancelled else { return }
                 savedTraces = traces
                 doodleTraces = sketches
+                geometryRevision += 1
+            }
+            .task(id: activeGeometryKey) {
+                // Timer updates do not reproject the entire active recording. The
+                // immutable scalar snapshot is processed off the main actor only
+                // when a GPS fix is accepted, a session is reset, or restored.
+                let points = model.activePoints.map(NativePaperGeoPoint.init)
+                let traces = await NativePaperGeometry.activeTraces(points)
+                guard !Task.isCancelled else { return }
+                activeTraces = traces
+                geometryRevision += 1
             }
         }
         .sheet(item: $selectedSpot) { spot in NativeMapSpotPreview(spot: spot) }
@@ -318,14 +327,14 @@ import ImageIO
     }
 }
 
-private struct NativePaperPoint: Sendable {
+private struct NativePaperPoint: Sendable, Equatable {
     var x: Double
     var y: Double
     init(x: Double, y: Double) { self.x = x; self.y = y }
     init(_ point: NativePoint) { self.init(lat: point.lat, lon: point.lon) }
     init(lat: Double, lon: Double) { x = 6378137 * lon * .pi / 180; let latitude = min(85, max(-85, lat)); y = 6378137 * log(tan(.pi / 4 + latitude * .pi / 360)) }
 }
-private struct NativePaperCamera: Sendable {
+private struct NativePaperCamera: Sendable, Equatable {
     static let world = 40075016.68557849
     static let halfWorld = world / 2
     var center = NativePaperPoint(lat: 35.6762, lon: 139.6503)
@@ -392,15 +401,16 @@ private enum NativePaperGeometry {
         }
         return output
     }
-    static func activeTraces(_ points: [NativePoint]) -> [NativePaperTrace] {
+    static func activeTraces(_ points: [NativePaperGeoPoint]) async -> [NativePaperTrace] {
         var output: [NativePaperTrace] = [], group: [NativePaperPoint] = [], mode = "walking"
         func flush() { if group.count > 1 { output.append(.init(walkID: "active", mode: mode, points: group, width: 1.9)) }; group = [] }
         for i in points.indices where i > 0 {
+            if i.isMultiple(of: 1024), Task.isCancelled { return [] }
             let p = points[i]
             if p.isBreak { flush(); continue }
             if !group.isEmpty && mode != p.mode { flush() }
-            if group.isEmpty { mode = p.mode; group.append(.init(points[i - 1])) }
-            group.append(.init(p))
+            if group.isEmpty { mode = p.mode; group.append(points[i - 1].projected) }
+            group.append(p.projected)
         }
         flush(); return output
     }
@@ -409,6 +419,38 @@ private enum NativePaperGeometry {
         return 6371008.8 * 2 * asin(min(1, sqrt(p * p + cos(a.lat * r) * cos(b.lat * r) * q * q)))
     }
     static func bearing(from a: NativePoint, to b: NativePoint) -> Double { let r = Double.pi / 180, dl = (b.lon - a.lon) * r; return atan2(sin(dl) * cos(b.lat * r), cos(a.lat * r) * sin(b.lat * r) - sin(a.lat * r) * cos(b.lat * r) * cos(dl)) / r }
+}
+/// The clock changes recording labels once per second. Compare only drawing
+/// inputs so those label changes do not invalidate thousands of Canvas vertices.
+private struct NativePaperCanvas: View, Equatable {
+    let saved: [NativePaperTrace]
+    let active: [NativePaperTrace]
+    let doodles: [NativePaperTrace]
+    let geometryRevision: Int
+    let camera: NativePaperCamera
+    let size: CGSize
+    let modes: [String: Bool]
+    let ink: Color
+    let fade: Bool
+    let thicken: Bool
+    let dashed: Bool
+    let smooth: Bool
+    let grid: Bool
+    let selection: String?
+    nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.geometryRevision == rhs.geometryRevision && lhs.camera == rhs.camera && lhs.size == rhs.size
+            && lhs.modes == rhs.modes && lhs.ink == rhs.ink && lhs.fade == rhs.fade
+            && lhs.thicken == rhs.thicken && lhs.dashed == rhs.dashed && lhs.smooth == rhs.smooth
+            && lhs.grid == rhs.grid && lhs.selection == rhs.selection
+    }
+    var body: some View {
+        Canvas(opaque: false, rendersAsynchronously: true) { context, canvasSize in
+            if grid { NativePaperPainter.grid(context: &context, size: canvasSize, camera: camera, color: ink.opacity(0.1)) }
+            NativePaperPainter.trails(doodles, context: &context, size: canvasSize, camera: camera, color: ink.opacity(0.28), dashed: true, smooth: false, thicken: false, focusedID: nil)
+            NativePaperPainter.trails(saved.filter { modes[$0.mode] != false }, context: &context, size: canvasSize, camera: camera, color: ink.opacity(fade ? 0.2 : 0.78), dashed: dashed, smooth: smooth, thicken: thicken, focusedID: selection)
+            NativePaperPainter.trails(active.filter { modes[$0.mode] != false }, context: &context, size: canvasSize, camera: camera, color: ink, dashed: dashed, smooth: smooth, thicken: false, focusedID: nil, active: true)
+        }
+    }
 }
 private enum NativePaperPainter {
     static func trails(_ traces: [NativePaperTrace], context: inout GraphicsContext, size: CGSize, camera: NativePaperCamera, color: Color, dashed: Bool, smooth: Bool, thicken: Bool, focusedID: String?, active: Bool = false) {

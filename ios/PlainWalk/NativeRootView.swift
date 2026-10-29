@@ -6,21 +6,28 @@ import UniformTypeIdentifiers
     @StateObject private var model=NativeAppModel()
     @Environment(\.scenePhase) private var scenePhase
     @State private var smokeStarted=false
+    private var isSmoke: Bool {
+        #if DEBUG
+        return ProcessInfo.processInfo.arguments.contains("-PlainWalkSmokeTest")
+        #else
+        return false
+        #endif
+    }
     var body: some View {
         TabView(selection:$model.tab) {
             NavigationStack {NativeMyMapView(model:model).toolbar(.hidden,for:.navigationBar)}.tabItem{Label("マイマップ",systemImage:"sparkles")}.tag(NativeTab.map)
-            NavigationStack {NativeRecordsView(model:model)}.tabItem{Label("記録",systemImage:"chart.bar.fill")}.tag(NativeTab.records)
-            NavigationStack {NativeProfileView(model:model)}.tabItem{Label("プロフィール",systemImage:"person")}.tag(NativeTab.profile)
+            NavigationStack {NativeRecordsView(model:model).onAppear{markScreen("records")}}.tabItem{Label("記録",systemImage:"chart.bar.fill")}.tag(NativeTab.records)
+            NavigationStack {NativeProfileView(model:model).onAppear{markScreen("profile")}}.tabItem{Label("プロフィール",systemImage:"person")}.tag(NativeTab.profile)
         }
         .tint(.primary).preferredColorScheme(model.colorScheme)
         .sheet(item:$model.sheet,onDismiss:model.sheetDismissed) {item in
-            sheetContent(item).preferredColorScheme(model.colorScheme)
+            sheetContent(item).preferredColorScheme(model.colorScheme).onAppear{markScreen(item.id)}
                 .alert("お知らせ",isPresented:Binding(get:{model.errorMessage != nil && model.sheet != nil},set:{if !$0{model.errorMessage=nil}})){Button("閉じる",role:.cancel){model.errorMessage=nil}}message:{Text(model.errorMessage ?? "")}
         }
         .fileImporter(isPresented:$model.importing,allowedContentTypes:[.json,.xml,UTType(filenameExtension:"gpx") ?? .data,UTType(filenameExtension:"tcx") ?? .data],allowsMultipleSelection:false,onCompletion:model.handleImport)
         .alert("お知らせ",isPresented:Binding(get:{model.errorMessage != nil && model.sheet==nil},set:{if !$0{model.errorMessage=nil}})){Button("閉じる",role:.cancel){model.errorMessage=nil}}message:{Text(model.errorMessage ?? "")}
-        .onChange(of:scenePhase){_,phase in if phase == .active {model.refreshSteps()} }
-        .task{model.refreshSteps();runSmoke()}
+        .onChange(of:scenePhase){_,phase in if phase == .active && !isSmoke {model.refreshSteps()} }
+        .task{if !isSmoke {model.refreshSteps()};runSmoke()}
     }
     @ViewBuilder private func sheetContent(_ item:NativeSheet)->some View {
         switch item {
@@ -38,18 +45,56 @@ import UniformTypeIdentifiers
         case .health: NativeHealthImportView(model:model)
         }
     }
-    private func runSmoke(){
+    private func markScreen(_ name: String) {
         #if DEBUG
-        guard !smokeStarted,ProcessInfo.processInfo.arguments.contains("-PlainWalkSmokeTest")else{return};smokeStarted=true
-        do{let persistence=try LocationRecorder.persistenceSelfTest();let storage=try NativeStore.selfTest();let math=try NativeTrackMath.selfTest();let trackIO=try NativeTrackIO.selfTest();let data:[String:Any]=["ready":true,"nativeUI":true,"recordingPersistence":persistence,"storage":storage,"trackMath":math,"trackIO":trackIO];let folder=FileManager.default.urls(for:.applicationSupportDirectory,in:.userDomainMask)[0].appendingPathComponent("PlainWalk");try FileManager.default.createDirectory(at:folder,withIntermediateDirectories:true);try JSONSerialization.data(withJSONObject:data).write(to:folder.appendingPathComponent("native-ready.json"),options:.atomic)
-            if ProcessInfo.processInfo.arguments.contains("-PlainWalkNativeSettingsSmokeTest"){model.openSettings()}
-        }catch{model.showError("Native smoke check: "+error.localizedDescription)}
+        guard isSmoke else { return }
+        let folder = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("PlainWalk")
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try? Data("ready".utf8).write(to: folder.appendingPathComponent("screen-" + name + ".ready"), options: .atomic)
+        #endif
+    }
+    private func runSmoke() {
+        #if DEBUG
+        guard !smokeStarted, isSmoke else { return }
+        smokeStarted = true
+        do {
+            let checks: [String: Any] = [
+                "ready": true, "nativeUI": true,
+                "recordingPersistence": try LocationRecorder.persistenceSelfTest(),
+                "storage": try NativeStore.selfTest(),
+                "trackMath": try NativeTrackMath.selfTest(),
+                "trackIO": try NativeTrackIO.selfTest(),
+                "importCompatibility": try NativeAppModel.importSelfTest()
+            ]
+            let folder = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("PlainWalk")
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            try JSONSerialization.data(withJSONObject: checks).write(to: folder.appendingPathComponent("native-ready.json"), options: .atomic)
+            let args = ProcessInfo.processInfo.arguments
+            if args.contains("-PlainWalkNativeSettingsSmokeTest") { model.openSettings() }
+            if let route = args.first(where: { $0.hasPrefix("-PlainWalkScreen=") })?.split(separator: "=").last {
+                switch String(route) {
+                case "records": model.tab = .records
+                case "profile": model.tab = .profile
+                case "layers": model.openLayers()
+                case "answer": model.openAnswerMap()
+                case "spots": model.openCollection(.spots)
+                case "doodles": model.openCollection(.doodles)
+                case "menu": model.openMenu()
+                default: break
+                }
+            }
+        } catch { model.showError("Native smoke check: " + error.localizedDescription) }
         #endif
     }
 }
 
 struct NativeShareView:UIViewControllerRepresentable {
     let url:URL
-    func makeUIViewController(context:Context)->UIActivityViewController{UIActivityViewController(activityItems:[url],applicationActivities:nil)}
+    func makeUIViewController(context:Context)->UIActivityViewController {
+        let controller = UIActivityViewController(activityItems:[url],applicationActivities:nil)
+        let folder = url.deletingLastPathComponent()
+        controller.completionWithItemsHandler = { _, _, _, _ in try? FileManager.default.removeItem(at: folder) }
+        return controller
+    }
     func updateUIViewController(_ uiViewController:UIActivityViewController,context:Context){}
 }

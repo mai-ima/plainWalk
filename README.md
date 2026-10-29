@@ -1,22 +1,28 @@
 # PlainWalk Web / iOS / Swift Playgrounds
 
-PlainWalk の公開情報と提供された画面を参考にした非公式の独立実装です。**完全再現は未達です。** 課金・広告なし。追加の beta 機能は設定から切り替えます。
+PlainWalk の公開情報・提供された画面・APK の静的な構造を参考にした、非公式の独立実装です。**本家との完全一致は未達です。** 元アプリのコードや素材の一括コピーはしていません。課金・広告は設けず、実装済みのカスタマイズを無料で使えます。
 
-| 対象 | 開く場所 | 主な動作 |
+| 対象 | 開く場所 | 画面と記録 |
 |---|---|---|
-| Web / PWA | `npm run build` → `dist/` | Safari・ホーム画面、前面 GPS、端末内保存 |
-| iOS / Xcode | `ios/PlainWalk.xcodeproj` | 同梱 Web UI＋Core Location・HealthKit・Live Activity・MapKit |
-| Swift Playgrounds | `ios/Playgrounds/PlainWalk.swiftpm` | iPad / Mac で編集・実行する前面記録版 |
+| Web / PWA | `npm run build` → `dist/` | JavaScript / SVG、前面 GPS、IndexedDB |
+| iOS / Xcode | `ios/PlainWalk.xcodeproj` | SwiftUI / Canvas / MapKit、Core Location、端末内ファイル |
+| Swift Playgrounds | `ios/Playgrounds/PlainWalk.swiftpm` | 同じ SwiftUI の正本から生成、前面 GPS |
 
-- [構成・生成物の配置](docs/project-structure.md)
+## iOS はネイティブ画面で起動します
+
+起動先は `NativeRootView` です。マイマップは Canvas、記録・プロフィール・設定・コレクションは SwiftUI、答え合わせは MapKit を使います。標準タブ、ナビゲーション、シート、SF Symbols、触覚、PhotosPicker、カメラ、ファイル選択、共有シートを接続しています。
+
+以前の `LocalWebApp` / `NativeBridge` は互換用のコードとして残しています。通常起動の画面には使いません。同梱 `Web/` にはブラウザ版の資源と、日本の境界 GeoJSON が入ります。Native のエリアバッジもこの実データを読みます。
+
+- [ファイル配置と生成物](docs/project-structure.md)
 - [確定したユーザー要件](docs/requirements.md)
 - [提供画像 16 枚の分析](docs/app-analysis.md)
 - [追加の画像・一次資料の分析](docs/research-deep-dive.md)
 - [APK の静的解析と Android 画像](docs/apk-static-analysis.md)
-- [実機検証用の開発者機能](docs/device-testing.md)
 - [実装範囲と残差](docs/reproduction-audit.md)
-- [Xcode 版の起動・署名](ios/README.md)
-- [Swift Playgrounds 版の開き方](ios/Playgrounds/README.md)
+- [実機検証と開発者機能](docs/device-testing.md)
+- [Xcode の起動・署名](ios/README.md)
+- [Swift Playgrounds の開き方](ios/Playgrounds/README.md)
 
 ## Web の起動
 
@@ -28,9 +34,9 @@ npm run build
 npm start
 ```
 
-`http://localhost:4173` を開きます。実端末の位置情報・カメラ・PWA は HTTPS が必要です。編集する正本は `web/`、配信用 `dist/` は自動生成します。
+`http://localhost:4173` を開きます。実端末の位置情報・カメラ・PWA は HTTPS が必要です。編集する正本は `web/`、配信用 `dist/` は自動生成です。
 
-Vercel は GitHub リポジトリのルートを手動で Import してください。`vercel.json` がビルドと `dist/` 出力を指定します。こちらから Vercel の接続・デプロイは行いません。
+Vercel は GitHub リポジトリのルートをユーザーが手動で Import してください。`vercel.json` がビルドと `dist/` 出力を指定します。Vercel の接続・デプロイは行っていません。
 
 ## Swift Playgrounds 用 ZIP
 
@@ -38,15 +44,26 @@ Vercel は GitHub リポジトリのルートを手動で Import してくださ
 npm run playgrounds
 ```
 
-`artifacts/packages/PlainWalk.swiftpm.zip` を生成します。展開後の `.swiftpm` を iPad / Mac の Swift Playgrounds で開けます。生成済み ZIP は単独で動く構成で、Web サーバーや Node.js は不要です。iPhone 向けの署名・インストールは通常の Xcode 版を使います。
+`artifacts/packages/PlainWalk.swiftpm.zip` を生成します。展開した `.swiftpm` を iPad / Mac の Swift Playgrounds で開きます。生成済み ZIP に Node.js や Web サーバーは不要です。iPhone の署名・インストールは通常の Xcode 版を使います。
 
-Playgrounds 版は前面 GPS、ファイル保存、MapKit、Vision、モーション歩数、同じ Web UI を同梱します。HealthKit・Live Activity 拡張・ロック中の継続記録を使える版としては扱いません。[GitHub Actions 40898218214](https://github.com/mai-ima/plainWalk/actions/runs/40898218214) の Playgrounds ジョブでコンパイルを通過しました。iPad 実機での動作は未検証です。
+Playgrounds 版も SwiftUI / Canvas / MapKit を使います。HealthKit、Live Activity 拡張、ロック中の継続 GPS は利用範囲に含めません。
 
-## 実装した機能
+## 機能の範囲
 
-白地図、GPS 記録、一時停止と長押し終了、中断復旧、12 m セルによる開拓距離の近似、通った回数による線の変化、履歴・カレンダー・統計、GPX / TCX 入出力、JSON バックアップ、写真・短い動画、フィルム・3D LUT、旗と方角、しおり、地図上のらくがき、ノートの自由配置・切り抜き・画像出力、軌跡の修正・再生・動画出力、日本 1,905 区域のエリアバッジ。
+| 機能 | Web | SwiftUI 版 |
+|---|---|---|
+| 白地図・記録・一時停止・終了・復旧 | 前面 GPS | Core Location、Xcode 版に背景記録コード |
+| 配色・線・写真ピン・現在地・表示レイヤー | 実装 | ネイティブの選択画面と描画 |
+| 履歴・カレンダー・統計・軌跡再生 | 実装 | SwiftUI で実装 |
+| GPX / TCX 取り込み、GPX 出力、JSON バックアップ | 実装 | Files / 共有シート |
+| 写真・短い動画・ひとこと | 実装 | PhotosPicker・カメラ・動画再生 |
+| 旗・しおり・らくがき・ステッカー | 実装 | SwiftUI / MapKit / Vision |
+| 日本 1,905 区域のバッジ | 実 GeoJSON の判定 | 同じ実 GeoJSON を Swift で判定 |
+| 共有の白地図 | 選んだ線のファイル交換 | 同じ形式のファイル交換 |
+| 写真フィルム・3D LUT、手動軌跡修正、動画書き出し | 実装 | 未実装 |
+| ノート | 写真・道の自由配置、切り抜き、PNG 出力 | 文章・紙・書体、スライダーでの配置調整、PNG 出力 |
 
-標準＋14 配色と実装済みカスタマイズは無料。共有の白地図は、選んだ線だけの JSON ファイルを交換する方式です。日時・写真・メモを除外し、共同編集や自動同期は行いません。猫は独自 SVG で、公式の立体モデルとは異なります。
+共有白地図には選んだ線だけを入れ、日時・写真・メモを除きます。招待リンクによる共同編集・自動同期はありません。立体バッジや猫の見た目・演出は独自実装です。Watch、通常のウィジェット、自動開始、iCloud 自動同期、日本以外の境界、道路へのスナップ、公式と同じ近接交換は未実装です。
 
 ## 検証と限界
 
@@ -54,17 +71,15 @@ Playgrounds 版は前面 GPS、ファイル保存、MapKit、Vision、モーシ�
 npm test
 npm run check
 python3 ios/validate_project.py
-# npm start を起動した別ターミナルで:
+# npm run build と npm start の後、別ターミナルで:
 npx playwright install chromium
 npm run test:browser
 ```
 
-19 件の単体テストと、Chromium / Linux WebKit の主要画面・保存復旧・操作が通過。テストは `tests/unit/` と `tests/browser/`、画像や動画は `artifacts/previews/` に分離しました。
+2026-10-29 のローカル検証では、単体テスト 23 件、Chromium の 7 スイート、構文チェック、Web ビルドが通過しました。新しい保存整合性テストは、GPX / TCX、保存失敗、再読み込み、取り込みの再試行、ネイティブ拡張データの保持を確認します。ネイティブ接続のブラウザ試験はモックです。Linux WebKit の以前の操作試験も、iPhone 実機検証とは区別します。
 
-通常の iOS 版は [GitHub Actions 40888890524](https://github.com/mai-ima/plainWalk/actions/runs/40888890524) で本体・拡張のコンパイル、iPhone Simulator 起動、Web/native 接続、位置ジャーナル復旧が通過。実機の背景 GPS・HealthKit・電池消費・配布署名は未検証で、署名済み IPA はありません。Playgrounds 版の検証は通常版と区別します。
+今回追加した SwiftUI の通常起動構成は、macOS でのコンパイル・Simulator 試験を進めており、成功はまだ確認できていません。以前の [Xcode CI](https://github.com/mai-ima/plainWalk/actions/runs/40888890524) と [Playgrounds CI](https://github.com/mai-ima/plainWalk/actions/runs/40898218214) の成功は旧構成の履歴であり、今回の成功を示すものではありません。実機の背景 GPS・HealthKit・電池消費・配布署名は未検証で、署名済み IPA はありません。
 
-Watch アプリ、通常のウィジェット、自動開始、共有の自動同期、日本以外の区域、公式と同じ立体バッジ、道路へのスナップ、写真の深度ぼかし、動画ピンへのフィルム、公式と同じ近接交換は未実装です。Web の傾斜表示は建物の 3D 表示ではありません。
+公式サイトは 2026-10-29 に再確認しました。12 m グリッド、手動記録、GPX / TCX、選んだ線だけの共有という公開仕様を参照しています。内部の判定閾値や全画面の完全一致を確定したものではありません。
 
-端末やブラウザのデータ消去に備え、バックアップを保存してください。インポートは 45 MB、動画は 15 MB / 2.6 秒以内。写真は読み込み後に圧縮します。外観設定はバックアップに含みません。
-
-設定画面と実機検証画面を SwiftUI に追加。外観・単位・通知・ファイル・診断を接続します。地図と多くのコレクションは同梱 Web UI を使う構成を維持し、全画面の SwiftUI 化・完全一致とはしていません。
+端末やブラウザのデータ消去に備え、バックアップを保存してください。Web の取り込みは 45 MB、SwiftUI 版は 30 MB までです。短い動画の時間・容量を制限し、写真は保存前に圧縮します。設定・外観は記録のバックアップとは別に保存します。

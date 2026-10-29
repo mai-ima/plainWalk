@@ -1,52 +1,59 @@
 # iOS プロジェクト（iOS 17 以降）
 
-Web と同じ画面を WKWebView で表示し、端末 API を Swift から接続する構成です。元の PlainWalk のソースや署名済みアプリではありません。公開されている機能・画面を基にした独立実装です。
+通常の起動先は `NativeRootView` です。SwiftUI のタブ・ナビゲーション・シート、Canvas の白地図、MapKit の答え合わせ地図を使います。Web ページをそのまま表示する起動構成から変更しました。PlainWalk の公開画面と機能を基にした独立実装で、元アプリのソースや署名済みアプリではありません。
 
-**GitHub macOS の Xcode CI で、本体・Live Activity 拡張のコンパイル、iPhone Simulator の起動、Web/native 接続、位置ジャーナル復旧テストが通過しました。CI: https://github.com/mai-ima/plainWalk/actions/runs/40888890524 。実機・配布署名は未検証で、署名済み IPA はありません。**
+**今回追加した SwiftUI 構成は macOS で検証中で、コンパイル・Simulator 試験の成功は未確認です。実機・配布署名も未検証で、署名済み IPA はありません。** [以前の CI 成功](https://github.com/mai-ima/plainWalk/actions/runs/40888890524) は旧 WebView 構成の検証履歴です。
 
 ## Mac で開く
 
-1. リポジトリ全体を Mac に展開します。`ios/` と `dist/` の相対位置を保ってください。
-2. `npm run build` で境界データを展開してから `ios/PlainWalk.xcodeproj` を Xcode 16 以降で開き、`PlainWalk` スキームを選びます。
+1. リポジトリ全体を Mac に展開し、`npm ci` と `npm run build` を実行します。
+2. `ios/PlainWalk.xcodeproj` を Xcode 16 以降で開き、`PlainWalk` スキームを選びます。
 3. Signing & Capabilities で自分の Team と一意の Bundle Identifier を設定します。アプリと Live Activity 拡張の両方を変更してください。
-4. 実機で位置情報を許可し、必要な場合だけヘルスケアの読み取りを許可します。
+4. 実機にインストールし、記録開始時に位置情報、必要な機能を使うときにモーション・カメラ・HealthKit 等を許可します。
 
-プロジェクトを再生成するときは `python3 ios/generate_project.py` を実行します。生成スクリプトは署名情報を持ちません。手動で編集した署名設定を保存したい場合は再生成前に退避してください。
+`npm run build` は日本の境界 GeoJSON も展開します。ビルド時に `dist/` をアプリの `Web/` にコピーするため、`ios/` と `dist/` の相対位置を保ってください。SwiftUI のバッジはここから実際の境界データを読みます。ローカルの白地図・記録・保存は Web サーバーを必要とせず、MapKit の地図・場所検索には通信が必要です。
 
-ビルド時、`dist/` をアプリの `Web/` にコピーします。リモートサイトを読み込むラッパーではなく、画面とロジックをアプリ内に同梱します。答え合わせ以外は通信を必要としません。
+プロジェクトを再生成する場合は `python3 ios/generate_project.py` を実行します。署名情報を持たない生成スクリプトなので、手動の署名設定を残したい場合は先に退避してください。
 
-## 接続したコード
+## 画面と機能の配置
 
-- `LocationRecorder.swift`: 記録中だけ Core Location の background updates を有効化。3 m フィルタ、GPS 精度・速度チェック。位置更新は追記ジャーナルへ保存し、開始・停止時に atomic なチェックポイントを保存。画面側が止まっていても保持し、復帰時に seq で重複を避けて同期。
-- `NativeBridge.swift`: 自分のローカルメインフレームだけからのメッセージを受付。Web の状態を protected Application Support ファイルへ保存。共有シート、ファイル選択、ネイティブ地図へ接続。
-- `HealthService.swift`: 明示操作で歩数・最近 200 件までの歩行／ラン／ハイク／自転車ワークアウトと許可されたルートを読む。書き込みはしない。未許可とデータなしを区別できない点を UI に表示。
-- `LiveActivityService.swift` と `PlainWalkLive`: 距離と記録状態の ActivityKit / Dynamic Island 表示。通知サーバーは使わない。
-- `NativeMapController.swift`: MapKit の建物、立体表示、航空写真と分割した軌跡。
+| ファイル | 担当 |
+|---|---|
+| `NativeRootView.swift` | 標準タブ、NavigationStack、シート、ファイル取り込み |
+| `NativeMyMapView.swift` | Canvas、パン・拡大縮小、軌跡・写真ピン・現在地、記録ボタン |
+| `NativeAnswerMapView.swift` | MapKit、標準・航空写真・3D、場所検索、旗・しおり |
+| `NativeRecordsView.swift`, `NativeProfileView.swift` | 履歴、カレンダー、詳細、プロフィール |
+| `NativeCollectionsView.swift` | 写真、Vision ステッカー、実境界バッジ、らくがき、共有、ノート |
+| `NativeLayerView.swift`, `NativeSettingsView.swift` | 配色、表示、設定、OS 機能への入口 |
+| `NativePhotoCaptureView.swift` | PhotosPicker、ネイティブカメラ、短い動画 |
+| `NativeAppModel.swift`, `NativeModels.swift`, `NativeStore.swift` | 状態、既存 JSON との互換、検証、atomic な保存 |
+| `NativeTrackMath.swift`, `NativeTrackIO.swift`, `NativeDoodleProgress.swift` | 距離・開拓、GPX / TCX、歩いたらくがきの更新 |
+| `NativeUtilityViews.swift` | メニュー、統計、軌跡の再生、HealthKit の取り込み |
+
+`PlainWalkApp.swift` 内の `LocalWebApp` と `NativeBridge.swift` は互換コードとして残ります。通常起動の白地図・記録・プロフィールを表示するためには使いません。ネイティブとブラウザは同じ保存キー・バックアップ形式を利用しますが、端末間やアプリとブラウザの保存領域は自動同期されません。
+
+SwiftUI 版には LUT / フィルム、手動の軌跡修正、軌跡の動画書き出しがまだありません。これらは Web 版の機能です。ネイティブのノートは文章・紙・書体、スライダーでの配置調整と PNG 出力に対応し、写真・道・ステッカーの既存配置や未知の追加項目を保持します。キャンバス上の直接ドラッグ編集は Web 版との操作差です。[対応表](../docs/reproduction-audit.md)も参照してください。
+
+## 端末 API
+
+- `LocationRecorder.swift`: Core Location。Xcode 版は記録中に背景更新を使用し、精度・揺れ・速度・時間の欠損を判定します。位置は連番付きの追記ジャーナルへ保存します。
+- `MotionService.swift`, `HealthService.swift`: モーション歩数、許可した HealthKit の歩数・ワークアウト・ルート。HealthKit は読み取りのみです。未許可とデータなしを区別できない項目があります。
+- `LiveActivityService.swift`, `PlainWalkLive/`: ActivityKit / Dynamic Island。通常のホーム画面ウィジェットとは別です。
+- `CutoutService.swift`: Vision による被写体の切り抜き。画像の内容によって切り抜けない場合があります。
+- `NativeDeveloperView.swift`, `DiagnosticService.swift`: 権限・保存・ジャーナル復旧を確認する隔離された検証操作。自動送信はしません。
 
 ## 保存と復旧
 
-iOS 側は IndexedDB に依存せず、Web 状態も Application Support に保存します。ファイル保護は初回ロック解除後の background 書き込みに対応する `completeFileProtectionUntilFirstUserAuthentication` です。ネイティブの位置セッションと Web 状態は別々に保持し、終了前に同期します。
+Application Support の `PlainWalk/` に、既存と同じ `web-library.json`、`web-config.json`、`web-active.json` を保存します。IndexedDB に依存しません。ファイル保護には初回ロック解除後の背景書き込みに対応する `completeFileProtectionUntilFirstUserAuthentication` を使います。
 
-OS にプロセスを終了された後は自動的に記録を再開せず、復旧確認を出します。強制終了後の継続記録、端末再起動後、位置情報の権限変更時の動作を実機で検証する必要があります。
+ネイティブの位置セッションと画面用の保存は分かれています。位置ジャーナルはセッション ID と連番を持ち、不完全な行からの復旧や重複の排除を行います。記録中の全経路を位置更新ごとに書き直す方式は避けています。保存データを読み取れない場合は元のファイルを保護し、バックアップからの復元を案内します。
 
-「バックアップを書き出す」で共有シートを開き、「ファイルに保存」から iCloud Drive をユーザーが選べます。直接の iCloud 自動同期ではありません。
+OS 終了・アプリ再起動後は記録を自動で再開せず、復旧した状態を確認します。強制終了・再起動・権限変更・低容量時の動作は実機での確認が必要です。
 
-## 実機で必要な検証
+JSON バックアップと GPX は標準共有シートから Files / iCloud Drive / AirDrop 等へ渡せます。共有の白地図は選んだ線だけのファイル交換で、日時・写真・メモを除きます。招待リンク、共同編集、自動同期、独自の近接交換は未実装です。
 
-- カスタム URL scheme で ES modules と画像／動画の再生が動くこと
-- 位置情報の拒否・許可・概算位置・権限取消時の表示
-- ロック状態で 15 分以上歩き、native の記録点と復帰後の白地図が一致すること
-- 一時停止／再開／終了、OS によるプロセス終了、空き容量不足
-- HealthKit の許可／拒否、Apple Watch 起源の歩数、位置のないワークアウト
-- Live Activity の作成・更新・停止、Dynamic Island、古い Activity の復旧
-- MapKit の軌跡・分割点・建物・航空写真、ネットワーク切断
-- 写真／動画の権限、共有シート、ファイルの取り込みと iCloud Drive への保存
-- VoiceOver、文字サイズ、ダークモード、縦横画面、セーフエリア
+## 実機で確認すること
 
-Apple Watch アプリ、通常のホーム画面ウィジェット、ジオフェンスによる自動開始、共有白地図の自動同期は未実装です。国内の境界データ、切り抜きステッカー、白地図ファイルの共有は同梱の Web UI に含めています。
+[実機検証の手順](../docs/device-testing.md)に沿って、背景 GPS、一時停止・復旧、低容量、HealthKit、Live Activity、MapKit、写真・動画・ファイル、VoiceOver・文字サイズ・セーフエリアを確認してください。Playgrounds の前面記録と、Xcode 版の背景記録を分けて記録します。
 
-ジャーナルはセッション ID と連番を持ち、復旧時に重複を避けます。途中の不完全な行を無視して読める点を回復し、終了時だけ大きい状態を書き直します。これにより、位置更新のたびに全経路を書き直す負荷を避けます。Simulator の DEBUG スモークテストで、ジャーナル復旧とチェックポイント後の重複排除を検証する設定です。
-
-## SwiftUI の設定と実機診断
-
-`NativeSettingsView.swift` は iOS の参照画面に沿う設定、`NativeDeveloperView.swift` と `DiagnosticService.swift` は実機の権限・保存・記録状態を確認します。設定変更は Web と同じ保存ファイルへ接続。通知は許可・時刻・予定へ、ファイルの取り込みは UIDocumentPicker へ接続します。地図とコレクションの全体を SwiftUI に置き換えた状態ではありません。詳細は [実機検証の手順](../docs/device-testing.md)。
+Watch アプリ、通常のホーム画面ウィジェット、ジオフェンス等の自動開始、iCloud 自動同期は未実装です。公式の細かな演出や内部判定の一致も未確認です。

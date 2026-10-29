@@ -99,8 +99,8 @@ private enum NCCaptureError: LocalizedError { case message(String); var errorDes
 private enum NCCapturedMedia { case photo(Data), movie(URL) }
 private func ncCompressedPhoto(_ bytes: Data) throws -> Data {
     guard let source = CGImageSourceCreateWithData(bytes as CFData, nil), let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [kCGImageSourceCreateThumbnailFromImageAlways: true, kCGImageSourceThumbnailMaxPixelSize: 1600, kCGImageSourceCreateThumbnailWithTransform: true] as CFDictionary) else { throw NCCaptureError.message("写真を読み取れませんでした。") }
-    let output = NSMutableData(); guard let destination = CGImageDestinationCreateWithData(output, UTType.jpeg.identifier as CFString, 1, nil) else { throw NCCaptureError.message("写真を保存できませんでした。") }
-    CGImageDestinationAddImage(destination, image, [kCGImageDestinationLossyCompressionQuality: 0.83] as CFDictionary); guard CGImageDestinationFinalize(destination), output.length <= 3_500_000 else { throw NCCaptureError.message("写真を小さくできませんでした。別の写真でお試しください。") }; return output as Data
+    guard let output = CFDataCreateMutable(kCFAllocatorDefault, 0), let destination = CGImageDestinationCreateWithData(output, UTType.jpeg.identifier as CFString, 1, nil) else { throw NCCaptureError.message("写真を保存できませんでした。") }
+    CGImageDestinationAddImage(destination, image, [kCGImageDestinationLossyCompressionQuality: 0.83] as CFDictionary); guard CGImageDestinationFinalize(destination), CFDataGetLength(output) <= 3_500_000 else { throw NCCaptureError.message("写真を小さくできませんでした。別の写真でお試しください。") }; return output as Data
 }
 private struct NCCameraPicker: UIViewControllerRepresentable {
     let video: Bool

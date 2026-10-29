@@ -1,70 +1,59 @@
 # PlainWalk 再現調査・対応表
 
-調査日: 2026-10-29。完全一致の認定ではなく、実装の根拠と残差を記録する。
+更新日: 2026-10-29。公開資料と実装を対照した記録です。完全一致の認定ではありません。
 
-## 一次資料
+## 調査の根拠
 
-1. https://plainwalk.app/ — 白地図、12 m グリッド、写真・動画、エリア、Plus、1.17 の機能一覧。
-2. https://apps.apple.com/jp/app/id6800746478 — iPhone のスクリーンショット、アプリ説明、バージョン履歴。iTunes Lookup API の日本ストア結果も確認。10 枚のスクリーンショットのうち白地図、答え合わせ、旗、配色、記録画面を目視で照合。
-3. https://note.com/plainwalk/n/nab36140b7cf1 — 公式の基本機能の説明。
-4. https://note.com/plainwalk/n/nf160cabe8248 — 写真とつぶやき、旅行での利用。
-5. Web・画像・動画検索も実施。「PlainWalk app youtube 動画 操作」等では全画面と全操作を網羅した動画は見つからず。動画内容を視聴済みとする記録はない。
+- [公式サイト](https://plainwalk.app/)を 2026-10-29 に再確認しました。12 m グリッド、手動 GPS 記録、GPX / TCX の取り込み、選んだ線だけの共有を確認しています。公式の Apple Watch・共有白地図は iPhone 向けとして扱います。
+- [App Store](https://apps.apple.com/jp/app/id6800746478)、提供画像 16 枚、iTunes Lookup の画像、[公式の基本説明](https://note.com/plainwalk/n/nab36140b7cf1)、[写真とつぶやきの説明](https://note.com/plainwalk/n/nf160cabe8248)を調査済みです。画像ごとの記録は [画像分析](app-analysis.md) と [追加調査](research-deep-dive.md)にあります。
+- 実際に取得した Android 1.1.0 XAPK の binary manifest、DEX の型構成、署名証明書の指紋を静的に確認しています。[APK の解析記録](apk-static-analysis.md)と [機械可読の要約](references/android-apk.json)を参照してください。
+- App Store 以外では AppBrain の公開画像 8 枚を取得・個別に確認しました。出典とハッシュは [画像一覧](references/android-images.json)にあります。Android の画面を iOS の正解として扱いません。
+- 動画の検索は行っていますが、全画面・全操作を網羅した操作動画の視聴記録はありません。未確認の動画を視聴済みとはしません。
 
-## Apple の実装資料
+APK から確認した TrackSession / TrackPoint / ModeSpan、位置サービスと receiver の分離は設計の参考です。難読化された名前や権限の存在だけで、元の閾値・UI・実装済み機能を確定しません。コードや素材の一括抽出・流用、ライセンス制御の回避はしていません。以下の画面とアルゴリズムは独立実装です。
 
-- https://developer.apple.com/documentation/corelocation/cllocationmanager/allowsbackgroundlocationupdates
-- https://developer.apple.com/documentation/healthkit/reading-route-data
-- https://developer.apple.com/documentation/widgetkit/activityconfiguration
-- https://developer.apple.com/documentation/webkit/wkwebviewconfiguration
+Apple の実装資料: [SwiftUI Canvas](https://developer.apple.com/documentation/swiftui/canvas)、[MapKit](https://developer.apple.com/documentation/mapkit)、[Core Location 背景更新](https://developer.apple.com/documentation/corelocation/cllocationmanager/allowsbackgroundlocationupdates)、[HealthKit ルート](https://developer.apple.com/documentation/healthkit/reading-route-data)、[ActivityKit](https://developer.apple.com/documentation/activitykit)。
 
 ## 対応表
 
-| 対象 | Web | iOS プロジェクト | 完全一致との残差 |
+SwiftUI 版の通常起動は `NativeRootView` です。画面の実装があることと、コンパイル・実機試験が通過したことを区別します。
+
+| 対象 | Web | SwiftUI / iOS | 残差・確認事項 |
 |---|---|---|---|
-| 白地図・現在地・線 | 実装・ブラウザ検証 | 同じ UI を同梱 | 正確な内部描画仕様は不明。線の頻度・投影は独立実装 |
-| 記録・一時停止・長押し終了 | 実装 | native 位置記録に接続 | アニメーション・振動のタイミングは完全照合していない |
-| 背景 GPS | ブラウザ制限あり | Core Location コード追加 | Xcode CI ビルド通過、ロック状態の実機検証が必要 |
-| 記録の永続化・復旧 | IndexedDB、検証済み | protected file と native session | iOS の OS 終了・低容量は未検証 |
-| 歩数 | 手動 | HealthKit 取得コード | 実機権限・Apple Watch データとの比較が必要 |
-| Health ワークアウト | 対応不可 | ルート選択・読み込みコード | 実機 Health データが必要 |
-| 答え合わせ | OSM タイル | MapKit の標準・航空写真・3D | 地図プロバイダと見た目は元アプリと一致保証なし |
-| 配色・線・ピン・相棒 | 標準＋14 配色、実線・点線、5 ピン種 | 同じ UI | 配色は公式サイト公開値に一致。iOS アプリ内の全配色との対照試験は未完了。相棒の公式アニメーションは不明。相棒は地図上の現在地にも表示 |
-| 写真ピン・フィルム・LUT | 実装、写真の保存検証 | 同じ UI | フィルムは独立実装。公式 LUT の値は不明 |
-| 1〜2 秒動画 | ファイル入力・対応環境のカメラ | 同じ UI | 動画自体へのフィルム加工とルート再生への差し込みは未対応 |
-| ノート・画像書き出し | 紙・書体・写真と道のドラッグ配置・回転・PNG・手動切り抜き・箔/ホログラム | Vision 自動切り抜きコードも追加 | 公式の演出・交換は未対応、Vision は実機未検証 |
-| 再生・動画出力 | 実装、6 秒出力検証 | 同じ UI、実機未検証 | 公式の演出・動画ピン再生・映像合成は未再現 |
-| 軌跡の手動修正 | ドラッグ・削除・分割・Undo、検証 | 同じ UI | 道路への自動スナップは未対応 |
-| 旗 | 複数・順序・座標共有 | 同じ UI | 住所検索・公式の共有導線は未再現 |
-| エリアバッジ | 日本 1,905 区域のポリゴン判定・輪郭・訪問距離、WebKit 検証 | 同じ UI | 日本以外のデータ、公式の結晶造形との一致は未対応 |
-| Live Activities | 対応不可 | ActivityKit と拡張コード | 拡張のビルド通過、実機の表示は未検証。通常のウィジェットではない |
-| らくがき・しおり | 描画保存・歩行時の点の消去、しおりから旗 | 同じ UI | 公式の消去判定・演出とは独立実装 |
-| ステッカー一覧 | ノートの切り抜きを一覧化・PNG 共有 | 同じ UI | 近接交換は未対応 |
-| 共有白地図 | 選択した線のみのファイル交換 | 同じ UI | 招待リンク・自動同期は未対応 |
-| Watch・自動開始 | 未対応 | 未実装 | 追加ターゲット、権限、同期プロトコルが必要 |
-| iCloud | ファイルの手動保存 | Files で選べる共有・復元 | 直接の自動同期ではない |
+| 白地図・現在地・線 | SVG、ブラウザ検証 | Canvas、パン・拡大縮小、現在地とピン | 内部描画仕様・公式との細かな一致は不明 |
+| 記録・一時停止・長押し終了 | 前面 GPS、保存失敗・復旧の回帰試験 | Core Location と標準 UI・触覚 | 実歩行、権限変更、演出の照合が必要 |
+| 背景 GPS | ブラウザ制限あり | Xcode 版に背景更新・ジャーナル | Playgrounds は前面のみ。実機未検証 |
+| 保存・復旧 | IndexedDB | 保護付きファイル、ID・連番、互換 JSON | OS 終了・低容量時の実機試験が必要 |
+| 歩数・Health ワークアウト | 歩数の手動入力 | モーション、Xcode 版の HealthKit 読み取り | 実機権限と実データの照合が必要 |
+| 答え合わせ | OSM タイル | MapKit の標準・航空写真・3D・検索 | プロバイダと描画の一致保証なし |
+| 配色・線・ピン・相棒 | 標準＋14 配色、実線・点線・5 ピン種 | SwiftUI の選択と Canvas の描画 | 猫・動きは独自実装、全状態の対照未完了 |
+| 写真・短い動画・ひとこと | 保存・再生 | PhotosPicker、カメラ、動画再生 | 実機の権限、位置・時刻の保持を確認する |
+| フィルム・3D LUT | 実装 | 未実装 | 公式 LUT の値や動画加工は未再現 |
+| ノート | 自由配置、回転、切り抜き、PNG、仕上げ | 文章・紙・書体、スライダーの配置調整、PNG | ネイティブは直接ドラッグ編集なし。実機の描画・出力は未検証 |
+| 軌跡の再生 | 再生・動画出力 | ネイティブの再生 | SwiftUI の動画書き出しは未実装 |
+| 軌跡の手動修正 | 移動・削除・分割・Undo | 未実装 | 道路への自動スナップも未対応 |
+| 旗・しおり | 方角・座標共有、しおりから旗 | MapKit の検索・選択、旗・しおり | 公式との導線・表示の完全対照は未完了 |
+| エリアバッジ | 実 GeoJSON、ブラウザ検証 | 日本 1,905 区域の実境界を Swift で判定 | 日本以外、公式と同じ結晶・立体造形は未対応 |
+| らくがき | 地図への描画・歩行時の更新 | MapKit 描画、保存・歩行での更新 | 消去判定・演出は独立実装 |
+| ステッカー | 手動切り抜き、一覧・PNG | Vision、一覧、共有シート | 公式の近接交換は未実装 |
+| 共有白地図 | 選んだ線の JSON ファイル | 同じ形式のファイル作成・交換 | 招待リンク・共同編集・自動同期は未対応 |
+| GPX / TCX、バックアップ | 取り込み、GPX / JSON 出力 | Files、XML 解析、標準共有 | 双方で形式検証。未知の追加データを保持する |
+| Live Activities | 対応不可 | ActivityKit / Dynamic Island 拡張 | 今回のコンパイルと実機表示は未確認 |
+| Watch・通常ウィジェット・自動開始 | 未対応 | 未実装 | 別ターゲットや権限・同期実装が必要 |
+| iCloud | ファイルの手動保存 | Files / 共有シートから選択 | 直接の自動同期ではない |
 
-## 完全再現を断定できない理由
+## 配色と計算の参照範囲
 
-公開の宣伝用画面だけでは、全設定、全モーダル、初期状態、エラー状態、各 OS バージョン、アニメーションや触覚の仕様は確定できない。実機の公式アプリと同じデータを用いた画面・操作の対照試験が必要。現在は元アプリの全状態の記録がなく、作業機は Linux で、GitHub macOS CI による Xcode ビルドは通過。Apple の実機署名環境はない。
+公式の公開配色アセット `https://plainwalk.app/assets/lang-menu-Bx17NVHy.js` の名称・paper・ink を照合した記録があります。標準＋14 色に反映していますが、iOS の全画面・明暗・状態の色が同一だとは断定しません。確認済みアセットの SHA-256 は `07983f270bb828d46747f64b7a39baeab3075ed710e17ae322ecb22b5067b34a` です。
 
-独自実装や模擬検証を公式との完全一致として扱わない。未実装のボタンに偽の成功結果や架空の健康・境界データを出すことはしない。
+開拓距離は 12 m セルと区間のサンプリングによる近似です。GPS の精度・揺れ・速度・時間欠損の処理、らくがきの消去、エリア内の距離も独自実装です。公開仕様や APK の型の存在から元の数値を復元できたとはしません。境界の出典とライセンスは [NOTICE](../web/public/data/NOTICE.md)にあります。
 
-前回の指定を引き継ぎ、購入・課金・広告を設けず、実装済みのカスタマイズは無料。beta 機能は設定から切替可能。
+## 検証の状況
 
-## 配色データの照合
+2026-10-29 のローカルで、単体テスト 23 件、Chromium 7 スイート、構文チェック、Web ビルドが通過しました。追加したデータ整合性テストは、空の GPX / TCX 座標、区間の切断、時刻 0、保存失敗、保存直後の再読み込み、重複排除、再取り込みを検証します。Web/native の連携はモックであり、iOS の動作試験ではありません。時刻のないファイルの時刻は補間・補完値です。
 
-https://plainwalk.app/assets/lang-menu-Bx17NVHy.js の公開配色定義を確認。標準＋14 色の名称、paper と ink の値を反映。これは公式 Web サイトの値であり、iOS の全状態の色が同じだとは断定しない。
+以前の [Xcode CI 40888890524](https://github.com/mai-ima/plainWalk/actions/runs/40888890524) と [Playgrounds CI 40898218214](https://github.com/mai-ima/plainWalk/actions/runs/40898218214)、Linux WebKit の操作試験は旧構成の履歴です。今回の SwiftUI 通常起動、Canvas、MapKit、コレクションを含む最新の macOS コンパイル・Simulator 結果は [README](../README.md)で確認してください。旧構成の成功を今回の成功として扱いません。
 
-検証した配色アセットの SHA-256: `07983f270bb828d46747f64b7a39baeab3075ed710e17ae322ecb22b5067b34a`
+公開画像では全設定・初期状態・エラー・アニメーション・触覚を確定できません。公式アプリと同じデータを使う実機の対照試験が必要です。背景 GPS、HealthKit、カメラ、電池消費、配布署名は未検証で、署名済み IPA はありません。独自実装・モック・Simulator を本家の完全再現として扱いません。
 
-## 継続改善
-
-日本の市区町村 1,905 区域の境界を端末内で判定するエリアバッジを実装。出典は web/public/data/NOTICE.md。ノートに写真・道・切り抜き画像を配置し、サイズ・回転・紙・書体・仕上げを変更できる。WebKit の不足ライブラリを作業領域内に準備し、Linux WebKit でモバイルの GPX・エリアバッジ・ノート・保存復旧の実操作が通過。iPhone の実機試験とは区別する。
-
-## iOS 起動検証
-
-GitHub Actions 40888890524 にて、iOS 本体と Live Activity 拡張のビルド、iPhone Simulator 上でのアプリ起動、Web からネイティブ保存への接続、位置ジャーナルの復旧と重複防止の自己テストが通過。起動画像も生成。実機の GPS・HealthKit・電池消費・署名は未検証。
-
-## APK と SwiftUI の追加
-
-Android 1.1.0 の XAPK を取得し、binary manifest・DEX の型の構成・署名証明書の指紋を静的解析した。コードや素材は取り込まず、[解析結果](apk-static-analysis.md) に構成と限界を記録。Google Play 由来の AppBrain 公開画像 8 枚も個別に確認。iOS の設定と実機診断は SwiftUI で追加し、外観・単位・通知・HealthKit・ファイルの入口へ接続。完全な SwiftUI 化と本家の完全一致は未達。
+実装済みのカスタマイズは無料で、課金・広告は追加しません。使えない自動開始・同期等は説明を表示し、架空の健康データや成功結果は出しません。
