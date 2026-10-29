@@ -16,7 +16,6 @@ export function createCollections(ctx) {
     id,
     toast,
     download,
-    project,
     screenToPoint,
     paths,
   } = ctx;
@@ -80,6 +79,7 @@ export function createCollections(ctx) {
     $("#doodleToolbar").hidden = false;
     $("#mapBanner").hidden = false;
     $("#mapBanner").textContent = "1 本指で描く · 完了すると保存します";
+    $("#mapBanner").onclick = null;
     $("#mapPage").classList.add("drawing-doodle");
     draw();
   }

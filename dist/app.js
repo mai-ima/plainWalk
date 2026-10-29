@@ -430,10 +430,13 @@ function draw() {
         `${config.highlight !== false ? `<circle cx="${x}" cy="${y}" r="${radius}" fill="#8ab7ee" fill-opacity=".15" stroke="none"/>` : ""}<circle cx="${x}" cy="${y}" r="5" fill="${answer ? "#208ac4" : color}" stroke="var(--paper)" stroke-width="2"/>${config.locationMark && config.locationMark !== "dot" && view.zoom >= 14 && !answer ? `<foreignObject x="${x - 13}" y="${y - 30}" width="26" height="42"><div xmlns="http://www.w3.org/1999/xhtml">${companionSVG(config.locationMark, !!active && !paused && Date.now() - current.t < 10000, current.heading || 0)}</div></foreignObject>` : ""}`;
     } else $("#location").innerHTML = "";
     $("#mapPage").classList.toggle("answer-map", answer);
-    $("#answerButton").innerHTML = answer ? "閉じる" : icon("map");
-    $(".map-caption").innerHTML = answer
-      ? "<strong>答え合わせマップ</strong>"
-      : "<strong>歩いた道が、地図になる。</strong><span>まだ誰も描いていない場所を、あなたの一歩で。</span>";
+    if ($("#answerButton").dataset.mode !== String(answer)) {
+      $("#answerButton").dataset.mode = String(answer);
+      $("#answerButton").innerHTML = answer ? "閉じる" : icon("map");
+      $(".map-caption").innerHTML = answer
+        ? "<strong>答え合わせマップ</strong>"
+        : "<strong>歩いた道が、地図になる。</strong><span>まだ誰も描いていない場所を、あなたの一歩で。</span>";
+    }
     drawTiles();
     const scale =
       metersPerPixel() *
@@ -2504,7 +2507,13 @@ document.addEventListener("visibilitychange", () => {
 window.addEventListener("pagehide", () => {
   if (active) persistActive();
 });
-setInterval(updateStats, 1000);
+let statsDate = today();
+setInterval(() => {
+  if (active || statsDate !== today()) {
+    statsDate = today();
+    updateStats();
+  }
+}, 1000);
 if ("serviceWorker" in navigator)
   navigator.serviceWorker.register("./sw.js").catch(() => {});
 if (data.walks.length) fit(data.walks.flatMap((w) => w.points));

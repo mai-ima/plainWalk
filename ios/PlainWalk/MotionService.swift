@@ -4,9 +4,11 @@ import Foundation
 final class MotionService {
     private let activity = CMMotionActivityManager()
     private let pedometer = CMPedometer()
+    private var running = false
     var mode = "walking"
     func start() {
-        guard CMMotionActivityManager.isActivityAvailable() else { return }
+        guard !running, CMMotionActivityManager.isActivityAvailable() else { return }
+        running = true
         activity.startActivityUpdates(to: .main) { [weak self] update in
             guard let update else { return }
             if update.automotive { self?.mode = "vehicle" }
@@ -15,7 +17,11 @@ final class MotionService {
             else if update.walking { self?.mode = "walking" }
         }
     }
-    func stop() { activity.stopActivityUpdates() }
+    func stop() {
+        guard running else { return }
+        activity.stopActivityUpdates()
+        running = false
+    }
     func steps() async throws -> Double? {
         guard CMPedometer.isStepCountingAvailable() else { throw NativeError.message("この端末では歩数計を利用できません。") }
         let start = Calendar.current.startOfDay(for: Date())
