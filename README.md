@@ -82,7 +82,9 @@ npm run test:browser
 
 2026-10-29 のローカル検証では、単体テスト 25 件、Chromium の 7 スイート、構文チェック、Web ビルドが通過しました。新しい保存整合性テストは、GPX / TCX、保存失敗、再読み込み、取り込みの再試行、ネイティブ拡張データの保持を確認します。ネイティブ接続のブラウザ試験はモックです。Linux WebKit の以前の操作試験も、iPhone 実機検証とは区別します。
 
-[GitHub Actions 40922182440](https://github.com/mai-ima/plainWalk/actions/runs/40922182440) で、Xcode 本体・Live Activity 拡張・Swift Playgrounds パッケージのコンパイルが通過しました。Xcode 版は iPhone Simulator で起動し、記録復旧・保存失敗と再試行・GPX / TCX・共有ファイル・地図カメラの自己テスト、主要画面の表示完了待ち、診断画像のタイトル検出も通過しています。画像を見比べ、初期地図のカメラと設定ラベルを修正しました。実機の背景 GPS・HealthKit・電池消費・配布署名は未検証で、署名済み IPA はありません。
+[GitHub Actions 40972605104](https://github.com/mai-ima/plainWalk/actions/runs/40972605104) で Web、Xcode 本体・Live Activity 拡張、Swift Playgrounds パッケージがすべて成功しました。Xcode 版は iPhone Simulator で、保存復旧・保存失敗と再試行・GPX / TCX・共有ファイル・地図カメラ・軌跡編集・実 CoreImage の LUT 変換・境界処理の自己テストが通過しました。設定・写真一覧・地図・LUT など 12 画面を表示完了後に撮影し、診断画像のタイトル検出も通過しています。初回の設定遷移の失敗を修正し、全面表示と地図配置を撮影画像で確認しました。
+
+実機の背景 GPS・HealthKit・電池消費・配布署名は未検証で、署名済み IPA はありません。初回の自己テストと、その後の画面撮影専用起動を分けています。Web の背景動作制限や、OS による標準タブの描画差は残ります。
 
 公式サイトは 2026-10-29 に再確認しました。12 m グリッド、手動記録、GPX / TCX、選んだ線だけの共有という公開仕様を参照しています。内部の判定閾値や全画面の完全一致を確定したものではありません。
 
