@@ -14,10 +14,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npm run build
       - run: npm test
       - run: npm run check
       - run: python3 ios/validate_project.py
+      - run: npx playwright install --with-deps chromium
+      - name: Verify mobile browser flows
+        run: |
+          python3 -m http.server 4173 --directory dist > "$RUNNER_TEMP/plainwalk-preview.log" 2>&1 &
+          npm run test:browser
   ios:
     runs-on: macos-latest
     timeout-minutes: 20
@@ -41,3 +47,26 @@ jobs:
           name: ios-simulator-screenshot
           path: .build/screenshots
           if-no-files-found: ignore
+  playgrounds:
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm run playgrounds
+      - name: Compile Swift Playgrounds app package
+        working-directory: ios/Playgrounds/PlainWalk.swiftpm
+        run: >-
+          xcodebuild -scheme PlainWalkPlaygrounds
+          -configuration Debug -sdk iphonesimulator
+          -destination 'generic/platform=iOS Simulator'
+          -derivedDataPath "$GITHUB_WORKSPACE/.build/playgrounds"
+          CODE_SIGNING_ALLOWED=NO build
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: plainwalk-swift-playgrounds
+          path: artifacts/packages/PlainWalk.swiftpm.zip
+          if-no-files-found: error

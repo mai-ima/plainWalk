@@ -4,9 +4,17 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test tests/core.test.js tests/effects.test.js tests/areas.test.js",
+    "test": "node --test tests/unit/*.test.js",
     "check": "node scripts/check.mjs",
     "start": "python3 -m http.server 4173 --directory dist",
-    "build": "node scripts/build.mjs"
+    "build": "node scripts/build.mjs",
+    "test:browser": "node scripts/test-browser.mjs",
+    "playgrounds": "npm run build && python3 scripts/prepare-playgrounds.py"
+  },
+  "devDependencies": {
+    "playwright": "1.57.0"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

@@ -1,10 +1,9 @@
-*-preview.png
+dist/
+artifacts/
 node_modules/
-*.tar.gz
-*-debug.png
-dist/data/japan-municipalities.geojson
 .vercel/
 .DS_Store
 *.xcuserstate
 xcuserdata/
 .build/
+ios/Playgrounds/PlainWalk.swiftpm/Sources/

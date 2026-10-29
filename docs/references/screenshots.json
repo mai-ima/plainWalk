@@ -1,0 +1,106 @@
+{
+  "appVersion": "1.18.0",
+  "releaseDate": "2026-10-25T14:44:30Z",
+  "images": [
+    {
+      "index": 1,
+      "source": "Apple App Store Japan",
+      "url": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/52/fa/c5/52fac583-7e2f-e170-9f05-163bd8b53b10/01_hook.png/1206x2622bb.jpg",
+      "width": 1206,
+      "height": 2614,
+      "sha256": "c1331b1759141b16f8896d0323c5ad7ff45d9e2bc365ea2314efe21c16cba514",
+      "inspected": "2026-10-29",
+      "kind": "promotional screenshot; not a live UI capture"
+    },
+    {
+      "index": 2,
+      "source": "Apple App Store Japan",
+      "url": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/d3/04/63/d304639a-5a1e-cdcd-686d-f728333e26ba/02_value.png/1206x2622bb.jpg",
+      "width": 1206,
+      "height": 2614,
+      "sha256": "e972927bc67a5bac98a93324f12b9196b652e74d1dca35f182466bc5a68d7396",
+      "inspected": "2026-10-29",
+      "kind": "promotional screenshot; not a live UI capture"
+    },
+    {
+      "index": 3,
+      "source": "Apple App Store Japan",
+      "url": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/70/4d/68/704d68d2-41ae-3a24-bbe8-0b6ab9131fd5/03_realmap.png/1206x2622bb.jpg",
+      "width": 1206,
+      "height": 2614,
+      "sha256": "8aeea83a316c560a6d58ed5aacfe5c5227c7dc01ad7314f88691a0e24f38bde5",
+      "inspected": "2026-10-29",
+      "kind": "promotional screenshot; not a live UI capture"
+    },
+    {
+      "index": 4,
+      "source": "Apple App Store Japan",
+      "url": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/b8/1b/20/b81b2088-2035-33da-8f5d-58788125f22b/04_flag.png/1206x2622bb.jpg",
+      "width": 1206,
+      "height": 2614,
+      "sha256": "8cde1de6e63d7da819bc4b76a198e152a3730664c7d36d383c1cb5545706f364",
+      "inspected": "2026-10-29",
+      "kind": "promotional screenshot; not a live UI capture"
+    },
+    {
+      "index": 5,
+      "source": "Apple App Store Japan",
+      "url": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/74/a1/af/74a1af66-68d7-1aa6-fb6b-bc51fad828cc/05_spots.png/1206x2622bb.jpg",
+      "width": 1206,
+      "height": 2614,
+      "sha256": "65c60725c1f669b2e54792f11bc9dcc1464af7bc2e7a3d944caf08e1a49dcdf4",
+      "inspected": "2026-10-29",
+      "kind": "promotional screenshot; not a live UI capture"
+    },
+    {
+      "index": 6,
+      "source": "Apple App Store Japan",
+      "url": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/d2/6c/33/d26c33cb-4fff-2c73-33c6-ec4e55afe20a/06_background.png/1206x2622bb.jpg",
+      "width": 1206,
+      "height": 2614,
+      "sha256": "f48ecad9fe395a2e418327907fa515d9b8c79f3f33c9ee0c04465dbac51402d3",
+      "inspected": "2026-10-29",
+      "kind": "promotional screenshot; not a live UI capture"
+    },
+    {
+      "index": 7,
+      "source": "Apple App Store Japan",
+      "url": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/63/54/07/63540761-a340-e3ee-4b9b-e5e83b4b6260/07_growth.png/1206x2622bb.jpg",
+      "width": 1206,
+      "height": 2614,
+      "sha256": "18f0266ca8b5415156ad0edb592a1621317de4a47d224defdcb73d5dbb1d7cc9",
+      "inspected": "2026-10-29",
+      "kind": "promotional screenshot; not a live UI capture"
+    },
+    {
+      "index": 8,
+      "source": "Apple App Store Japan",
+      "url": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/24/02/c6/2402c66b-8857-d870-33e9-7ce79297c6ee/08_badges.png/1206x2622bb.jpg",
+      "width": 1206,
+      "height": 2614,
+      "sha256": "774389f459b88848e00f6db9ba2e8cf8d3e8ede5639e613c59dfc176af430ede",
+      "inspected": "2026-10-29",
+      "kind": "promotional screenshot; not a live UI capture"
+    },
+    {
+      "index": 9,
+      "source": "Apple App Store Japan",
+      "url": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/b9/23/15/b9231511-c343-f710-dc88-db96c2b9c52d/09_customize.png/1206x2622bb.jpg",
+      "width": 1206,
+      "height": 2614,
+      "sha256": "75240d29792611309ca5be14ecfe6158c0c3bde021b06ba3aaaef2ad77143a9e",
+      "inspected": "2026-10-29",
+      "kind": "promotional screenshot; not a live UI capture"
+    },
+    {
+      "index": 10,
+      "source": "Apple App Store Japan",
+      "url": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/4b/66/6c/4b666ca4-c568-2d42-5849-67a6fcefe3a3/10_proof.png/1206x2622bb.jpg",
+      "width": 1206,
+      "height": 2614,
+      "sha256": "056319b690247509cfd1ff22600a27921061c5ab85bde88dd6d772d1ee132ea7",
+      "inspected": "2026-10-29",
+      "kind": "promotional screenshot; not a live UI capture"
+    }
+  ]
+}

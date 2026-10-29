@@ -1,7 +1,4 @@
-const {
-  chromium,
-  webkit,
-} = require("/opt/codex/cua_node/lib/node_modules/playwright");
+const { chromium, webkit } = require("./support.cjs").playwright;
 const assert = require("node:assert/strict");
 (async () => {
   const engine = process.env.PW_ENGINE === "webkit" ? webkit : chromium;
@@ -9,8 +6,8 @@ const assert = require("node:assert/strict");
     headless: true,
     executablePath:
       engine === webkit
-        ? "/workspace/scratch/run-webkit.sh"
-        : "/usr/bin/chromium",
+        ? require("./support.cjs").webkitExecutable
+        : require("./support.cjs").chromiumExecutable,
     args: engine === chromium ? ["--no-sandbox"] : [],
   });
   const ctx = await browser.newContext({
@@ -29,13 +26,17 @@ const assert = require("node:assert/strict");
   await page
     .getByText("ここいいなの写真から切り抜いたステッカーが、ここに集まります。")
     .waitFor();
-  await page.screenshot({ path: "stickers-reference-preview.png" });
+  await page.screenshot({
+    path: require("./support.cjs").artifact("stickers-reference-preview.png"),
+  });
   await button("戻る").click();
   await button("気になる場所").click();
   await page
     .getByRole("heading", { name: "気になる場所はまだありません" })
     .waitFor();
-  await page.screenshot({ path: "bookmarks-reference-preview.png" });
+  await page.screenshot({
+    path: require("./support.cjs").artifact("bookmarks-reference-preview.png"),
+  });
   await button("マイマップ").click();
   await button("答え合わせマップ").click();
   await button("しおりを挟む").click();
@@ -48,7 +49,9 @@ const assert = require("node:assert/strict");
   assert.equal(await page.locator("#pins [data-flag]").count(), 1);
   await button("プロフィール").click();
   await button("らくがき").click();
-  await page.screenshot({ path: "doodles-reference-preview.png" });
+  await page.screenshot({
+    path: require("./support.cjs").artifact("doodles-reference-preview.png"),
+  });
   await button("らくがきを描く").last().click();
   await page.mouse.move(100, 300);
   await page.mouse.down();
@@ -66,19 +69,19 @@ const assert = require("node:assert/strict");
     (await page.locator("#doodles path").getAttribute("d")).includes("L") ||
       (await page.locator("#doodles path").getAttribute("d")).includes("Q"),
   );
-  await page
-    .locator("#importFile")
-    .setInputFiles({
-      name: "shared.gpx",
-      mimeType: "application/gpx+xml",
-      buffer: Buffer.from(
-        '<gpx><trk><trkseg><trkpt lat="35.68" lon="139.76"><time>2026-10-29T10:00:00Z</time></trkpt><trkpt lat="35.681" lon="139.76"><time>2026-10-29T10:02:00Z</time></trkpt></trkseg></trk></gpx>',
-      ),
-    });
+  await page.locator("#importFile").setInputFiles({
+    name: "shared.gpx",
+    mimeType: "application/gpx+xml",
+    buffer: Buffer.from(
+      '<gpx><trk><trkseg><trkpt lat="35.68" lon="139.76"><time>2026-10-29T10:00:00Z</time></trkpt><trkpt lat="35.681" lon="139.76"><time>2026-10-29T10:02:00Z</time></trkpt></trkseg></trk></gpx>',
+    ),
+  });
   await button("この道を白地図に残す").click();
   await button("プロフィール").click();
   await button("共有の白地図").click();
-  await page.screenshot({ path: "shared-reference-preview.png" });
+  await page.screenshot({
+    path: require("./support.cjs").artifact("shared-reference-preview.png"),
+  });
   await button("紙を作る").click();
   await page.locator("#sharedName").fill("週末の白地図");
   await page.locator("[data-shared-walk]").check();
@@ -99,13 +102,11 @@ const assert = require("node:assert/strict");
   await button("マイマップ").click();
   await button("メニュー").click();
   await button("GPX / TCX を取り込む").click();
-  await page
-    .locator("#importFile")
-    .setInputFiles({
-      name: "white-map.json",
-      mimeType: "application/json",
-      buffer: Buffer.from(JSON.stringify(content)),
-    });
+  await page.locator("#importFile").setInputFiles({
+    name: "white-map.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(content)),
+  });
   await page
     .getByRole("heading", { name: "共有の白地図", exact: true })
     .waitFor();
