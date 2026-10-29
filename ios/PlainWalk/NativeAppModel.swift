@@ -93,7 +93,8 @@ private struct NativeImportPayload: @unchecked Sendable {
             for raw in active?["points"] as? [[String:Any]] ?? [] {if let point=NativePoint(json:raw){pointsByTime[point.t]=point}}
             for raw in session.points {let point=NativePoint(raw);pointsByTime[point.t]=point}
             activePoints=pointsByTime.values.sorted{$0.t<$1.t}
-            active?["pauseAt"]=nativeTime(active?["pauseAt"]) ?? activePoints.last?.t ?? session.start
+            let recoveredPauseAt = nativeTime(active?["pauseAt"]) ?? activePoints.last?.t ?? session.start
+            active?["pauseAt"] = recoveredPauseAt
             isPaused=true;recordingDistance=NativeTrackMath.trailDistance(activePoints);recorderDistanceOffset=max(0,recordingDistance-session.distance)
         } else if let raw=active {
             activePoints=(raw["points"] as? [[String:Any]] ?? []).compactMap(NativePoint.init(json:));isPaused=true

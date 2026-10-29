@@ -35,7 +35,7 @@ private struct LocationJournalEntry: Codable {
     var point: RecordedPoint
 }
 
-@MainActor final class LocationRecorder: NSObject, @preconcurrency CLLocationManagerDelegate, ObservableObject {
+@MainActor final class LocationRecorder: NSObject, @preconcurrency CLLocationManagerDelegate, @preconcurrency ObservableObject {
     let manager = CLLocationManager()
     let motion = MotionService()
     let objectWillChange = ObservableObjectPublisher()
