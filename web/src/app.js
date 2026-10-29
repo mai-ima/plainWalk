@@ -676,6 +676,17 @@ function startWatch() {
   );
 }
 async function requestWake() {
+  if (native) {
+    await nativeCall("idleTimer", {
+      enabled:
+        !!config.beta &&
+        !!config.wake &&
+        !!active &&
+        !paused &&
+        document.visibilityState === "visible",
+    }).catch(() => {});
+    return;
+  }
   if (
     config.beta &&
     config.wake &&
@@ -759,6 +770,7 @@ async function stopWalk() {
   toast("今日の道を、白地図に残しました。");
 }
 function clearWatch() {
+  if (native) nativeCall("idleTimer", { enabled: false }).catch(() => {});
   if (native)
     nativeCall("locationStop", { end: !active }).catch((e) => toast(e.message));
   if (watch !== null) {
@@ -2818,7 +2830,13 @@ onNative((message) => {
     config = { ...config, ...message.config };
     trace.enable(config.developerMode === true);
     saveConfig()
-      .then(() => developer.apply())
+      .then(() => {
+        developer.apply();
+        updateStats();
+        requestWake();
+        if (tab === "profile" && !$("#contentPage").dataset.route)
+          renderProfile();
+      })
       .catch((e) => toast(e.message));
     return;
   }
@@ -2838,7 +2856,9 @@ onNative((message) => {
     }
     updateStats();
   } else if (message.event === "foreground") {
-    syncNative().catch((e) => toast(e.message));
+    syncNative()
+      .then(() => requestWake())
+      .catch((e) => toast(e.message));
   } else if (message.event === "error") {
     trace.record("error", { source: "native", code: "recorder" });
     geoError = message.message;

@@ -31,3 +31,5 @@
 Playgrounds 版は前面 GPS のみを対象にする。HealthKit・Live Activity 拡張・ロック中の継続記録の検証には通常の Xcode 版を使う。
 
 CI でのコンパイル・Simulator 起動と、この実機検証を同じものとして扱わない。SwiftUI 設定画面の Simulator 起動画像も CI のアーティファクトに保存する構成。
+
+スリープ防止は beta の設定を有効にした記録中だけ働きます。Xcode / Playgrounds 版は UIApplication の idle timer、Web は対応ブラウザの Screen Wake Lock を使い、記録の停止・一時停止で解除します。

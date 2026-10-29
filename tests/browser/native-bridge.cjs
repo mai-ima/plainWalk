@@ -44,6 +44,7 @@ const assert = require("node:assert/strict");
           return { steps: 4321 };
         if (action === "healthWorkouts") return [];
         if (
+          action === "idleTimer" ||
           action === "showSettings" ||
           action === "ready" ||
           action === "haptic" ||

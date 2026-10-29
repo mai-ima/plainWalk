@@ -75,6 +75,7 @@ import MapKit
                     try recorder.start(id: payload["sessionID"] as? String, start: payload["start"] as? Double, recording: payload["recording"] as? Bool ?? false)
                     reply(id)
                 case "locationStop": try recorder.stop(end: payload["end"] as? Bool ?? false); reply(id)
+                case "idleTimer": UIApplication.shared.isIdleTimerDisabled = payload["enabled"] as? Bool ?? false; reply(id)
                 case "appearance":
                     let mode = payload["mode"] as? String ?? "auto"
                     webView?.window?.overrideUserInterfaceStyle = mode == "dark" ? .dark : mode == "light" ? .light : .unspecified
