@@ -66,7 +66,8 @@ import UniformTypeIdentifiers
                 "trackMath": try NativeTrackMath.selfTest(),
                 "trackIO": try NativeTrackIO.selfTest(),
                 "importCompatibility": try NativeAppModel.importSelfTest(),
-                "modelState": try NativeAppModel.stateSelfTest()
+                "modelState": try NativeAppModel.stateSelfTest(),
+                "mapCamera": try NativeAnswerMapView.cameraSelfTest()
             ]
             let folder = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("PlainWalk")
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)

@@ -135,6 +135,52 @@ import MapKit
             searching = false; searchError = "検索できませんでした。通信状態を確認して、もう一度お試しください。"
         }
     }
+
+#if DEBUG
+    /// Exercise MapKit's real configuration/region/camera interaction, including
+    /// the initial nil-to-flat pitch transition that previously reset the map.
+    static func cameraSelfTest() throws -> Bool {
+        func require(_ condition: @autoclosure () -> Bool, _ name: String) throws {
+            guard condition() else { throw NativeError.message("答え合わせマップのカメラ検証に失敗: " + name) }
+        }
+        func configuredMap(walks: [NativeWalk] = [], current: NativePoint? = nil) -> MKMapView {
+            let map = MKMapView(frame: CGRect(x: 0, y: 0, width: 320, height: 600))
+            let surface = NativeAnswerMapSurface(walks: walks, activePoints: [], libraryRevision: 0,
+                flags: [], current: current, satellite: false, pitched: false,
+                focus: nil, focusRevision: 0, locateRevision: 0, zoomRevision: 0, zoomIn: true,
+                onRegion: { _ in }, onPick: { _ in })
+            let coordinator = NativeAnswerMapSurface.Coordinator(surface)
+            coordinator.map = map; map.delegate = coordinator
+            // Reproduce makeUIView's initial region before the configuration is
+            // applied, then exercise the exact update path used by SwiftUI.
+            map.setRegion(.init(center: .init(latitude: 36.5, longitude: 137.2), span: .init(latitudeDelta: 16, longitudeDelta: 16)), animated: false)
+            coordinator.update(surface, map: map)
+            map.layoutIfNeeded()
+            coordinator.update(surface, map: map)
+            map.delegate = nil; coordinator.map = nil
+            return map
+        }
+        let empty = configuredMap()
+        try require((30...45).contains(empty.region.center.latitude) && (125...150).contains(empty.region.center.longitude), "空データで日本を表示")
+        try require(empty.region.span.latitudeDelta > 5, "空データで地域全体を表示")
+        try require(abs(empty.camera.pitch) < 0.1, "初期表示は平面")
+
+        let point = NativePoint(lat: 35.6812, lon: 139.7671, t: 1_000)
+        let located = configuredMap(current: point)
+        try require(abs(located.region.center.latitude - point.lat) < 0.01 && abs(located.region.center.longitude - point.lon) < 0.01, "初回の平面設定でGPS中心を保持")
+        try require(located.region.span.latitudeDelta < 0.1, "GPSの表示倍率を保持")
+
+        let points = [NativePoint(lat: 34.68, lon: 135.50, t: 1_000), NativePoint(lat: 34.69, lon: 135.52, t: 11_000)]
+        guard let walk = NativeWalk(json: ["id": "camera-self-test", "name": "camera", "start": 1_000.0, "end": 11_000.0, "points": points.map(\.json)]) else {
+            throw NativeError.message("カメラ検証用の軌跡を生成できません。")
+        }
+        let routed = configuredMap(walks: [walk])
+        try require(points.allSatisfy { routed.visibleMapRect.contains(MKMapPoint(CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon))) }, "初回の平面設定で軌跡全体を保持")
+        try require(abs(routed.region.center.latitude - 34.685) < 0.05 && abs(routed.region.center.longitude - 135.51) < 0.05, "軌跡の中心を保持")
+        try require(routed.region.span.latitudeDelta < 0.2, "軌跡の表示倍率を保持")
+        return true
+    }
+#endif
 }
 
 private struct NativeAnswerPlace: Equatable { var name: String; var lat: Double; var lon: Double; var coordinate: CLLocationCoordinate2D { .init(latitude: lat, longitude: lon) } }
@@ -201,6 +247,11 @@ private struct NativeAnswerResult: Identifiable { var id: String; var place: Nat
                 initialized = true
                 if let current = next.current { locate(current, map: map, animated: false) }
                 else if let first = savedLines.first { var rect = first.boundingMapRect; for line in savedLines.dropFirst() { rect = rect.union(line.boundingMapRect) }; map.setVisibleMapRect(rect, edgePadding: .init(top: 60, left: 35, bottom: 70, right: 70), animated: false) }
+                else {
+                    // Apply the empty-library viewport after MapKit's map
+                    // configuration, which can reset a region set in makeUIView.
+                    map.setRegion(.init(center: .init(latitude: 36.5, longitude: 137.2), span: .init(latitudeDelta: 16, longitudeDelta: 16)), animated: false)
+                }
             }
             if focusedRevision != next.focusRevision {
                 focusedRevision = next.focusRevision
@@ -219,8 +270,15 @@ private struct NativeAnswerResult: Identifiable { var id: String; var place: Nat
                 map.setCamera(camera, animated: !UIAccessibility.isReduceMotionEnabled)
             }
             if pitched != next.pitched {
-                pitched = next.pitched; let camera = map.camera.copy() as! MKMapCamera; camera.pitch = next.pitched ? 55 : 0
-                map.setCamera(camera, animated: initialized && !UIAccessibility.isReduceMotionEnabled)
+                let changesPitch = pitched != nil || next.pitched
+                pitched = next.pitched
+                // The first flat configuration already has zero pitch. Reading
+                // its camera here can return MapKit's pre-region default and
+                // overwrite the initial Japan/GPS/trail viewport.
+                if changesPitch {
+                    let camera = map.camera.copy() as! MKMapCamera; camera.pitch = next.pitched ? 55 : 0
+                    map.setCamera(camera, animated: !UIAccessibility.isReduceMotionEnabled)
+                }
             }
         }
         private func locate(_ point: NativePoint, map: MKMapView, animated: Bool) { map.setRegion(.init(center: .init(latitude: point.lat, longitude: point.lon), latitudinalMeters: 1000, longitudinalMeters: 1000), animated: animated) }

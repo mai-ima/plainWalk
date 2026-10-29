@@ -94,7 +94,7 @@ import SwiftUI
             }
             .background(Color(uiColor: .systemGroupedBackground))
             .navigationTitle("地図レイヤー").navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("閉じる") { dismiss() }.fontWeight(.semibold) } }
+            .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("閉じる") { dismiss() }.fontWeight(.semibold).foregroundStyle(.primary) } }
         }
         .tint(.green)
         .presentationDragIndicator(.visible)
