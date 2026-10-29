@@ -9,7 +9,9 @@ struct RecordedPoint: Codable {
     var accuracy: Double
     var seq: Int
     var gap: Bool
-    var json: [String: Any] { ["lat": lat, "lon": lon, "t": t, "accuracy": accuracy, "seq": seq, "gap": gap] }
+    var mode: String? = nil
+    var heading: Double? = nil
+    var json: [String: Any] { ["lat": lat, "lon": lon, "t": t, "accuracy": accuracy, "seq": seq, "gap": gap, "mode": mode ?? "walking", "heading": heading ?? 0] }
 }
 struct NativeSession: Codable {
     var id: String
@@ -23,6 +25,9 @@ struct NativeSession: Codable {
 
 @MainActor final class LocationRecorder: NSObject, CLLocationManagerDelegate, ObservableObject {
     let manager = CLLocationManager()
+    let motion = MotionService()
+    private var heading: Double = 0
+    private var interruptionSent = false
     @Published private(set) var session: NativeSession?
     var onPoint: ((RecordedPoint, String?) -> Void)?
     var onError: ((String) -> Void)?
@@ -58,6 +63,8 @@ struct NativeSession: Codable {
             try persist()
         }
         recordingRequested = recording
+        interruptionSent = false
+        if recording { motion.start() }
         locating = true
         if status == .notDetermined { manager.requestWhenInUseAuthorization() }
         else { beginUpdates() }
@@ -67,9 +74,10 @@ struct NativeSession: Codable {
         guard locating else { return }
         manager.allowsBackgroundLocationUpdates = recordingRequested
         manager.startUpdatingLocation()
+        if CLLocationManager.headingAvailable() { manager.startUpdatingHeading() }
     }
     func stop(end: Bool) throws {
-        manager.stopUpdatingLocation()
+        manager.stopUpdatingLocation(); manager.stopUpdatingHeading(); motion.stop()
         manager.allowsBackgroundLocationUpdates = false
         recordingRequested = false; locating = false
         if end { session = nil }
@@ -99,7 +107,7 @@ struct NativeSession: Codable {
                                       t: location.timestamp.timeIntervalSince1970 * 1000,
                                       accuracy: location.horizontalAccuracy, seq: (session?.points.last?.seq ?? 0) + 1, gap: false)
             if recordingRequested, var next = session {
-                point.gap = next.nextGap
+                point.gap = next.nextGap; point.mode = motion.mode; point.heading = heading
                 if let previous = next.points.last {
                     let before = CLLocation(latitude: previous.lat, longitude: previous.lon)
                     let delta = (point.t - previous.t) / 1000
@@ -117,8 +125,9 @@ struct NativeSession: Codable {
             } else { onPoint?(point, nil) }
         }
     }
+    func locationManager(_ manager: CLLocationManager, didUpdateHeading newHeading: CLHeading) { heading = newHeading.trueHeading >= 0 ? newHeading.trueHeading : newHeading.magneticHeading }
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        if (error as? CLError)?.code != .locationUnknown { onError?(error.localizedDescription) }
+        if (error as? CLError)?.code != .locationUnknown { if recordingRequested && !interruptionSent { NotificationService.interruption(); interruptionSent = true }; onError?(error.localizedDescription) }
     }
 }
 enum NativeError: LocalizedError {

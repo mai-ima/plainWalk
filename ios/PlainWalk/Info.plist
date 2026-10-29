@@ -41,6 +41,8 @@
 	<string>さんぽ中に歩いた道を白地図に描くため、現在地を利用します。</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>「ここいいな」の短い動画に音を残します。</string>
+	<key>NSMotionUsageDescription</key>
+	<string>今日の歩数と、さんぽの徒歩・ランニング・自転車・乗り物を判定するために使います。</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>書き出したさんぽの画像や動画を、選択したときだけ写真ライブラリに保存します。</string>
 	<key>NSPhotoLibraryUsageDescription</key>

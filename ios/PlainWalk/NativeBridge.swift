@@ -59,6 +59,10 @@ import MapKit
                     try recorder.start(id: payload["sessionID"] as? String, start: payload["start"] as? Double, recording: payload["recording"] as? Bool ?? false)
                     reply(id)
                 case "locationStop": try recorder.stop(end: payload["end"] as? Bool ?? false); reply(id)
+                case "openSettings":
+                    if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }; reply(id)
+                case "notificationsConfigure": try await NotificationService.configure(payload); reply(id)
+                case "pedometerSteps": let total = try await recorder.motion.steps(); reply(id, result: ["steps": total.map { $0 as Any } ?? NSNull()])
                 case "photoCutout":
                     guard let encoded = payload["base64"] as? String, encoded.utf8.count < 8_000_000, let bytes = Data(base64Encoded: encoded) else { throw NativeError.message("切り抜く写真を読み取れません。") }
                     let output = try await CutoutService.cutout(bytes)
