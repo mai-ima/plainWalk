@@ -7,3 +7,4 @@ dist/data/japan-municipalities.geojson
 .DS_Store
 *.xcuserstate
 xcuserdata/
+.build/

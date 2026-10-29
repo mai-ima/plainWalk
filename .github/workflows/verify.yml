@@ -31,5 +31,13 @@ jobs:
         run: >-
           xcodebuild -project ios/PlainWalk.xcodeproj -scheme PlainWalk
           -configuration Debug -sdk iphonesimulator
-          -destination 'generic/platform=iOS Simulator'
+          -destination 'generic/platform=iOS Simulator' -derivedDataPath .build/ios
           CODE_SIGNING_ALLOWED=NO build
+      - name: Launch bundled app on iPhone Simulator
+        run: bash scripts/ios-simulator-smoke.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-simulator-screenshot
+          path: .build/screenshots
+          if-no-files-found: ignore

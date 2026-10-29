@@ -12,16 +12,18 @@ live_sources=[ROOT/'PlainWalkLive/PlainWalkLive.swift',ROOT/'Shared/WalkActivity
 all_sources=sorted(set(app_sources+live_sources))
 refs={p:add('file:'+str(p.relative_to(ROOT)),f'isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = {q(str(p.relative_to(ROOT)))}; sourceTree = "<group>";') for p in all_sources}
 asset=add('assets','isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = PlainWalk/Assets.xcassets; sourceTree = "<group>";')
+privacy=add('privacy','isa = PBXFileReference; lastKnownFileType = text.xml; path = PlainWalk/PrivacyInfo.xcprivacy; sourceTree = "<group>";')
 app_product=add('app-product','isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PlainWalk.app; sourceTree = BUILT_PRODUCTS_DIR;')
 live_product=add('live-product','isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PlainWalkLive.appex; sourceTree = BUILT_PRODUCTS_DIR;')
 products=add('products',f'isa = PBXGroup; children = ({app_product}, {live_product},); name = Products; sourceTree = "<group>";')
-main=add('main',f'isa = PBXGroup; children = ({", ".join(refs.values())}, {asset}, {products},); sourceTree = "<group>";')
+main=add('main',f'isa = PBXGroup; children = ({", ".join(refs.values())}, {asset}, {privacy}, {products},); sourceTree = "<group>";')
 source_phases={}
 for target,files in [('app',app_sources),('live',live_sources)]:
  builds=[add(f'build:{target}:{p.name}',f'isa = PBXBuildFile; fileRef = {refs[p]};') for p in files]
  source_phases[target]=add(target+'sources',f'isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = ({", ".join(builds)},); runOnlyForDeploymentPostprocessing = 0;')
 asset_build=add('assetbuild',f'isa = PBXBuildFile; fileRef = {asset};')
-resources=add('resources',f'isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = ({asset_build},); runOnlyForDeploymentPostprocessing = 0;')
+privacy_build=add('privacy-build',f'isa = PBXBuildFile; fileRef = {privacy};')
+resources=add('resources',f'isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = ({asset_build}, {privacy_build},); runOnlyForDeploymentPostprocessing = 0;')
 script='set -eu\nWEB_SOURCE="$SRCROOT/../dist"\nWEB_DEST="$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Web"\ntest -f "$WEB_SOURCE/index.html"\ntest -f "$WEB_SOURCE/data/japan-municipalities.geojson" || { echo "Run npm run build before building iOS"; exit 1; }\nmkdir -p "$WEB_DEST"\n/usr/bin/ditto "$WEB_SOURCE" "$WEB_DEST"\n'
 copy_web=add('copy-web',f'isa = PBXShellScriptBuildPhase; buildActionMask = 2147483647; files = (); inputPaths = (); outputPaths = (); alwaysOutOfDate = 1; name = "Bundle Web application"; runOnlyForDeploymentPostprocessing = 0; shellPath = /bin/sh; shellScript = {q(script)};')
 embed_build=add('embedbuild',f'isa = PBXBuildFile; fileRef = {live_product}; settings = {{ATTRIBUTES = (RemoveHeadersOnCopy, );}};')
@@ -34,7 +36,7 @@ for kind in ['project','app','live']:
  for mode in ['Debug','Release']:
   settings={'IPHONEOS_DEPLOYMENT_TARGET':'17.0','SDKROOT':'iphoneos','SWIFT_VERSION':'5.0','CLANG_ENABLE_MODULES':'YES','ENABLE_USER_SCRIPT_SANDBOXING':'NO'}
   if kind!='project':
-   settings.update({'CODE_SIGN_STYLE':'Automatic','CURRENT_PROJECT_VERSION':'2','MARKETING_VERSION':'0.2.0','TARGETED_DEVICE_FAMILY':'1,2','SUPPORTED_PLATFORMS':'iphoneos iphonesimulator','PRODUCT_NAME':'$(TARGET_NAME)','GENERATE_INFOPLIST_FILE':'NO','INFOPLIST_FILE':'PlainWalk/Info.plist' if kind=='app' else 'PlainWalkLive/Info.plist','PRODUCT_BUNDLE_IDENTIFIER':'org.example.plainwalkweb' + ('.Live' if kind=='live' else '')})
+   settings.update({'CODE_SIGN_STYLE':'Automatic','CURRENT_PROJECT_VERSION':'2','MARKETING_VERSION':'0.3.0','TARGETED_DEVICE_FAMILY':'1,2','SUPPORTED_PLATFORMS':'iphoneos iphonesimulator','PRODUCT_NAME':'$(TARGET_NAME)','GENERATE_INFOPLIST_FILE':'NO','INFOPLIST_FILE':'PlainWalk/Info.plist' if kind=='app' else 'PlainWalkLive/Info.plist','PRODUCT_BUNDLE_IDENTIFIER':'org.example.plainwalkweb' + ('.Live' if kind=='live' else '')})
    if kind=='app':settings.update({'CODE_SIGN_ENTITLEMENTS':'PlainWalk/PlainWalk.entitlements','ASSETCATALOG_COMPILER_APPICON_NAME':'AppIcon','LD_RUNPATH_SEARCH_PATHS':'$(inherited) @executable_path/Frameworks'})
    else:settings.update({'SKIP_INSTALL':'YES','APPLICATION_EXTENSION_API_ONLY':'YES','LD_RUNPATH_SEARCH_PATHS':'$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks'})
   if mode=='Debug':settings.update({'SWIFT_OPTIMIZATION_LEVEL':'-Onone','SWIFT_ACTIVE_COMPILATION_CONDITIONS':'DEBUG'})

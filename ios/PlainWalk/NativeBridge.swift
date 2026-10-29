@@ -42,6 +42,16 @@ import MapKit
         Task { @MainActor in
             do {
                 switch action {
+                case "ready":
+                    #if DEBUG
+                    let folder = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("PlainWalk", isDirectory: true)
+                    try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+                    var persistence = true
+                    if ProcessInfo.processInfo.arguments.contains("-PlainWalkSmokeTest") { persistence = try LocationRecorder.persistenceSelfTest() }
+                    let bytes = try JSONSerialization.data(withJSONObject: ["ready": true, "recordingPersistence": persistence, "version": payload["version"] as? String ?? "unknown"])
+                    try bytes.write(to: folder.appendingPathComponent("web-ready.json"), options: .atomic)
+                    #endif
+                    reply(id)
                 case "storageRead", "storageWrite":
                     guard let key = payload["key"] as? String, ["library", "active", "config"].contains(key) else { throw NativeError.message("保存先が不正です。") }
                     let folder = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("PlainWalk", isDirectory: true)
@@ -59,6 +69,10 @@ import MapKit
                     try recorder.start(id: payload["sessionID"] as? String, start: payload["start"] as? Double, recording: payload["recording"] as? Bool ?? false)
                     reply(id)
                 case "locationStop": try recorder.stop(end: payload["end"] as? Bool ?? false); reply(id)
+                case "appearance":
+                    let mode = payload["mode"] as? String ?? "auto"
+                    webView?.window?.overrideUserInterfaceStyle = mode == "dark" ? .dark : mode == "light" ? .light : .unspecified
+                    reply(id)
                 case "openSettings":
                     if let url = URL(string: UIApplication.openSettingsURLString) { _ = await UIApplication.shared.open(url) }; reply(id)
                 case "notificationsConfigure": try await NotificationService.configure(payload); reply(id)

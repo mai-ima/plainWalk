@@ -29,7 +29,7 @@ beta 設定: GPS 精度円、画面スリープ防止、全 GPX の書き出し�
 
 Core Location の背景記録、位置更新ごとの atomic ファイル保存、復帰時の重複を避けた同期、HealthKit の歩数・ワークアウトとルート、ActivityKit と Dynamic Island の拡張ターゲット、MapKit の建物・立体・航空写真、Files と共有シート。Web 状態も保護された端末内ファイルに保存し、独自 URL scheme の IndexedDB には依存しません。
 
-**Xcode / Apple SDK がこの環境にないため、iOS 側のコンパイルと実機検証は未実施です。署名済み IPA はありません。**
+**GitHub の macOS / Xcode CI で iOS 本体と Live Activity 拡張のビルドが通過しました。実機の権限・背景 GPS と配布署名は未検証です。署名済み IPA はありません。**
 
 ## 検証
 
@@ -63,3 +63,7 @@ Web の画面ロック中の GPS や HealthKit はネイティブと同じには
 Vercel ではリポジトリ全体を Import し、Root Directory はルートのままにしてください。vercel.json が npm run build と dist 出力を指定します。圧縮した境界データをビルド時に展開するため、先に npm run build を実行してから Xcode で開いてください。
 
 確定した要件は [docs/requirements.md](docs/requirements.md) を参照。
+
+## ビルド検証の記録
+
+iOS コンパイル通過: https://github.com/mai-ima/plainWalk/actions/runs/40884105110 。次の CI では iPhone Simulator 起動と、Web 画面の読み込み・ネイティブストレージ接続・位置ジャーナルの復旧を検証します。Vercel への接続はユーザー指示により行わず、GitHub からの手動 Import に対応します。

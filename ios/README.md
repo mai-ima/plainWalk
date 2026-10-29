@@ -2,7 +2,7 @@
 
 Web と同じ画面を WKWebView で表示し、端末 API を Swift から接続する構成です。元の PlainWalk のソースや署名済みアプリではありません。公開されている機能・画面を基にした独立実装です。
 
-**この Linux 環境には Xcode と Apple SDK がありません。プロジェクトは生成済みですが、Swift のコンパイル・シミュレーター・実機・署名は未検証です。IPA は作成していません。**
+**GitHub macOS の Xcode CI で、本体・Live Activity 拡張の Simulator 向けコンパイルが通過しました。CI: https://github.com/mai-ima/plainWalk/actions/runs/40884105110 。実機・配布署名は未検証で、署名済み IPA はありません。**
 
 ## Mac で開く
 
@@ -17,7 +17,7 @@ Web と同じ画面を WKWebView で表示し、端末 API を Swift から接�
 
 ## 接続したコード
 
-- `LocationRecorder.swift`: 記録中だけ Core Location の background updates を有効化。3 m フィルタ、GPS 精度・速度チェック。位置更新ごとに atomic なファイル書き込み。画面側が止まっていても保持し、復帰時に seq で重複を避けて同期。
+- `LocationRecorder.swift`: 記録中だけ Core Location の background updates を有効化。3 m フィルタ、GPS 精度・速度チェック。位置更新は追記ジャーナルへ保存し、開始・停止時に atomic なチェックポイントを保存。画面側が止まっていても保持し、復帰時に seq で重複を避けて同期。
 - `NativeBridge.swift`: 自分のローカルメインフレームだけからのメッセージを受付。Web の状態を protected Application Support ファイルへ保存。共有シート、ファイル選択、ネイティブ地図へ接続。
 - `HealthService.swift`: 明示操作で歩数・最近 200 件までの歩行／ラン／ハイク／自転車ワークアウトと許可されたルートを読む。書き込みはしない。未許可とデータなしを区別できない点を UI に表示。
 - `LiveActivityService.swift` と `PlainWalkLive`: 距離と記録状態の ActivityKit / Dynamic Island 表示。通知サーバーは使わない。
@@ -44,3 +44,5 @@ OS にプロセスを終了された後は自動的に記録を再開せず、�
 - VoiceOver、文字サイズ、ダークモード、縦横画面、セーフエリア
 
 Apple Watch アプリ、通常のホーム画面ウィジェット、ジオフェンスによる自動開始、共有白地図、写真切り抜きステッカー、自治体の境界データは未実装です。
+
+ジャーナルはセッション ID と連番を持ち、復旧時に重複を避けます。途中の不完全な行を無視して読める点を回復し、終了時だけ大きい状態を書き直します。これにより、位置更新のたびに全経路を書き直す負荷を避けます。Simulator の DEBUG スモークテストで、ジャーナル復旧とチェックポイント後の重複排除を検証する設定です。

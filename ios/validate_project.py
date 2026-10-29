@@ -3,6 +3,7 @@ from pathlib import Path
 import plistlib,re,xml.etree.ElementTree as ET
 root=Path(__file__).resolve().parent
 for path in root.rglob('*.plist'):plistlib.loads(path.read_bytes())
+for path in root.rglob('*.xcprivacy'):plistlib.loads(path.read_bytes())
 for path in root.rglob('*.entitlements'):plistlib.loads(path.read_bytes())
 text=(root/'PlainWalk.xcodeproj/project.pbxproj').read_text()
 objects=set(re.findall(r'^([A-F0-9]{24}) = \{',text,re.M));refs=set(re.findall(r'\b[A-F0-9]{24}\b',text))
