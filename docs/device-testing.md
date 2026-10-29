@@ -49,3 +49,5 @@ Playgrounds は前面 GPS だけを対象にします。HealthKit・Live Activit
 CI のコンパイル・起動画像、Simulator の自己テスト、iPhone の実歩行結果は分けて残します。背景 GPS・HealthKit・電池消費・実端末の権限・配布署名は、現時点で未検証です。
 
 スリープ防止は、Web では beta とスリープ防止の両設定を有効にした記録中に Screen Wake Lock を使います。SwiftUI 版はスリープ防止設定と記録状態に応じて UIApplication の idle timer を使います。停止・一時停止で解除されることを確認してください。
+
+CI の撮影は SwiftUI の onAppear だけでは判定せず、UIKit の viewDidAppear 後まで待ちます。診断画像には Vision で「実機検証」のタイトルがあることを確認し、別画面の画像を成功扱いにしません。最新の結果は README の CI リンクを参照してください。

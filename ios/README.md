@@ -2,7 +2,7 @@
 
 通常の起動先は `NativeRootView` です。SwiftUI のタブ・ナビゲーション・シート、Canvas の白地図、MapKit の答え合わせ地図を使います。Web ページをそのまま表示する起動構成から変更しました。PlainWalk の公開画面と機能を基にした独立実装で、元アプリのソースや署名済みアプリではありません。
 
-**今回追加した SwiftUI 構成は macOS で検証中で、コンパイル・Simulator 試験の成功は未確認です。実機・配布署名も未検証で、署名済み IPA はありません。** [以前の CI 成功](https://github.com/mai-ima/plainWalk/actions/runs/40888890524) は旧 WebView 構成の検証履歴です。
+**[CI 40922182440](https://github.com/mai-ima/plainWalk/actions/runs/40922182440) で、本体・Live Activity 拡張のコンパイル、iPhone Simulator 起動、保存・復旧・取り込み・地図カメラの自己テスト、主要画面の表示完了待ち、診断画像のタイトル検出が通過しました。実機・配布署名は未検証で、署名済み IPA はありません。**
 
 ## Mac で開く
 
@@ -24,7 +24,7 @@
 | `NativeAnswerMapView.swift` | MapKit、標準・航空写真・3D、場所検索、旗・しおり |
 | `NativeRecordsView.swift`, `NativeProfileView.swift` | 履歴、カレンダー、詳細、プロフィール |
 | `NativeCollectionsView.swift` | 写真、Vision ステッカー、実境界バッジ、らくがき、共有、ノート |
-| `NativeLayerView.swift`, `NativeSettingsView.swift` | 配色、表示、設定、OS 機能への入口 |
+| `NativeLayerView.swift`, `NativeSettingsView.swift`, `NativeStepGoalView.swift` | 配色、表示、設定、OS 機能への入口 |
 | `NativePhotoCaptureView.swift` | PhotosPicker、ネイティブカメラ、短い動画 |
 | `NativeAppModel.swift`, `NativeModels.swift`, `NativeStore.swift` | 状態、既存 JSON との互換、検証、atomic な保存 |
 | `NativeTrackMath.swift`, `NativeTrackIO.swift`, `NativeDoodleProgress.swift` | 距離・開拓、GPX / TCX、歩いたらくがきの更新 |

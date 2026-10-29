@@ -31,6 +31,6 @@ Playgrounds 版は前面記録用です。生成時に背景位置更新を無�
 
 ## 検証
 
-今回の SwiftUI 起動構成を含むパッケージは macOS で検証中で、コンパイル・Simulator 試験の成功は未確認です。[以前の GitHub Actions](https://github.com/mai-ima/plainWalk/actions/runs/40898218214) のコンパイル成功は旧構成の履歴です。iPad / Mac の Swift Playgrounds 上での実行、権限、GPS 精度、カメラは未検証です。
+今回の SwiftUI 起動構成を含むパッケージは [GitHub Actions 40922182440](https://github.com/mai-ima/plainWalk/actions/runs/40922182440) の macOS ジョブでコンパイルを通過しました。Simulator の起動・自己テスト・画面確認は同じ正本からビルドした Xcode 版で実施しており、Playgrounds アプリ内での実行試験とは区別します。iPad / Mac の Swift Playgrounds 上での実行、権限、GPS 精度、カメラは未検証です。
 
 実機検証の画面は同じ正本から生成されます。検証結果は [手順](../../docs/device-testing.md)に従って記録し、Xcode / Simulator の結果と区別してください。
