@@ -1,4 +1,5 @@
-import {formatDistance, distanceUnit as getDistanceUnit} from "./units.js";
+import { createCollections } from "./collections.js";
+import { formatDistance, distanceUnit as getDistanceUnit } from "./units.js";
 import { layersHTML, settingsHTML } from "./reference-ui.js";
 import { companionSVG } from "./companion.js";
 import { drawNotebook, hitItem, loadImage, lassoCutout } from "./notebook.js";
@@ -35,6 +36,7 @@ const $ = (s) => document.querySelector(s),
 const icons = {
   home: '<path d="m3 11 9-8 9 8M5 10v11h14V10M9 21v-7h6v7"/>',
   building: '<path d="M4 3h12v18H4zM16 9h5v12M8 7h4M8 11h4M8 15h4"/>',
+  exchange: '<path d="M4 7h15m-5-5 5 5-5 5M20 17H5m5-5-5 5 5 5"/>',
   plus: '<circle cx="12" cy="12" r="10"/><path d="M12 7v10M7 12h10"/>',
   target:
     '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
@@ -48,7 +50,8 @@ const icons = {
     '<rect x="5" y="4" width="14" height="17" rx="3"/><path d="M9 3h6v4H9zM9 12h6M9 16h4"/>',
   profile:
     '<circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/>',
-  camera: '<path d="M3 8h4l2-3h6l2 3h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 1-2z"/><circle cx="12" cy="13" r="4"/>',
+  camera:
+    '<path d="M3 8h4l2-3h6l2 3h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 1-2z"/><circle cx="12" cy="13" r="4"/>',
   locate:
     '<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/>',
   layers: '<path d="m12 3 9 5-9 5-9-5zM3 12l9 5 9-5M3 16l9 5 9-5"/>',
@@ -211,7 +214,7 @@ const themes = [
   ["オリーブ", "#bdbb74", "#1f2008"],
   ["デニム", "#93b1d8", "#0b1b30"],
 ];
-const fmt = (m) => formatDistance(m,config.units),
+const fmt = (m) => formatDistance(m, config.units),
   distanceUnit = () => getDistanceUnit(config.units),
   dateKey = (t) => {
     const d = new Date(t);
@@ -260,7 +263,7 @@ async function saveConfig() {
   draw();
 }
 function applyTheme() {
-  if(native)nativeCall("appearance",{mode:config.dark}).catch(()=>{});
+  if (native) nativeCall("appearance", { mode: config.dark }).catch(() => {});
   const theme = themes[config.theme] || themes[0],
     dark =
       config.dark === "dark" ||
@@ -386,6 +389,7 @@ function draw() {
     $("#emptyMap").hidden =
       list.some((w) => w.points.length > 1) || data.spots.length > 0;
     drawMapContext(w, h);
+    collections.render();
     let pins = "";
     for (const p of data.flags) {
       const [x, y] = pointToScreen(p);
@@ -425,6 +429,11 @@ function draw() {
       $("#location").innerHTML =
         `${config.highlight !== false ? `<circle cx="${x}" cy="${y}" r="${radius}" fill="#8ab7ee" fill-opacity=".15" stroke="none"/>` : ""}<circle cx="${x}" cy="${y}" r="5" fill="${answer ? "#208ac4" : color}" stroke="var(--paper)" stroke-width="2"/>${config.locationMark && config.locationMark !== "dot" && view.zoom >= 14 && !answer ? `<foreignObject x="${x - 13}" y="${y - 30}" width="26" height="42"><div xmlns="http://www.w3.org/1999/xhtml">${companionSVG(config.locationMark, !!active && !paused && Date.now() - current.t < 10000, current.heading || 0)}</div></foreignObject>` : ""}`;
     } else $("#location").innerHTML = "";
+    $("#mapPage").classList.toggle("answer-map", answer);
+    $("#answerButton").innerHTML = answer ? "閉じる" : icon("map");
+    $(".map-caption").innerHTML = answer
+      ? "<strong>答え合わせマップ</strong>"
+      : "<strong>歩いた道が、地図になる。</strong><span>まだ誰も描いていない場所を、あなたの一歩で。</span>";
     drawTiles();
     const scale =
       metersPerPixel() *
@@ -499,7 +508,9 @@ function fit(points) {
 }
 let expCache = { length: -1, value: 0 };
 function updateStats() {
-  $$(".map-stats em").slice(1).forEach(el=>el.textContent=distanceUnit());
+  $$(".map-stats em")
+    .slice(1)
+    .forEach((el) => (el.textContent = distanceUnit()));
   const todayWalks = data.walks.filter((w) => dateKey(w.start) === today());
   if (active && expCache.length !== active.points.length) {
     expCache = {
@@ -579,6 +590,7 @@ function acceptPosition(pos) {
         delete active.nextBreak;
       }
       active.points.push({ ...current, accuracy });
+      collections.progress({ ...current, accuracy });
       if (Date.now() - lastPersist > 4000) {
         persistActive();
         lastPersist = Date.now();
@@ -912,7 +924,7 @@ function renderRecords() {
 }
 function renderProfile() {
   $("#contentPage").innerHTML =
-    `<h1 class="page-title">プロフィール</h1><div class="profile-avatar">${companionSVG(config.locationMark === "dot" ? "black" : config.locationMark || "black")}</div><h2 class="profile-name">あなたの白地図</h2><p class="center subtle">いつもの一歩が、ちいさな冒険に。</p><div class="center"><span class="pill">${levelName()} · 開拓 ${fmt(exp.total)} ${distanceUnit()}</span></div><div class="stats-row" style="margin:28px 0"><div><b>${data.walks.length}</b><small>さんぽ</small></div><div><b>${new Set(data.walks.map((w) => dateKey(w.start))).size}</b><small>歩いた日</small></div><div><b>${fmt(exp.total)}</b><small>総開拓距離 ${distanceUnit()}</small></div></div><section class="card">${row("stats", "歩行の統計", "chart")}${row("badges", "エリアと開拓のバッジ", "badge")}${row("spots", "ここいいな", "camera")}${row("flags", "目的地の旗", "flag")}${row("notes", "ノート", "note")}</section><section class="card">${row("layers", "地図の見た目", "layers", "配色・線・写真ピン・相棒を、自由に。")}${row("settings", "設定", "settings")}${row("backup", "データのバックアップ", "download")}${row("about", "この Web 版について", "info")}</section><p class="center caption-note">PlainWalk Web · 非公式・無料<br>記録はこのブラウザの中に。</p>`;
+    `<h1 class="page-title">プロフィール</h1><div class="profile-avatar">${companionSVG(config.locationMark === "dot" ? "black" : config.locationMark || "black")}</div><h2 class="profile-name">あなたの白地図</h2><p class="center subtle">いつもの一歩が、ちいさな冒険に。</p><div class="center"><span class="pill">${levelName()} · 開拓 ${fmt(exp.total)} ${distanceUnit()}</span></div><div class="stats-row" style="margin:28px 0"><div><b>${data.walks.length}</b><small>さんぽ</small></div><div><b>${new Set(data.walks.map((w) => dateKey(w.start))).size}</b><small>歩いた日</small></div><div><b>${fmt(exp.total)}</b><small>総開拓距離 ${distanceUnit()}</small></div></div><section class="card">${row("stats", "歩行の統計", "chart")}${row("badges", "エリアと開拓のバッジ", "badge")}${row("spots", "ここいいな", "camera")}${row("stickers", "ステッカー", "badge")}${row("doodles", "らくがき", "pen")}${row("sharedMaps", "共有の白地図", "map")}${row("bookmarks", "気になる場所", "flag")}${row("flags", "目的地の旗", "flag")}${row("notes", "ノート", "note")}</section><section class="card">${row("layers", "地図の見た目", "layers", "配色・線・写真ピン・相棒を、自由に。")}${row("settings", "設定", "settings")}${row("backup", "データのバックアップ", "download")}${row("about", "この Web 版について", "info")}</section><p class="center caption-note">PlainWalk Web · 非公式・無料<br>記録はこのブラウザの中に。</p>`;
 }
 function levelName() {
   const levels = [
@@ -977,7 +989,7 @@ function updateFlag() {
       Math.PI;
   const d = distance(current, f);
   $("#flagDirection").innerHTML =
-    `${d < 1000 ? Math.round(d) + " m" : (d / 1000).toFixed(2) + " " + distanceUnit()}<span style="transform:rotate(${deg}deg)">↑</span>`;
+    `${d < 1000 ? Math.round(d) + " m" : fmt(d) + " " + distanceUnit()}<span style="transform:rotate(${deg}deg)">↑</span>`;
   $("#flagDirection").title = f.name + " · 北を上にした方角";
   $("#flagDirection").onclick = () => flagDetail(f.id);
 }
@@ -1417,7 +1429,12 @@ async function handleImport(file) {
     throw Error("45 MB 以下のファイルを選んでください。");
   const text = await file.text();
   if (/\.json$/i.test(file.name) || text.trim().startsWith("{")) {
-    const incoming = validateBackup(JSON.parse(text));
+    const value = JSON.parse(text);
+    if (value.type === "plainwalk-white-map" && value.version === 1) {
+      await collections.importWhiteMap(value);
+      return;
+    }
+    const incoming = validateBackup(value);
     const newWalks = incoming.walks.filter(
       (w) => !data.walks.some((p) => p.id === w.id),
     );
@@ -1451,9 +1468,18 @@ async function restore() {
   if (!pendingImport?.walks) return;
   const incoming = pendingImport;
   const prev = structuredClone(data);
-  for (const key of ["walks", "spots", "flags"])
-    data[key].push(
-      ...incoming[key].filter((w) => !data[key].some((p) => p.id === w.id)),
+  for (const key of [
+    "walks",
+    "spots",
+    "flags",
+    "bookmarks",
+    "doodles",
+    "sharedMaps",
+  ])
+    (data[key] ||= []).push(
+      ...(incoming[key] || []).filter(
+        (w) => !data[key].some((p) => p.id === w.id),
+      ),
     );
   data.walks.sort((a, b) => a.start - b.start);
   data.notes = { ...incoming.notes, ...data.notes };
@@ -1544,7 +1570,7 @@ async function exportNote(day) {
 function limitations() {
   sheet(
     "iOS と Web 版の対応範囲",
-    `<p>このアプリは、公式アプリの公開情報を参考に制作した非公式 Web 移植版です。寸分違わない完全再現には至っていません。</p><h3>利用できる機能</h3><p>前面での GPS 記録、白地図、履歴、開拓距離の近似計算、答え合わせ、写真・短い動画のピン、複数の旗、ノート、軌跡の手動修正、軌跡再生、対応ブラウザでの再生動画出力、画像・GPX の書き出し、GPX / TCX の取り込み、バックアップ、配色・線・カスタム LUT。</p><h3>Web ではネイティブ版と同じにできない機能</h3><p>画面ロック中の継続的な GPS、Live Activities、Apple Watch、ウィジェット、HealthKit と iCloud の直接連携、自宅からの自動記録、バックグラウンドの移動検知。</p><h3>追加した iOS プロジェクト</h3><p>Core Location のバックグラウンド記録、端末内ファイル保存、HealthKit の歩数・ワークアウト取り込み、ActivityKit、MapKit の立体・航空写真表示、ファイル共有のコードを同梱しています。GitHub の Xcode ビルドは通過しました。実機動作は未検証です。この Web サイトだけでネイティブ機能が使えるわけではありません。</p><h3>この実装で未対応の機能</h3><p>日本以外の市区町村バッジ、公式と同じ立体造形、道路への自動補正、共有の白地図、写真の切り抜きステッカーと交換、Apple Watch アプリ、通常のウィジェット、自宅からの自動記録。Web の傾斜表示は建物の 3D 表示ではありません。動画ピンのフィルム加工は未対応です。</p><p class="subtle">iPhone では Safari の共有メニューから「ホーム画面に追加」でアプリとして開けます。初回読み込み後の白地図と保存済み記録はオフラインで利用できます。答え合わせには通信が必要です。</p>`,
+    `<p>このアプリは、公式アプリの公開情報を参考に制作した非公式 Web 移植版です。寸分違わない完全再現には至っていません。</p><h3>利用できる機能</h3><p>前面での GPS 記録、白地図、履歴、開拓距離の近似計算、答え合わせ、写真・短い動画のピン、複数の旗、ノート、軌跡の手動修正、軌跡再生、対応ブラウザでの再生動画出力、画像・GPX の書き出し、GPX / TCX の取り込み、バックアップ、配色・線・カスタム LUT。</p><h3>Web ではネイティブ版と同じにできない機能</h3><p>画面ロック中の継続的な GPS、Live Activities、Apple Watch、ウィジェット、HealthKit と iCloud の直接連携、自宅からの自動記録、バックグラウンドの移動検知。</p><h3>追加した iOS プロジェクト</h3><p>Core Location のバックグラウンド記録、端末内ファイル保存、HealthKit の歩数・ワークアウト取り込み、ActivityKit、MapKit の立体・航空写真表示、ファイル共有のコードを同梱しています。GitHub で Xcode ビルド、iPhone シミュレーターの起動と記録の復元テストを通過しました。実機動作は未検証です。この Web サイトだけでネイティブ機能が使えるわけではありません。</p><h3>この実装で未対応の機能</h3><p>日本以外の市区町村バッジ、公式と同じ立体造形、道路への自動補正、共有の白地図の自動同期、近接によるステッカー交換、Apple Watch アプリ、通常のウィジェット、自宅からの自動記録。Web の傾斜表示は建物の 3D 表示ではありません。動画ピンのフィルム加工は未対応です。</p><p class="subtle">iPhone では Safari の共有メニューから「ホーム画面に追加」でアプリとして開けます。初回読み込み後の白地図と保存済み記録はオフラインで利用できます。答え合わせには通信が必要です。</p>`,
   );
 }
 function about() {
@@ -1583,7 +1609,39 @@ function endDemo() {
   draw();
   toast("体験モードを終了しました。体験の道は保存しません。");
 }
+const collections = createCollections({
+  $,
+  esc,
+  icon,
+  row,
+  miniSvg,
+  save,
+  sheet,
+  openPage,
+  switchTab,
+  draw,
+  fit,
+  id,
+  toast,
+  download,
+  project,
+  screenToPoint,
+  paths,
+  closeSheet,
+  pickMode,
+  state: () => ({ data, active, answer, editing }),
+  setFollow: (value) => {
+    follow = value;
+  },
+  setAnswer: (value) => {
+    answer = value;
+    $("#attribution").hidden = !value;
+    $("#answerButton").style.background = value ? "var(--wash)" : "";
+    draw();
+  },
+});
 const actions = {
+  ...collections.actions,
   pageBack: pageBack,
   back: sheetBack,
   healthSteps: async () => {
@@ -1798,7 +1856,11 @@ function pickMode(type) {
   switchTab("map");
   mapMode = type;
   $("#mapBanner").textContent =
-    type === "flag" ? "旗を立てる場所をタップ" : "ここいいなを残す場所をタップ";
+    type === "flag"
+      ? "旗を立てる場所をタップ"
+      : type === "bookmark"
+        ? "しおりを挟む場所をタップ"
+        : "ここいいなを残す場所をタップ";
   $("#mapBanner").hidden = false;
 }
 async function handleClick(e) {
@@ -1810,6 +1872,7 @@ async function handleClick(e) {
   const b = e.target.closest("button,[data-spot],[data-flag]");
   if (!b) return;
   const d = b.dataset;
+  if (await collections.click(d)) return;
   if (d.action) {
     if (d.action === "record" && suppressRecordClick) {
       suppressRecordClick = false;
@@ -2323,6 +2386,7 @@ let dragStart = null,
   pinchDist = 0,
   pinchZoom = 0;
 const viewport = $("#mapViewport");
+collections.attach(viewport);
 viewport.addEventListener("pointerdown", (e) => {
   if (e.target.closest("[data-spot],[data-flag]")) return;
   viewport.setPointerCapture(e.pointerId);
@@ -2375,11 +2439,15 @@ viewport.addEventListener("pointerup", (e) => {
   if (!dragged && !wasMulti && !e.target.closest("[data-spot],[data-flag]")) {
     const r = viewport.getBoundingClientRect(),
       p = screenToPoint(e.clientX - r.left, e.clientY - r.top);
-    if (mapMode === "flag" || mapMode === "spot") {
+    if (["flag", "spot", "bookmark"].includes(mapMode)) {
       const type = mapMode;
       mapMode = "normal";
       $("#mapBanner").hidden = true;
-      type === "flag" ? flagAdd(p) : addSpot(p);
+      type === "flag"
+        ? flagAdd(p)
+        : type === "bookmark"
+          ? collections.bookmarkAdd(p)
+          : addSpot(p);
     } else if (mapMode === "demo") {
       current = { ...p, t: Date.now() };
       demoPoints.push(current);
@@ -2579,6 +2647,7 @@ function consumeNativePoint(point, sessionID) {
         break: point.gap || active.nextBreak || false,
       });
       delete active.nextBreak;
+      collections.progress({ ...current, accuracy });
     }
     active.nativeSeq = point.seq;
   }
@@ -2587,7 +2656,10 @@ function consumeNativePoint(point, sessionID) {
 onNative((message) => {
   if (message.event === "location") {
     consumeNativePoint(message.point, message.sessionID);
-    if (active && Date.now() - lastPersist > 5000) { persistActive(); lastPersist = Date.now(); }
+    if (active && Date.now() - lastPersist > 5000) {
+      persistActive();
+      lastPersist = Date.now();
+    }
     updateStats();
   } else if (message.event === "foreground") {
     syncNative().catch((e) => toast(e.message));
@@ -2876,7 +2948,11 @@ actions.exportReplayVideo = async () => {
     ctx.font = "bold 32px -apple-system,sans-serif";
     ctx.fillText("歩いた道が、あなたの地図になる。", 360, 845);
     ctx.font = "19px -apple-system,sans-serif";
-    ctx.fillText(fmt(trailDistance(points.slice(0, n))) + " " + distanceUnit(), 360, 890);
+    ctx.fillText(
+      fmt(trailDistance(points.slice(0, n))) + " " + distanceUnit(),
+      360,
+      890,
+    );
   };
   drawFrame(0);
   try {
@@ -3286,4 +3362,5 @@ function spotMarker(p, color) {
   return `<g fill="var(--panel)" stroke="${type === "outline" ? color : "var(--line)"}">${shape}</g><text x="0" y="-9" text-anchor="middle" fill="${color}" stroke="none" font-size="16">${esc(symbol)}</text>`;
 }
 
-if(native)nativeCall('ready',{version:'0.3.0'}).catch(e=>toast(e.message));
+if (native)
+  nativeCall("ready", { version: "0.3.0" }).catch((e) => toast(e.message));

@@ -27,6 +27,7 @@
           <svg id="map" xmlns="http://www.w3.org/2000/svg">
             <g id="mapGrid"></g>
             <g id="mapOutlines"></g>
+            <g id="doodles"></g>
             <g id="trails"></g>
             <g id="pins"></g>
             <g id="location"></g>
@@ -59,6 +60,18 @@
           <button data-action="editCancel">キャンセル</button
           ><button data-action="editUndo">戻す</button
           ><button data-action="editSave">保存</button>
+        </div>
+        <div id="doodleToolbar" hidden>
+          <button data-action="doodleCancel">キャンセル</button
+          ><button data-action="doodleUndo">戻す</button
+          ><button data-action="doodleSave">完了</button>
+        </div>
+        <div class="answer-actions">
+          <button class="primary compact" data-action="bookmarkPick">
+            しおりを挟む</button
+          ><button class="secondary compact" data-action="doodleStart">
+            らくがき
+          </button>
         </div>
         <div id="flagDirection" hidden></div>
         <div class="map-tools">

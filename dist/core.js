@@ -209,6 +209,7 @@ export function validateBackup(v) {
     spots: v.spots,
     flags: v.flags,
     notes: validateNotes(v.notes),
+    ...validateCollections(v),
   };
 }
 
@@ -276,4 +277,78 @@ export function validateNotes(notes) {
     }
   }
   return result;
+}
+
+export function validateCollections(v) {
+  const list = (key) => {
+    const items = v[key] ?? [];
+    if (!Array.isArray(items) || items.length > 1000)
+      throw Error("コレクションが大きすぎます。");
+    return items;
+  };
+  const points = (ps) => {
+    if (
+      !Array.isArray(ps) ||
+      ps.length > 300000 ||
+      ps.some((p) => !validPoint(p))
+    )
+      throw Error("コレクションの位置情報が不正です。");
+    return ps.map((p) => ({
+      lat: p.lat,
+      lon: p.lon,
+      ...(p.break ? { break: true } : {}),
+      ...(p.done ? { done: true } : {}),
+    }));
+  };
+  const entry = (x) => {
+    if (
+      !x ||
+      typeof x.id !== "string" ||
+      x.id.length > 200 ||
+      typeof x.name !== "string" ||
+      x.name.length > 200
+    )
+      throw Error("コレクションの形式が不正です。");
+    return { id: x.id, name: x.name };
+  };
+  let totalPoints = 0;
+  const boundedPoints = (ps) => {
+    const clean = points(ps);
+    totalPoints += clean.length;
+    if (totalPoints > 300000)
+      throw Error("コレクションの位置情報が多すぎます。");
+    return clean;
+  };
+  return {
+    bookmarks: list("bookmarks").map((p) => {
+      const clean = entry(p);
+      if (!validPoint(p)) throw Error("しおりの位置が不正です。");
+      return { ...clean, lat: p.lat, lon: p.lon };
+    }),
+    doodles: list("doodles").map((d) => {
+      const clean = entry(d);
+      if (!Number.isFinite(d.created))
+        throw Error("らくがきの日付が不正です。");
+      return { ...clean, created: d.created, points: boundedPoints(d.points) };
+    }),
+    sharedMaps: list("sharedMaps").map((m) => {
+      const clean = entry(m);
+      if (!Array.isArray(m.walks) || m.walks.length > 10000)
+        throw Error("共有の道が多すぎます。");
+      return {
+        ...clean,
+        walks: m.walks.map((w) => {
+          if (typeof w.id !== "string") throw Error("共有の道が不正です。");
+          return {
+            id: w.id,
+            points: boundedPoints(w.points).map(({ lat, lon, break: gap }) => ({
+              lat,
+              lon,
+              ...(gap ? { break: true } : {}),
+            })),
+          };
+        }),
+      };
+    }),
+  };
 }

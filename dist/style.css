@@ -1916,5 +1916,244 @@ body.dark #sheet.reference-sheet #sheetClose {
   background: var(--paper);
 }
 
-.full-page-empty{top:47.3%}
-.map-header{top:max(16px,env(safe-area-inset-top))}.map-caption{transform:translateY(6px)}.map-caption span{font-size:10.8px}.native-page-header{padding-top:max(16px,env(safe-area-inset-top))}#sheet.reference-sheet{height:calc(100dvh - max(16px,env(safe-area-inset-top)));max-height:calc(100dvh - max(16px,env(safe-area-inset-top)))}
+.full-page-empty {
+  top: 47.3%;
+}
+.map-header {
+  top: max(16px, env(safe-area-inset-top));
+}
+.map-caption {
+  transform: translateY(6px);
+}
+.map-caption span {
+  font-size: 10.8px;
+}
+.native-page-header {
+  padding-top: max(16px, env(safe-area-inset-top));
+}
+#sheet.reference-sheet {
+  height: calc(100dvh - max(16px, env(safe-area-inset-top)));
+  max-height: calc(100dvh - max(16px, env(safe-area-inset-top)));
+}
+
+.collection-outline {
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  margin: 0 0 28px;
+  padding: 8px 13px;
+  background: var(--panel);
+}
+.collection-outline .row {
+  border: 0;
+  padding: 10px 0;
+  min-height: 60px;
+}
+.collection-outline .row svg {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: 50%;
+  padding: 8px;
+}
+.collection-outline .row strong {
+  font-size: 14px;
+  font-weight: 650;
+}
+.collection-outline .row small {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.collection-intro {
+  padding: 16px;
+  margin-top: 0;
+}
+.collection-intro h2,
+.collection-message h2 {
+  font-size: 15px;
+  line-height: 1.5;
+  margin: 0 0 9px;
+  font-weight: 650;
+}
+.collection-intro p,
+.collection-message p {
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 0;
+  color: var(--muted);
+}
+.collection-intro .compact {
+  margin: 12px 0 0;
+}
+.collection-message {
+  padding: 20px 16px;
+  border-radius: 25px;
+  background: var(--panel);
+  margin: 25px 0 35px;
+}
+.collection-note {
+  margin: 34px 16px 24px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+.collection-create {
+  width: 100%;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  min-height: 51px;
+  color: #0097ee;
+  font-size: 16px;
+  padding: 12px 16px;
+}
+.collection-create svg {
+  width: 23px;
+  height: 23px;
+}
+.collection-place {
+  width: 100%;
+  text-align: left;
+}
+.collection-place svg {
+  width: 22px;
+  height: 22px;
+}
+.sticker-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 24px 0;
+}
+.sticker-grid button {
+  display: grid;
+  gap: 8px;
+  text-align: center;
+  min-width: 0;
+}
+.sticker-grid img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 5px #0002);
+}
+.sticker-grid small {
+  font-size: 10px;
+  color: var(--muted);
+}
+.sticker-preview {
+  width: 100%;
+  height: 280px;
+  object-fit: contain;
+  filter: drop-shadow(0 5px 8px #0002);
+}
+.compact {
+  width: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 18px;
+  border-radius: 99px;
+  font-size: 14px;
+  min-height: 40px;
+}
+.compact svg {
+  width: 20px;
+  height: 20px;
+}
+.answer-actions {
+  display: none;
+  position: absolute;
+  bottom: calc(40px + env(safe-area-inset-bottom));
+  left: 0;
+  right: 0;
+  justify-content: center;
+  gap: 12px;
+  pointer-events: none;
+}
+.answer-map .answer-actions {
+  display: flex;
+}
+.answer-actions button {
+  pointer-events: auto;
+  box-shadow: 0 6px 25px #0001;
+}
+.answer-map .map-stats,
+.answer-map .record-control,
+.answer-map #emptyMap {
+  display: none;
+}
+#doodleToolbar {
+  position: absolute;
+  top: calc(max(16px, env(safe-area-inset-top)) + 62px);
+  left: 16px;
+  right: 16px;
+  display: flex;
+  justify-content: space-between;
+  border-radius: 25px;
+  padding: 8px;
+  background: var(--panel);
+  box-shadow: 0 6px 20px #0001;
+  z-index: 12;
+}
+#doodleToolbar[hidden] {
+  display: none;
+}
+#doodleToolbar button {
+  padding: 8px 12px;
+  font-size: 14px;
+}
+#doodleToolbar button:last-child {
+  font-weight: 650;
+  color: var(--accent);
+}
+.drawing-doodle .answer-actions,
+.drawing-doodle .map-tools,
+.drawing-doodle .map-header {
+  visibility: hidden;
+}
+.drawing-doodle #mapBanner {
+  top: calc(max(16px, env(safe-area-inset-top)) + 120px);
+  font-size: 12px;
+}
+.drawing-doodle #mapViewport {
+  cursor: crosshair;
+}
+.answer-map #menuButton {
+  visibility: hidden;
+}
+.answer-map .map-caption {
+  position: absolute;
+  left: 55px;
+  right: 55px;
+  transform: none;
+  pointer-events: none;
+}
+.answer-map .map-caption strong {
+  font-size: 16px;
+  font-weight: 650;
+  color: var(--ink);
+}
+.answer-map #answerButton {
+  width: 78px;
+  border-radius: 99px;
+  font-size: 16px;
+}
+.answer-map .map-tools {
+  bottom: 95px;
+}
+.answer-map .map-tools small {
+  display: none;
+}
+.answer-map #layerButton {
+  order: 0;
+}
+.answer-map #locateButton {
+  order: 1;
+}
+.answer-map #spotButton,
+.answer-map #spotToolLabel {
+  display: none;
+}

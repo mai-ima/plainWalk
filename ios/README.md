@@ -2,12 +2,12 @@
 
 Web と同じ画面を WKWebView で表示し、端末 API を Swift から接続する構成です。元の PlainWalk のソースや署名済みアプリではありません。公開されている機能・画面を基にした独立実装です。
 
-**GitHub macOS の Xcode CI で、本体・Live Activity 拡張の Simulator 向けコンパイルが通過しました。CI: https://github.com/mai-ima/plainWalk/actions/runs/40884105110 。実機・配布署名は未検証で、署名済み IPA はありません。**
+**GitHub macOS の Xcode CI で、本体・Live Activity 拡張のコンパイル、iPhone Simulator の起動、Web/native 接続、位置ジャーナル復旧テストが通過しました。CI: https://github.com/mai-ima/plainWalk/actions/runs/40888890524 。実機・配布署名は未検証で、署名済み IPA はありません。**
 
 ## Mac で開く
 
 1. リポジトリ全体を Mac に展開します。`ios/` と `dist/` の相対位置を保ってください。
-2. `ios/PlainWalk.xcodeproj` を Xcode 16 以降で開き、`PlainWalk` スキームを選びます。
+2. `npm run build` で境界データを展開してから `ios/PlainWalk.xcodeproj` を Xcode 16 以降で開き、`PlainWalk` スキームを選びます。
 3. Signing & Capabilities で自分の Team と一意の Bundle Identifier を設定します。アプリと Live Activity 拡張の両方を変更してください。
 4. 実機で位置情報を許可し、必要な場合だけヘルスケアの読み取りを許可します。
 
@@ -43,6 +43,6 @@ OS にプロセスを終了された後は自動的に記録を再開せず、�
 - 写真／動画の権限、共有シート、ファイルの取り込みと iCloud Drive への保存
 - VoiceOver、文字サイズ、ダークモード、縦横画面、セーフエリア
 
-Apple Watch アプリ、通常のホーム画面ウィジェット、ジオフェンスによる自動開始、共有白地図、写真切り抜きステッカー、自治体の境界データは未実装です。
+Apple Watch アプリ、通常のホーム画面ウィジェット、ジオフェンスによる自動開始、共有白地図の自動同期は未実装です。国内の境界データ、切り抜きステッカー、白地図ファイルの共有は同梱の Web UI に含めています。
 
 ジャーナルはセッション ID と連番を持ち、復旧時に重複を避けます。途中の不完全な行を無視して読める点を回復し、終了時だけ大きい状態を書き直します。これにより、位置更新のたびに全経路を書き直す負荷を避けます。Simulator の DEBUG スモークテストで、ジャーナル復旧とチェックポイント後の重複排除を検証する設定です。

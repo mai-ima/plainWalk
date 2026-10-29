@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test tests/core.test.js tests/effects.test.js tests/areas.test.js",
-    "check": "node --check dist/app.js && node --check dist/core.js && node --check dist/native.js && node --check dist/effects.js && node --check dist/media.js && node --check dist/sw.js && node --check dist/areas.js && node --check dist/notebook.js",
+    "check": "node scripts/check.mjs",
     "start": "python3 -m http.server 4173 --directory dist",
     "build": "node scripts/build.mjs"
   }
