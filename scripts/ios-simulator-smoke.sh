@@ -22,7 +22,7 @@ for PW_ATTEMPT in $(seq 1 30); do
     for PW_SETTINGS_ATTEMPT in $(seq 1 20); do
       if [[ -f "$PW_APP_CONTAINER/Library/Application Support/PlainWalk/native-settings-ready.json" ]]; then
         xcrun simctl io "$PW_SIM_DEVICE" screenshot .build/screenshots/ios-native-settings.png
-        for PW_SCREEN in records profile layers answer spots doodles menu stepGoal; do
+        for PW_SCREEN in records profile layers answer spots doodles menu stepGoal developer; do
           xcrun simctl terminate "$PW_SIM_DEVICE" org.example.plainwalkweb
           xcrun simctl launch "$PW_SIM_DEVICE" org.example.plainwalkweb -PlainWalkSmokeTest "-PlainWalkScreen=$PW_SCREEN"
           PW_SCREEN_FILE="$PW_APP_CONTAINER/Library/Application Support/PlainWalk/screen-$PW_SCREEN.ready"

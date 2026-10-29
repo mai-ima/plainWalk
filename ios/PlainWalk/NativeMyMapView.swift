@@ -124,7 +124,7 @@ import ImageIO
             }
         }
         .sheet(item: $selectedSpot) { spot in NativeMapSpotPreview(spot: spot) }
-        .sheet(item: $selectedFlag) { flag in NativeMapFlagPreview(flag: flag, current: model.currentPoint, distanceText: model.distanceText, unit: model.distanceUnit) }
+        .sheet(item: $selectedFlag) { flag in NativeMapFlagPreview(model: model, flag: flag) }
     }
 
     private var header: some View {
@@ -552,15 +552,28 @@ struct NativePaperCompanion: View {
     }
 }
 @MainActor private struct NativeMapFlagPreview: View {
-    let flag: NativeFlag; let current: NativePoint?; let distanceText: (Double) -> String; let unit: String
+    @ObservedObject var model: NativeAppModel
+    let flag: NativeFlag
+    @State private var removalError: String?
     @Environment(\.dismiss) private var dismiss
     var body: some View {
-        NavigationStack { VStack(spacing: 20) {
-            Image(systemName: "flag.fill").font(.system(size: 44)).padding(.top, 25)
+        NavigationStack { ScrollView { VStack(spacing: 16) {
+            Image(systemName: "flag.fill").font(.system(size: 36)).padding(.top, 8)
             Text(flag.name).font(.title2.weight(.semibold))
-            if let current { Text("現在地から \(distanceText(NativePaperGeometry.distance(current, flag.point))) \(unit)").foregroundStyle(.secondary) }
+            if let current = model.currentPoint { Text("現在地から \(model.distanceText(NativePaperGeometry.distance(current, flag.point))) \(model.distanceUnit)").foregroundStyle(.secondary) }
             ShareLink(item: "\(flag.name)\nhttps://www.openstreetmap.org/?mlat=\(flag.point.lat)&mlon=\(flag.point.lon)#map=17/\(flag.point.lat)/\(flag.point.lon)") { Label("場所を共有", systemImage: "square.and.arrow.up") }.buttonStyle(.borderedProminent)
-            Spacer()
-        }.padding(20).navigationTitle("目的地").navigationBarTitleDisplayMode(.inline).toolbar { ToolbarItem(placement: .topBarTrailing) { Button("閉じる") { dismiss() } } } }.presentationDetents([.medium])
+            Button("旗を取り下げる", role: .destructive) {
+                do {
+                    try model.updateLibrary { library in
+                        library["flags"] = (library["flags"] as? [[String: Any]] ?? []).filter { $0["id"] as? String != flag.id }
+                    }
+                    model.haptic(); dismiss()
+                } catch { removalError = error.localizedDescription }
+            }.buttonStyle(.bordered).frame(minHeight: 44)
+        }.padding(20) }.navigationTitle("目的地").navigationBarTitleDisplayMode(.inline).toolbar { ToolbarItem(placement: .topBarTrailing) { Button("閉じる") { dismiss() } } } }
+        .presentationDetents([.medium])
+        .alert("旗を取り下げられませんでした", isPresented: Binding(get: { removalError != nil }, set: { if !$0 { removalError = nil } })) {
+            Button("閉じる", role: .cancel) { removalError = nil }
+        } message: { Text(removalError ?? "") }
     }
 }

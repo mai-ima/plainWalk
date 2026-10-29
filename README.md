@@ -19,6 +19,7 @@ PlainWalk の公開情報・提供された画面・APK の静的な構造を参
 - [提供画像 16 枚の分析](docs/app-analysis.md)
 - [追加の画像・一次資料の分析](docs/research-deep-dive.md)
 - [APK の静的解析と Android 画像](docs/apk-static-analysis.md)
+- [APK の記録・保存・動作分類の仕組みと差分](docs/apk-mechanism-notes.md)
 - [実装範囲と残差](docs/reproduction-audit.md)
 - [実機検証と開発者機能](docs/device-testing.md)
 - [Xcode の起動・署名](ios/README.md)

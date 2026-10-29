@@ -25,7 +25,9 @@ private struct NativeImportPayload: @unchecked Sendable {
     @Published private(set) var accuracy = 0.0
     @Published private(set) var isRecording = false
     @Published private(set) var isPaused = false
-    @Published private(set) var activePoints: [NativePoint] = []
+    // GPS callbacks publish scalar state before each append; keep this array out of
+    // @Published so its publisher cannot retain and copy the whole route per fix.
+    private(set) var activePoints: [NativePoint] = []
     @Published private(set) var todaySteps: Double?
     @Published private(set) var todayPioneered = 0.0
     @Published private(set) var totalPioneered = 0.0
@@ -500,8 +502,9 @@ private struct NativeImportPayload: @unchecked Sendable {
     private func tick() {
         if let active {
             let now = Date().timeIntervalSince1970 * 1000
-            elapsed = max(0, ((nativeNumber(active["pauseAt"]) ?? now) - (nativeNumber(active["start"]) ?? now) - (nativeNumber(active["pausedMs"]) ?? 0)) / 1000)
-        } else { elapsed = 0 }
+            let nextElapsed = max(0, ((nativeNumber(active["pauseAt"]) ?? now) - (nativeNumber(active["start"]) ?? now) - (nativeNumber(active["pausedMs"]) ?? 0)) / 1000)
+            if elapsed != nextElapsed { elapsed = nextElapsed }
+        } else if elapsed != 0 { elapsed = 0 }
         let day = Calendar.current.startOfDay(for: Date())
         if day != lastDay {
             lastDay = day
@@ -510,5 +513,5 @@ private struct NativeImportPayload: @unchecked Sendable {
         }
         if isRecording && Date().timeIntervalSince(lastStepRefresh) >= 30 { refreshSteps() }
     }
-    func settingsAction(_ name:String){switch name {case "tab:map":tab = .map;closeSheet();case "tab:records":tab = .records;closeSheet();case "tab:profile":tab = .profile;closeSheet();case "nativeDeveloper":present(.developer);case "nativeImport","nativeRestore":importFiles();case "backup":exportBackup();case "gpxExportAll":shareData(NativeTrackIO.gpx(walks:walks),name:"PlainWalk-all.gpx");case "healthImport":present(.health);case "resetData":showError("記録の削除は、それぞれのさんぽ詳細から行えます。バックアップを書き出してから削除してください。");case "steps":present(.stepGoal);case "lutSettings":showError("写真のLUT編集は現在未実装です。元の写真でここいいなを保存できます。");case "about":showError("PlainWalk 互換クライアント 0.3.0。SwiftUI・MapKit・Core Locationで独立実装しています。");default:showError("手動GPS記録、写真・ノート、GPX、JSONバックアップに対応。自動開始、iCloud自動同期、近距離交換は未実装です。")}}
+    func settingsAction(_ name:String){switch name {case "tab:map":tab = .map;closeSheet();case "tab:records":tab = .records;closeSheet();case "tab:profile":tab = .profile;closeSheet();case "nativeDeveloper":present(.developer);case "nativeImport","nativeRestore":importFiles();case "backup":exportBackup();case "gpxExportAll":shareData(NativeTrackIO.gpx(walks:walks),name:"PlainWalk-all.gpx");case "healthImport":present(.health);case "resetData":showError("記録の削除は、それぞれのさんぽ詳細から行えます。バックアップを書き出してから削除してください。");case "steps":present(.stepGoal);case "lutSettings":showError("写真のLUT編集は現在未実装です。元の写真でここいいなを保存できます。");case "about":showError("PlainWalk を参考にした非公式アプリ 0.3.0。SwiftUI・MapKit・Core Locationで独立実装しています。");default:showError("手動GPS記録、写真・ノート、GPX、JSONバックアップに対応。自動開始、iCloud自動同期、近距離交換は未実装です。")}}
 }

@@ -38,6 +38,10 @@ jobs:
         with:
           node-version: '22'
       - run: npm run build
+      - name: Warm iPhone Simulator while compiling
+        run: |
+          PW_SIM_DEVICE=$(xcrun simctl list devices available --json | python3 -c 'import json,sys; data=json.load(sys.stdin); print(next(d["udid"] for group in data["devices"].values() for d in group if "iPhone" in d["name"] and d.get("isAvailable")))')
+          xcrun simctl boot "$PW_SIM_DEVICE" || true
       - name: Compile iOS app and Live Activity extension
         run: >-
           xcodebuild -project ios/PlainWalk.xcodeproj -scheme PlainWalk

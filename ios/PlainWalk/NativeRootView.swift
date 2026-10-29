@@ -83,6 +83,7 @@ import UniformTypeIdentifiers
                 case "doodles": model.openCollection(.doodles)
                 case "menu": model.openMenu()
                 case "stepGoal": model.present(.stepGoal)
+                case "developer": model.present(.developer)
                 default: break
                 }
             }

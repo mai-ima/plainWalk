@@ -7,6 +7,8 @@ import tree_sitter_swift
 
 root = Path(__file__).resolve().parents[1]
 parser = Parser(Language(tree_sitter_swift.language()))
+# The grammar misparses valid multiple trailing closures in the Widget extension.
+# Xcode remains the validation gate for that target.
 paths = sorted(path for folder in ('PlainWalk', 'Shared')
                for path in (root / 'ios' / folder).glob('*.swift'))
 errors = []

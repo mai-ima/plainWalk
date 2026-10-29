@@ -13,7 +13,7 @@ private struct DiagnosticExport: Identifiable { let id = UUID(); let url: URL }
     private let checks = [("launch","起動と初回表示"),("location","位置情報の許可・拒否"),("record","記録・一時停止・再開"),("background","画面ロック中の記録"),("recovery","再起動後の復元"),("media","写真・動画と共有"),("backup","バックアップの入出力"),("offline","オフライン表示"),("accessibility","VoiceOver・文字サイズ")]
     private var checkValues: [String: Int] { (try? JSONSerialization.jsonObject(with: Data(checksJSON.utf8)) as? [String: Int]) ?? [:] }
     private func record(_ code: String, count: Int? = nil) { var item=["time": ISO8601DateFormatter().string(from: Date()),"code":code];if let count {item["count"]=String(count)}; events.append(item); if events.count > 100 { events.removeFirst(events.count - 100) } }
-    private func value(_ key: String) -> String { report[key].map { String(describing: $0) } ?? "不明" }
+    private func value(_ key: String) -> String { (report[key] is NSNull) ? "未取得" : (report[key].map { String(describing: $0) } ?? "不明") }
     private func refresh() async { report = await DiagnosticService.snapshot(recorder: recorder); record("snapshotRead") }
     var body: some View {
         NavigationStack {
@@ -31,6 +31,14 @@ private struct DiagnosticExport: Identifiable { let id = UUID(); let url: URL }
                     Button("保存を往復テスト") { do { let output = try DiagnosticService.storageTest(); result = "保存と読み取りが一致 · \(output["durationMs"] ?? 0) ms"; record("storagePassed") } catch { result = "保存の往復テストに失敗しました"; record("storageFailed") } }
                     #if DEBUG
                     Button("記録の復元テスト（隔離領域）") { do { _ = try LocationRecorder.persistenceSelfTest(); result = "ジャーナル復元・重複排除を確認"; record("recoveryPassed") } catch { result = "記録の復元テストに失敗しました"; record("recoveryFailed") } }
+                    Button("保存失敗と再試行テスト（隔離領域）") {
+                        do { _ = try NativeAppModel.stateSelfTest(); result = "保存失敗時の保持・再試行・二重保存の防止を確認"; record("transactionPassed") }
+                        catch { result = "保存失敗と再試行のテストに失敗しました"; record("transactionFailed") }
+                    }
+                    Button("GPX・共有ファイルの互換テスト") {
+                        do { _ = try NativeTrackIO.selfTest(); _ = try NativeAppModel.importSelfTest(); result = "GPX / TCX の断絶・時刻・共有ファイルの互換を確認"; record("interchangePassed") }
+                        catch { result = "ファイル互換テストに失敗しました"; record("interchangeFailed") }
+                    }
                     #endif
                     Text(result).font(.footnote).foregroundStyle(.secondary)
                 }
