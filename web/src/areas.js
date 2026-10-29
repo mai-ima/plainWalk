@@ -155,7 +155,7 @@ export async function collectAreas(walks, index, onProgress = () => {}) {
     .map((s) => ({ ...s, cells: [...s.cells] }))
     .sort((a, b) => b.distance - a.distance);
 }
-export function areaSVG(feature, size = 100, cells = null) {
+export function areaSVG(feature, size = 100, cells = null, walks = null) {
   const [a, b, c, d] = feature.bbox || bounds(feature),
     lat = (((b + d) / 2) * Math.PI) / 180,
     cos = Math.cos(lat),
@@ -180,7 +180,8 @@ export function areaSVG(feature, size = 100, cells = null) {
     );
   const clip =
       "boundary-" +
-      String(feature.properties.id).replace(/[^a-zA-Z0-9_-]/g, ""),
+      String(feature.properties.id).replace(/[^a-zA-Z0-9_-]/g, "") +
+      (walks ? "-trails" : "-cells"),
     metersScale = scale * 111195.08,
     cx = ((a + c) / 2) * 111195.08 * cos,
     cy = ((b + d) / 2) * 111195.08;
@@ -190,8 +191,29 @@ export function areaSVG(feature, size = 100, cells = null) {
       return `<rect x="${((x * 500 - cx) / metersScale + size / 2).toFixed(2)}" y="${(size / 2 - ((y + 1) * 500 - cy) / metersScale).toFixed(2)}" width="${(500 / metersScale + 0.1).toFixed(2)}" height="${(500 / metersScale + 0.1).toFixed(2)}"/>`;
     })
     .join("");
+  const pointXY = (p) =>
+    `${(((p.lon - (a + c) / 2) * cos) / scale + size / 2).toFixed(2)} ${(size / 2 - (p.lat - (b + d) / 2) / scale).toFixed(2)}`;
+  let trail = "";
+  if (walks)
+    for (const walk of walks)
+      for (let i = 1; i < walk.points.length; i++) {
+        const before = walk.points[i - 1],
+          point = walk.points[i];
+        if (
+          point.break ||
+          Math.max(before.lon, point.lon) < a ||
+          Math.min(before.lon, point.lon) > c ||
+          Math.max(before.lat, point.lat) < b ||
+          Math.min(before.lat, point.lat) > d
+        )
+          continue;
+        trail += `M${pointXY(before)}L${pointXY(point)} `;
+      }
+  const routes = trail
+    ? `<path data-area-trails="true" d="${trail}" clip-path="url(#${clip})" fill="none" stroke="var(--ink)" stroke-width=".7" stroke-linecap="round" stroke-linejoin="round"/>`
+    : "";
   return (
     opening +
-    `<defs><clipPath id="${clip}"><path d="${path}" fill-rule="evenodd" clip-rule="evenodd"/></clipPath></defs><path d="${path}" fill="currentColor" fill-opacity=".13" fill-rule="evenodd" stroke="currentColor" stroke-opacity=".5" stroke-width=".5"/><g clip-path="url(#${clip})" fill="currentColor" stroke="none">${squares}</g></svg>`
+    `<defs><clipPath id="${clip}"><path d="${path}" fill-rule="evenodd" clip-rule="evenodd"/></clipPath></defs><path d="${path}" fill="none" fill-rule="evenodd" stroke="var(--muted)" stroke-opacity=".8" stroke-width=".65" stroke-dasharray=".1 1.2" stroke-linecap="round"/><g clip-path="url(#${clip})" fill="currentColor" fill-opacity=".2" stroke="none">${squares}</g>${routes}</svg>`
   );
 }

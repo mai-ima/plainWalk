@@ -26,3 +26,7 @@ Web と同じ白地図・履歴・コレクション、端末内ファイル保�
 Playgrounds 版は前面で記録する構成です。HealthKit、Live Activity 拡張、Apple Watch、ロック中の継続 GPS を利用できる版としては扱いません。HealthKit 操作には利用範囲の説明を返します。iPad 実機での権限・GPS 精度・カメラと Mac の Playgrounds 実行は未検証です。
 
 権限とアプリ設定の根拠: [Apple: app playground capabilities](https://developer.apple.com/documentation/swift-playgrounds/project-capabilities)、[Apple: iPad でファイル・画像を追加](https://support.apple.com/guide/playgrounds-ipad/add-swift-files-images-and-swift-packages-itc18b7bce9d/ipados)。
+
+## 検証
+
+GitHub Actions 40898218214 の `playgrounds` ジョブで `.swiftpm` のアプリを iOS Simulator 向けにコンパイルしました。iPad / Mac の Swift Playgrounds 上の実行試験とは区別します。

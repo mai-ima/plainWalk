@@ -38,7 +38,7 @@ npm run playgrounds
 
 `artifacts/packages/PlainWalk.swiftpm.zip` を生成します。展開後の `.swiftpm` を iPad / Mac の Swift Playgrounds で開けます。生成済み ZIP は単独で動く構成で、Web サーバーや Node.js は不要です。iPhone 向けの署名・インストールは通常の Xcode 版を使います。
 
-Playgrounds 版は前面 GPS、ファイル保存、MapKit、Vision、モーション歩数、同じ Web UI を同梱します。HealthKit・Live Activity 拡張・ロック中の継続記録を使える版としては扱いません。iPad 実機での動作は未検証です。
+Playgrounds 版は前面 GPS、ファイル保存、MapKit、Vision、モーション歩数、同じ Web UI を同梱します。HealthKit・Live Activity 拡張・ロック中の継続記録を使える版としては扱いません。[GitHub Actions 40898218214](https://github.com/mai-ima/plainWalk/actions/runs/40898218214) の Playgrounds ジョブでコンパイルを通過しました。iPad 実機での動作は未検証です。
 
 ## 実装した機能
 
@@ -57,7 +57,7 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-15 件の単体テストと、Chromium / Linux WebKit の主要画面・保存復旧・操作が通過。テストは `tests/unit/` と `tests/browser/`、画像や動画は `artifacts/previews/` に分離しました。
+16 件の単体テストと、Chromium / Linux WebKit の主要画面・保存復旧・操作が通過。テストは `tests/unit/` と `tests/browser/`、画像や動画は `artifacts/previews/` に分離しました。
 
 通常の iOS 版は [GitHub Actions 40888890524](https://github.com/mai-ima/plainWalk/actions/runs/40888890524) で本体・拡張のコンパイル、iPhone Simulator 起動、Web/native 接続、位置ジャーナル復旧が通過。実機の背景 GPS・HealthKit・電池消費・配布署名は未検証で、署名済み IPA はありません。Playgrounds 版の検証は通常版と区別します。
 

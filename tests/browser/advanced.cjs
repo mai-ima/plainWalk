@@ -21,15 +21,13 @@ const assert = require("node:assert/strict");
   await page
     .getByRole("button", { name: "GPX / TCX を取り込む", exact: true })
     .click();
-  await page
-    .locator("#importFile")
-    .setInputFiles({
-      name: "edit-test.gpx",
-      mimeType: "application/gpx+xml",
-      buffer: Buffer.from(
-        '<gpx><trk><trkseg><trkpt lat="35.680" lon="139.76"/><trkpt lat="35.681" lon="139.76"/><trkpt lat="35.681" lon="139.761"/></trkseg></trk></gpx>',
-      ),
-    });
+  await page.locator("#importFile").setInputFiles({
+    name: "edit-test.gpx",
+    mimeType: "application/gpx+xml",
+    buffer: Buffer.from(
+      '<gpx><trk><trkseg><trkpt lat="35.680" lon="139.76"/><trkpt lat="35.681" lon="139.76"/><trkpt lat="35.681" lon="139.761"/></trkseg></trk></gpx>',
+    ),
+  });
   await page
     .getByRole("button", { name: "この道を白地図に残す", exact: true })
     .click();
@@ -88,8 +86,9 @@ const assert = require("node:assert/strict");
     .click();
   const download = await downloading;
   await download.saveAs(
-    "/workspace/scratch/timelapse." +
-      download.suggestedFilename().split(".").at(-1),
+    require("./support.cjs").artifact(
+      "timelapse." + download.suggestedFilename().split(".").at(-1),
+    ),
   );
   assert.equal(errors.length, 0, errors.join("\n"));
   console.log(

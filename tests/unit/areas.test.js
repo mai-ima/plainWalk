@@ -115,3 +115,24 @@ test("gaps do not count invented cross-town distance", async () => {
   assert.equal(stats[0].distance, 0);
   assert.equal(stats[0].walks, 1);
 });
+test("area detail clips route segments to the boundary and respects recording gaps", () => {
+  const shape = { ...structuredClone(f), bbox: [0, 0, 1, 1] };
+  const svg = areaSVG(
+    shape,
+    100,
+    [],
+    [
+      {
+        points: [
+          { lat: 0.2, lon: 0.2 },
+          { lat: 0.4, lon: 0.4 },
+          { lat: 0.8, lon: 0.8, break: true },
+        ],
+      },
+    ],
+  );
+  assert.ok(svg.includes('data-area-trails="true"'));
+  assert.ok(svg.includes('clip-path="url(#boundary-'));
+  const d = svg.match(/data-area-trails="true" d="([^"]+)"/)[1];
+  assert.equal((d.match(/L/g) || []).length, 1);
+});

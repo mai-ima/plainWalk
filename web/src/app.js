@@ -894,24 +894,39 @@ function miniSvg(points, cls = "") {
 function renderRecords() {
   const now = new Date(),
     weekStart = new Date(now);
-  weekStart.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+  weekStart.setDate(now.getDate() - now.getDay());
   weekStart.setHours(0, 0, 0, 0);
-  const week = data.walks.filter((w) => w.start >= +weekStart);
+  const nextWeek = new Date(weekStart),
+    previousWeek = new Date(weekStart),
+    weekEnd = new Date(weekStart);
+  nextWeek.setDate(nextWeek.getDate() + 7);
+  previousWeek.setDate(previousWeek.getDate() - 7);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+  const week = data.walks.filter(
+    (w) => w.start >= +weekStart && w.start < +nextWeek,
+  );
+  const previous = data.walks.filter(
+    (w) => w.start >= +previousWeek && w.start < +weekStart,
+  );
+  const previousDistance = previous.reduce(
+    (n, w) => n + trailDistance(w.points),
+    0,
+  );
+  const previousNew = previous.reduce((n, w) => n + (exp.byWalk[w.id] || 0), 0);
   const daysInMonth = new Date(
       month.getFullYear(),
       month.getMonth() + 1,
       0,
     ).getDate(),
-    offset =
-      (new Date(month.getFullYear(), month.getMonth(), 1).getDay() + 6) % 7;
-  let calendar = ["月", "火", "水", "木", "金", "土", "日"]
+    offset = new Date(month.getFullYear(), month.getMonth(), 1).getDay();
+  let calendar = ["日", "月", "火", "水", "木", "金", "土"]
     .map((s) => `<span class="weekday">${s}</span>`)
     .join("");
   calendar += "<span></span>".repeat(offset);
   for (let i = 1; i <= daysInMonth; i++) {
     const d = dateKey(new Date(month.getFullYear(), month.getMonth(), i)),
       n = data.walks.filter((w) => dateKey(w.start) === d).length;
-    calendar += `<button class="day ${n ? "walked" : ""} ${d === today() ? "today" : ""}" data-day="${d}" aria-label="${d}、${n}回の記録">${i}</button>`;
+    calendar += `<button class="day ${n ? "walked" : ""} ${d === today() ? "today" : ""}" data-day="${d}" aria-label="${d}、${n}回の記録" title="${i}日"><span class="day-dot" aria-hidden="true"></span></button>`;
   }
   const walks = data.walks
     .filter((w) => {
@@ -923,7 +938,7 @@ function renderRecords() {
     })
     .sort((a, b) => b.start - a.start);
   $("#contentPage").innerHTML =
-    `<h1 class="page-title">記録</h1><section class="card"><div class="card-heading"><strong>今週</strong><small>${weekStart.getMonth() + 1}/${weekStart.getDate()} — ${now.getMonth() + 1}/${now.getDate()}</small></div><div class="stats-row"><div><b>${week.length}</b><small>さんぽ</small></div><div><b>${fmt(week.reduce((n, w) => n + trailDistance(w.points), 0))}<span class="unit"> ${distanceUnit()}</span></b><small>歩いた距離</small></div><div><b>${fmt(week.reduce((n, w) => n + (exp.byWalk[w.id] || 0), 0))}<span class="unit"> ${distanceUnit()}</span></b><small>開拓した道</small></div></div><div class="card-heading" style="margin-bottom:10px"><button data-action="prevMonth" aria-label="前月">‹</button><small>${month.getFullYear()}年 ${month.getMonth() + 1}月</small><button data-action="nextMonth" aria-label="翌月">›</button></div><div class="calendar">${calendar}</div><div style="margin-top:15px">${row("notes", "今日のふりかえり", "note")}</div></section><div class="two-buttons"><button data-action="replay">${icon("play")}地図の成長を<br>再生</button><button data-action="import">${icon("upload")}歩行の記録を<br>取り込む</button></div><div class="month-label"><span>${month.getFullYear()}年 ${month.getMonth() + 1}月</span><span>距離 ${fmt(walks.reduce((n, w) => n + trailDistance(w.points), 0))} ${distanceUnit()}</span></div>${walks.length ? walks.map((w) => `<button class="walk-card" data-walk="${esc(w.id)}">${miniSvg(w.points)}<span class="stack"><strong>${esc(w.name)}</strong><small>${new Date(w.start).getMonth() + 1}月${new Date(w.start).getDate()}日 ${time(w.start)} – ${time(w.end)}</small><b>開拓 ${fmt(exp.byWalk[w.id])} ${distanceUnit()} <small>· ${fmt(trailDistance(w.points))} ${distanceUnit()}</small></b></span><span class="subtle">›</span></button>`).join("") : `<div class="empty-state">${icon("foot")}<br>まだ、さんぽの記録がありません。<br>白地図で、最初の一歩を。</div>`}`;
+    `<h1 class="page-title">記録</h1><section class="card"><div class="card-heading"><strong>今週</strong><small>${weekStart.getMonth() + 1}/${weekStart.getDate()} — ${weekEnd.getMonth() + 1}/${weekEnd.getDate()}</small></div><div class="stats-row"><div><b>${week.length}</b><small>さんぽ</small><small class="week-comparison">先週 ${previous.length}</small></div><div><b>${fmt(week.reduce((n, w) => n + trailDistance(w.points), 0))}<span class="unit"> ${distanceUnit()}</span></b><small>歩いた距離</small><small class="week-comparison">先週 ${fmt(previousDistance)} ${distanceUnit()}</small></div><div><b>${fmt(week.reduce((n, w) => n + (exp.byWalk[w.id] || 0), 0))}<span class="unit"> ${distanceUnit()}</span></b><small>開拓した道</small><small class="week-comparison">先週 ${fmt(previousNew)} ${distanceUnit()}</small></div></div><div class="card-heading" style="margin-bottom:10px"><button data-action="prevMonth" aria-label="前月">‹</button><small>${month.getFullYear()}年 ${month.getMonth() + 1}月</small><button data-action="nextMonth" aria-label="翌月">›</button></div><div class="calendar">${calendar}</div><div style="margin-top:15px">${row("weeklyReview", "今週のふりかえり", "records")}</div></section><div class="two-buttons"><button data-action="replay">${icon("play")}地図の成長を<br>再生</button><button data-action="stats">${icon("chart")}歩行の記録</button></div><div class="month-label"><span>${month.getFullYear()}年 ${month.getMonth() + 1}月</span><span>距離 ${fmt(walks.reduce((n, w) => n + trailDistance(w.points), 0))} ${distanceUnit()}</span></div>${walks.length ? walks.map((w) => `<button class="walk-card" data-walk="${esc(w.id)}">${miniSvg(w.points)}<span class="stack"><strong>${esc(w.name)}</strong><small>${new Date(w.start).getMonth() + 1}月${new Date(w.start).getDate()}日 ${time(w.start)} – ${time(w.end)}</small><b>開拓 ${fmt(exp.byWalk[w.id])} ${distanceUnit()} <small>· ${fmt(trailDistance(w.points))} ${distanceUnit()}</small></b><span class="walk-exploration-bar" role="meter" aria-label="開拓した道の割合" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(Math.min(100, (100 * (exp.byWalk[w.id] || 0)) / Math.max(1, trailDistance(w.points))))}" style="--pioneer:${Math.min(100, (100 * (exp.byWalk[w.id] || 0)) / Math.max(1, trailDistance(w.points)))}%"></span></span><span class="subtle">›</span></button>`).join("") : `<div class="empty-state">${icon("foot")}<br>まだ、さんぽの記録がありません。<br>白地図で、最初の一歩を。</div>`}`;
 }
 function renderProfile() {
   $("#contentPage").innerHTML =
@@ -1306,7 +1321,7 @@ async function badges() {
       ]
         .map(
           ([v, l]) =>
-            `<button data-area-finish="${v}" class="${(config.areaFinish || "glass") === v ? "chosen" : ""}">${l}</button>`,
+            `<button data-area-finish="${v}" class="${(config.areaFinish || "ink") === v ? "chosen" : ""}">${l}</button>`,
         )
         .join(
           "",
@@ -1328,7 +1343,7 @@ function renderAreaGrid() {
           const feature = areaState.index.collection.features.find(
             (f) => f.properties.id === s.id,
           );
-          return `<button class="area-card ${config.areaFinish || "glass"}" data-area="${esc(s.id)}"><span class="area-shape">${areaSVG(feature, 100, s.cells)}</span><strong>${esc(s.name)}</strong><small>${esc(s.parent)}</small><small>${s.walks} さんぽ · ${fmt(s.distance)} ${distanceUnit()}</small></button>`;
+          return `<button class="area-card ${config.areaFinish || "ink"}" data-area="${esc(s.id)}"><span class="area-shape">${areaSVG(feature, 100, s.cells)}</span><strong>${esc(s.name)}</strong><small>${esc(s.parent)}</small><small>${s.walks} さんぽ · ${fmt(s.distance)} ${distanceUnit()}</small></button>`;
         })
         .join("")
     : `<div class="empty-state" style="grid-column:1/-1">${q ? "一致する街はありません。" : "まだ街のバッジがありません。<br>日本の街を歩くと、その輪郭が集まります。"}</div>`;
@@ -1341,7 +1356,7 @@ function areaDetail(areaID) {
   if (!stat || !feature) return;
   sheet(
     stat.name,
-    `<div class="area-detail ${config.areaFinish || "glass"}"><span class="area-shape">${areaSVG(feature, 100, stat.cells)}</span></div><p class="center subtle">${esc(stat.parent)}</p><div class="stats-row"><div><b>${stat.walks}</b><small>さんぽ</small></div><div><b>${fmt(stat.distance)}</b><small>街の中の道 ${distanceUnit()}</small></div></div><p class="center subtle">はじめて歩いた日 ${new Date(stat.first).toLocaleDateString("ja-JP")}<br>最近歩いた日 ${new Date(stat.last).toLocaleDateString("ja-JP")}</p><button class="primary" data-area-map="${esc(areaID)}">この街を白地図で見る</button><p class="caption-note">${stat.cells.length} 区画（500 m 四方）を歩いています。距離は軌跡を 25 m ごとに区切り、区間の中点で境界と照合した近似値です。バッジの質感は独自実装です。</p>`,
+    `<div class="area-detail ${config.areaFinish || "ink"}"><span class="area-shape">${areaSVG(feature, 100, stat.cells, data.walks)}</span></div><p class="center subtle">${esc(stat.parent)}</p><div class="stats-row"><div><b>${stat.walks}</b><small>さんぽ</small></div><div><b>${fmt(stat.distance)}</b><small>街の中の道 ${distanceUnit()}</small></div></div><p class="center subtle">はじめて歩いた日 ${new Date(stat.first).toLocaleDateString("ja-JP")}<br>最近歩いた日 ${new Date(stat.last).toLocaleDateString("ja-JP")}</p><button class="primary" data-area-map="${esc(areaID)}">この街を白地図で見る</button><p class="caption-note">${stat.cells.length} 区画（500 m 四方）を歩いています。距離は軌跡を 25 m ごとに区切り、区間の中点で境界と照合した近似値です。バッジの質感は独自実装です。</p>`,
   );
 }
 
@@ -1689,6 +1704,18 @@ const actions = {
   flags,
   spots,
   notes: () => notes(),
+  weeklyReview: () => {
+    const start = new Date();
+    start.setDate(start.getDate() - start.getDay());
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 7);
+    const walks = data.walks.filter((w) => w.start >= +start && w.start < +end);
+    sheet(
+      "今週のふりかえり",
+      `<p class="center subtle">${start.toLocaleDateString("ja-JP")} からの一週間</p><div class="stats-row"><div><b>${walks.length}</b><small>さんぽ</small></div><div><b>${fmt(walks.reduce((n, w) => n + trailDistance(w.points), 0))}</b><small>歩いた距離 ${distanceUnit()}</small></div><div><b>${fmt(walks.reduce((n, w) => n + (exp.byWalk[w.id] || 0), 0))}</b><small>開拓した道 ${distanceUnit()}</small></div></div>${walks.length ? walks.map((w) => `<button class="walk-card" data-walk="${esc(w.id)}">${miniSvg(w.points)}<span class="stack"><strong>${esc(w.name)}</strong><small>${new Date(w.start).toLocaleDateString("ja-JP")}</small></span></button>`).join("") : '<p class="center subtle">今週の最初の一歩を、白地図に。</p>'}<button class="secondary" data-action="notes">今日のノートを書く</button>`,
+    );
+  },
   stats,
   badges,
   steps,
