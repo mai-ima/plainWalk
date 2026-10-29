@@ -9,6 +9,7 @@ import MapKit
     let health = HealthService()
     let activities = LiveActivityService()
     private var restoreReply: String?
+    private var importingTrack = false
     private var exportURLs: [URL] = []
     static let bootstrap = #"""
     (()=>{let counter=0;const pending=new Map();window.PlainWalkNative={
@@ -50,6 +51,7 @@ import MapKit
                     if ProcessInfo.processInfo.arguments.contains("-PlainWalkSmokeTest") { persistence = try LocationRecorder.persistenceSelfTest() }
                     let bytes = try JSONSerialization.data(withJSONObject: ["ready": true, "recordingPersistence": persistence, "version": payload["version"] as? String ?? "unknown"])
                     try bytes.write(to: folder.appendingPathComponent("web-ready.json"), options: .atomic)
+                    if ProcessInfo.processInfo.arguments.contains("-PlainWalkNativeSettingsSmokeTest") { presentNativeSettings() }
                     #endif
                     reply(id)
                 case "storageRead", "storageWrite":
@@ -64,6 +66,10 @@ import MapKit
                         let bytes = try JSONSerialization.data(withJSONObject: payload["value"] ?? NSNull(), options: .fragmentsAllowed)
                         try bytes.write(to: file, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication]); reply(id)
                     }
+                case "diagnostics": reply(id, result: await DiagnosticService.snapshot(recorder: recorder))
+                case "diagnosticsStorageTest": reply(id, result: try DiagnosticService.storageTest())
+                case "showSettings": presentNativeSettings(suppliedConfig: payload["config"] as? [String: Any]); reply(id)
+                case "showNativeDeveloper": presentNativeDeveloper(); reply(id)
                 case "status": reply(id, result: ["session": recorder.session.map { $0.json as Any } ?? NSNull(), "healthAvailable": true, "version": 1])
                 case "locationStart":
                     try recorder.start(id: payload["sessionID"] as? String, start: payload["start"] as? Double, recording: payload["recording"] as? Bool ?? false)
@@ -97,10 +103,12 @@ import MapKit
                     let controller = UIActivityViewController(activityItems: [url], applicationActivities: nil)
                     controller.completionWithItemsHandler = { _, _, _, _ in try? FileManager.default.removeItem(at: folder) }
                     present(controller); reply(id)
-                case "restoreFile":
+                case "restoreFile", "importFile":
                     guard restoreReply == nil else { throw NativeError.message("ファイル選択をすでに開いています。") }
                     restoreReply = id
-                    let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.json], asCopy: true)
+                    importingTrack = action == "importFile"
+                    let types: [UTType] = importingTrack ? [.json, .xml, UTType(filenameExtension: "gpx") ?? .xml, UTType(filenameExtension: "tcx") ?? .xml] : [.json]
+                    let picker = UIDocumentPickerViewController(forOpeningContentTypes: types, asCopy: true)
                     picker.delegate = self; picker.allowsMultipleSelection = false; present(picker)
                 case "showMap":
                     let points = payload["points"] as? [[String: Any]] ?? []
@@ -118,9 +126,34 @@ import MapKit
         let accessed = url.startAccessingSecurityScopedResource(); defer { if accessed { url.stopAccessingSecurityScopedResource() } }
         do {
             let bytes = try Data(contentsOf: url)
-            guard bytes.count < 45_000_000, let text = String(data: bytes, encoding: .utf8) else { throw NativeError.message("45 MB 以下の JSON ファイルを選んでください。") }
-            reply(id, result: text)
+            guard bytes.count < 45_000_000, let text = String(data: bytes, encoding: .utf8) else { throw NativeError.message("45 MB 以下の GPX / TCX / JSON ファイルを選んでください。") }
+            if importingTrack { reply(id, result: ["name": url.lastPathComponent, "text": text]) } else { reply(id, result: text) }
         } catch { reply(id, error: error.localizedDescription) }
+    }
+    private func presentNativeSettings(suppliedConfig: [String: Any]? = nil) {
+        let folder = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("PlainWalk", isDirectory: true)
+        let file = folder.appendingPathComponent("web-config.json")
+        let stored = (try? Data(contentsOf: file)).flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] } ?? [:]
+        let config = suppliedConfig ?? stored
+        let view = NativeSettingsView(config: config, onChange: { [weak self] next in
+            do {
+                try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+                try JSONSerialization.data(withJSONObject: next).write(to: file, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+                self?.emit(["event": "configChanged", "config": next])
+            } catch { self?.emit(["event": "error", "message": "設定を保存できません。空き容量を確認してください。"] ) }
+        }, onAction: { [weak self] action in
+            guard let self else { return }
+            if action == "nativeDeveloper" { self.webView?.window?.rootViewController?.presentedViewController?.dismiss(animated: true) { self.presentNativeDeveloper() }; return }
+            self.webView?.window?.rootViewController?.presentedViewController?.dismiss(animated: true) { self.emit(["event": "uiAction", "action": action]) }
+        }, onClose: { [weak self] in self?.webView?.window?.rootViewController?.presentedViewController?.dismiss(animated: true) })
+        let controller = UIHostingController(rootView: view)
+        controller.modalPresentationStyle = .fullScreen
+        present(controller)
+    }
+    private func presentNativeDeveloper() {
+        let controller = UIHostingController(rootView: NativeDeveloperView(recorder: recorder))
+        controller.modalPresentationStyle = .pageSheet
+        present(controller)
     }
     private func present(_ controller: UIViewController) {
         guard var presenter = webView?.window?.rootViewController else { return }

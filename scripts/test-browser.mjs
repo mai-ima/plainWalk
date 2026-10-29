@@ -15,7 +15,7 @@ if (!ready)
 const suites = process.argv.slice(2);
 for (const name of suites.length
   ? suites
-  : ["browser", "reference", "collections", "features"]) {
+  : ["browser", "reference", "collections", "features", "developer", "native-bridge"]) {
   if (!/^[a-z-]+$/.test(name)) throw Error("Invalid suite name.");
   const result = spawnSync(process.execPath, [`tests/browser/${name}.cjs`], {
     stdio: "inherit",

@@ -9,14 +9,14 @@ xcrun simctl boot "$PW_SIM_DEVICE" || true
 xcrun simctl bootstatus "$PW_SIM_DEVICE" -b
 PW_APP_PATH="$PWD/.build/ios/Build/Products/Debug-iphonesimulator/PlainWalk.app"
 xcrun simctl install "$PW_SIM_DEVICE" "$PW_APP_PATH"
-xcrun simctl launch "$PW_SIM_DEVICE" org.example.plainwalkweb -PlainWalkSmokeTest
+xcrun simctl launch "$PW_SIM_DEVICE" org.example.plainwalkweb -PlainWalkSmokeTest -PlainWalkNativeSettingsSmokeTest
 PW_APP_CONTAINER=$(xcrun simctl get_app_container "$PW_SIM_DEVICE" org.example.plainwalkweb data)
 PW_READY_FILE="$PW_APP_CONTAINER/Library/Application Support/PlainWalk/web-ready.json"
 for PW_ATTEMPT in $(seq 1 30); do
-  if [[ -f "$PW_READY_FILE" ]]; then
+  if [[ -f "$PW_READY_FILE" && -f "$PW_APP_CONTAINER/Library/Application Support/PlainWalk/native-settings-ready.json" ]]; then
     python3 -c 'import json,sys; data=json.load(open(sys.argv[1])); assert data.get("ready") is True and data.get("recordingPersistence") is True; print("Bundled web application and native storage bridge are ready on iOS Simulator.")' "$PW_READY_FILE"
     mkdir -p .build/screenshots
-    xcrun simctl io "$PW_SIM_DEVICE" screenshot .build/screenshots/ios-launch.png
+    xcrun simctl io "$PW_SIM_DEVICE" screenshot .build/screenshots/ios-native-settings.png
     exit 0
   fi
   sleep 1

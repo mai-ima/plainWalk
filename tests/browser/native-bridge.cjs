@@ -44,6 +44,7 @@ const assert = require("node:assert/strict");
           return { steps: 4321 };
         if (action === "healthWorkouts") return [];
         if (
+          action === "showSettings" ||
           action === "ready" ||
           action === "haptic" ||
           action === "showMap" ||
@@ -105,9 +106,18 @@ const assert = require("node:assert/strict");
   await page.getByRole("button", { name: "閉じる", exact: true }).click();
   await page.getByRole("button", { name: "プロフィール", exact: true }).click();
   await page.getByRole("button", { name: "設定", exact: true }).click();
-  await page
-    .getByRole("button", { name: "1 日の歩数の目標", exact: true })
-    .click();
+  assert.ok(
+    await page.evaluate(() =>
+      nativeCalls.some((call) => call.action === "showSettings"),
+    ),
+  );
+  await page.evaluate(() =>
+    window.dispatchEvent(
+      new CustomEvent("plainwalk-native", {
+        detail: { event: "uiAction", action: "steps" },
+      }),
+    ),
+  );
   await page
     .getByRole("button", { name: "今日の歩数を更新", exact: true })
     .click();

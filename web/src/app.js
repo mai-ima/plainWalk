@@ -1,3 +1,5 @@
+import { createDiagnostics } from "./diagnostics.js";
+import { createDeveloperUI } from "./developer-ui.js";
 import { createCollections } from "./collections.js";
 import { formatDistance, distanceUnit as getDistanceUnit } from "./units.js";
 import { layersHTML, settingsHTML } from "./reference-ui.js";
@@ -165,6 +167,29 @@ let data = (await read("library")) || {
   mapMode = "normal",
   replayTimer = null,
   modalFocus = null;
+const trace = createDiagnostics({
+  persist: (events) => {
+    try {
+      sessionStorage.setItem("plainwalk-diagnostics", JSON.stringify(events));
+    } catch {}
+  },
+});
+trace.enable(config.developerMode === true);
+try {
+  trace.restore(
+    JSON.parse(sessionStorage.getItem("plainwalk-diagnostics") || "[]"),
+  );
+} catch {}
+trace.record("app", { status: "started", source: native ? "native" : "web" });
+window.addEventListener("error", (e) =>
+  trace.record("error", {
+    source: "javascript",
+    code: e.error?.name || "Error",
+  }),
+);
+window.addEventListener("unhandledrejection", (e) =>
+  trace.record("error", { source: "promise", code: e.reason?.name || "Error" }),
+);
 let editing = null,
   editorDrag = null;
 let view = {
@@ -243,6 +268,11 @@ function toast(msg, ms = 5000) {
 async function save() {
   try {
     await write("library", data);
+    trace.record("storage", {
+      source: "library",
+      status: "saved",
+      count: data.walks.length,
+    });
     areaRevision++;
     exp = exploration(data.walks);
     countVisits();
@@ -252,6 +282,7 @@ async function save() {
       "保存できませんでした。空き容量を確認し、バックアップしてください。",
       10000,
     );
+    trace.record("storage", { source: "library", status: "failed" });
     throw e;
   }
 }
@@ -593,6 +624,12 @@ function acceptPosition(pos) {
         delete active.nextBreak;
       }
       active.points.push({ ...current, accuracy });
+      trace.record("gps", {
+        source: "web",
+        status: "accepted",
+        accuracy,
+        points: active.points.length,
+      });
       collections.progress({ ...current, accuracy });
       if (Date.now() - lastPersist > 4000) {
         persistActive();
@@ -668,6 +705,10 @@ async function begin() {
     pausedMs: 0,
   };
   paused = false;
+  trace.record("recording", {
+    status: "started",
+    source: native ? "native" : "web",
+  });
   expCache = { length: -1, value: 0 };
   follow = true;
   await persistActive();
@@ -967,7 +1008,12 @@ function detail(walkId) {
     `${miniSvg(w.points, "walk-thumbnail")}<p class="center subtle">${new Date(w.start).toLocaleDateString("ja-JP")} ${time(w.start)} — ${time(w.end)}</p><div class="stats-row"><div><b>${fmt(trailDistance(w.points))}</b><small>歩いた距離 ${distanceUnit()}</small></div><div><b>${fmt(exp.byWalk[w.id])}</b><small>開拓した道 ${distanceUnit()}</small></div><div><b>${duration(w.duration ?? w.end - w.start)}</b><small>記録時間</small></div></div><label class="form-label">さんぽの名前</label><input id="walkName" maxlength="60" value="${esc(w.name)}"><label class="form-label">ひとこと</label><textarea id="walkNote" maxlength="3000">${esc(w.note || "")}</textarea><button class="primary" data-save-walk="${esc(w.id)}">変更を保存</button><div class="two-buttons" style="margin-top:15px"><button data-map-walk="${esc(w.id)}">${icon("map")}地図で見る</button><button data-replay-walk="${esc(w.id)}">${icon("play")}再生</button><button data-share-walk="${esc(w.id)}">${icon("download")}カードを保存</button><button data-gpx-walk="${esc(w.id)}">${icon("download")}GPX 書き出し</button></div><button class="secondary" data-edit-walk="${esc(w.id)}">軌跡を手で修正</button><button class="secondary danger-button" data-delete-walk="${esc(w.id)}">この記録を削除</button>`,
   );
 }
-function settings() {
+function settings(forceWeb = false) {
+  if (native && !forceWeb) {
+    closeSheet();
+    nativeCall("showSettings", { config }).catch((e) => toast(e.message));
+    return;
+  }
   const html = settingsHTML(config, { native, icon });
   if ($("#contentPage").dataset.route === "設定") {
     $("#pageBody").innerHTML = html;
@@ -1658,7 +1704,47 @@ const collections = createCollections({
     draw();
   },
 });
+const developer = createDeveloperUI({
+  $,
+  esc,
+  openPage,
+  trace,
+  native,
+  nativeCall,
+  saveConfig,
+  download,
+  toast,
+  state: () => ({
+    config,
+    recording: !!active && !paused,
+    paused: !!active && paused,
+    activePoints: active?.points.length || 0,
+    accuracy,
+    fixAgeMs: current ? Math.max(0, Date.now() - current.t) : null,
+    walks: data.walks.length,
+    points: data.walks.reduce((n, w) => n + w.points.length, 0),
+  }),
+  storageProbe: async () => {
+    if (!db) throw Error("No storage");
+    const key = "diagnostics-probe",
+      value = { id: crypto.randomUUID(), time: Date.now() };
+    try {
+      await write(key, value);
+      const result = await read(key);
+      if (result?.id !== value.id) throw Error("Round trip failed");
+    } finally {
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction("data", "readwrite");
+        tx.objectStore("data").delete(key);
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+  },
+});
+developer.apply();
 const actions = {
+  ...developer.actions,
   ...collections.actions,
   pageBack: pageBack,
   back: sheetBack,
@@ -1700,6 +1786,17 @@ const actions = {
   finish: stopWalk,
   pause: pauseToggle,
   settings,
+  notificationSettings: () => settings(true),
+  nativeDeveloper: () => nativeCall("showNativeDeveloper"),
+  nativeImport: async () => {
+    const file = await nativeCall("importFile");
+    if (file?.text)
+      await handleImport(
+        new File([file.text], file.name || "track.gpx", {
+          type: "application/xml",
+        }),
+      );
+  },
   layers,
   flags,
   spots,
@@ -1902,6 +1999,7 @@ async function handleClick(e) {
   const b = e.target.closest("button,[data-spot],[data-flag]");
   if (!b) return;
   const d = b.dataset;
+  if (await developer.click(d)) return;
   if (await collections.click(d)) return;
   if (d.action) {
     if (d.action === "record" && suppressRecordClick) {
@@ -2197,6 +2295,7 @@ async function handleClick(e) {
 }
 document.addEventListener("click", (e) => {
   handleClick(e).catch((err) => {
+    trace.record("error", { source: "ui", code: err.name || "Error" });
     console.error(err);
     toast(
       "操作を完了できませんでした。" +
@@ -2207,6 +2306,7 @@ document.addEventListener("click", (e) => {
 document.addEventListener("change", async (e) => {
   try {
     const el = e.target;
+    if (await developer.change(el)) return;
     if (el.dataset.mapConfig) {
       const key = el.dataset.mapConfig;
       if (
@@ -2222,6 +2322,15 @@ document.addEventListener("change", async (e) => {
         ].includes(key)
       ) {
         await configureNativeSetting(key, el);
+        return;
+      }
+      if (key === "developerMode") {
+        config.developerMode = el.checked;
+        trace.enable(el.checked);
+        trace.record("app", { status: "developerEnabled" });
+        await saveConfig();
+        developer.apply();
+        settings();
         return;
       }
       if (key === "beta") {
@@ -2514,6 +2623,10 @@ viewport.addEventListener(
 );
 window.addEventListener("resize", draw);
 document.addEventListener("visibilitychange", () => {
+  trace.record("visibility", {
+    status: document.visibilityState,
+    points: active?.points.length || 0,
+  });
   if (document.visibilityState === "hidden") {
     if (active) persistActive();
     if (!active) clearWatch();
@@ -2683,6 +2796,12 @@ function consumeNativePoint(point, sessionID) {
         break: point.gap || active.nextBreak || false,
       });
       delete active.nextBreak;
+      trace.record("gps", {
+        source: "native",
+        status: "accepted",
+        accuracy,
+        points: active.points.length,
+      });
       collections.progress({ ...current, accuracy });
     }
     active.nativeSeq = point.seq;
@@ -2690,6 +2809,22 @@ function consumeNativePoint(point, sessionID) {
   draw();
 }
 onNative((message) => {
+  if (message.event === "configChanged") {
+    config = { ...config, ...message.config };
+    trace.enable(config.developerMode === true);
+    saveConfig()
+      .then(() => developer.apply())
+      .catch((e) => toast(e.message));
+    return;
+  }
+  if (message.event === "uiAction") {
+    if (message.action.startsWith("tab:")) {
+      switchTab(message.action.slice(4));
+      return;
+    }
+    actions[message.action]?.();
+    return;
+  }
   if (message.event === "location") {
     consumeNativePoint(message.point, message.sessionID);
     if (active && Date.now() - lastPersist > 5000) {
@@ -2700,6 +2835,7 @@ onNative((message) => {
   } else if (message.event === "foreground") {
     syncNative().catch((e) => toast(e.message));
   } else if (message.event === "error") {
+    trace.record("error", { source: "native", code: "recorder" });
     geoError = message.message;
     toast(message.message);
   }
