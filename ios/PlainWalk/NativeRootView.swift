@@ -3,7 +3,13 @@ import UIKit
 import UniformTypeIdentifiers
 
 @MainActor struct NativeRootView: View {
+    #if DEBUG
+    @StateObject private var model=NativeScreenshotFixtures.makeModel()
+    @State private var captureRoute:NativeCaptureDestination?
+    @State private var captureContentReady=false
+    #else
     @StateObject private var model=NativeAppModel()
+    #endif
     @Environment(\.scenePhase) private var scenePhase
     @State private var smokeStarted=false
     private var isSmoke: Bool {
@@ -14,8 +20,23 @@ import UniformTypeIdentifiers
         #endif
     }
     var body: some View {
+        #if DEBUG
+        appContent.sheet(item:$captureRoute) { route in
+            captureScreen(route.id).preferredColorScheme(model.colorScheme)
+                .background {
+                    if captureContentReady {
+                        NativeSmokeAppearanceProbe(onReady:{markScreen("capture:"+route.id)},onWaiting:{markScreenTrace("capture:"+route.id,reason:$0)})
+                            .frame(width:1,height:1).allowsHitTesting(false)
+                    }
+                }
+        }
+        #else
+        appContent
+        #endif
+    }
+    private var appContent:some View {
         TabView(selection:$model.tab) {
-            NavigationStack {NativeMyMapView(model:model).toolbar(.hidden,for:.navigationBar)}.tabItem{Label("マイマップ",systemImage:"sparkles")}.tag(NativeTab.map)
+            NavigationStack {NativeMyMapView(model:model).toolbar(.hidden,for:.navigationBar).background {smokeProbe("map")}}.tabItem{Label("マイマップ",systemImage:"sparkles")}.tag(NativeTab.map)
             NavigationStack {NativeRecordsView(model:model).background { smokeProbe("records") }}.tabItem{Label("記録",systemImage:"chart.bar.fill")}.tag(NativeTab.records)
             NavigationStack(path: $model.profilePath) {
                 NativeProfileView(model:model).background { smokeProbe("profile") }.onAppear(perform:model.profileDidAppear)
@@ -47,6 +68,19 @@ import UniformTypeIdentifiers
         .onChange(of:scenePhase){_,phase in if phase == .active && !isSmoke {model.refreshSteps()} }
         .task{if !isSmoke {model.refreshSteps()};await runSmoke()}
     }
+    #if DEBUG
+    @ViewBuilder private func captureScreen(_ key:String)->some View {
+        switch key {
+        case "spotDetail","stickerPicker","bookmarkDetail","paperEditor","paperDetail","doodleEditor","doodleDetail","badgeDetail":
+            nativeCaptureCollectionScreen(key,model:model,onContentReady:{captureContentReady=true})
+        case "walkRename","day","week","walkPhoto","trackEditor":
+            nativeCaptureRecordScreen(key,model:model)
+        case "mapSpot","mapFlag": nativeCaptureMapScreen(key,model:model)
+        case "answerSearch","answerSelection","answerSatellite","answer3D": nativeCaptureAnswerScreen(key,model:model)
+        default: ContentUnavailableView("未定義の確認画面",systemImage:"exclamationmark.triangle",description:Text(key))
+        }
+    }
+    #endif
     @ViewBuilder private func sheetContent(_ item:NativeSheet)->some View {
         switch item {
         case .settings: NativeSettingsView(config:model.config,onChange:{next in model.saveConfig(next)},onAction:model.settingsAction,onClose:model.closeSheet)
@@ -77,6 +111,7 @@ import UniformTypeIdentifiers
         if let sheet=model.sheet {
             return name == (sheet.id.hasPrefix("noteEditor:") ? "noteEditor" : sheet.id)
         }
+        if model.tab == .map {return name == "map"}
         if model.tab == .records {return name == "records"}
         guard model.tab == .profile else {return false}
         switch model.profilePath.last {
@@ -133,9 +168,22 @@ import UniformTypeIdentifiers
             }
             try JSONSerialization.data(withJSONObject: checks).write(to: folder.appendingPathComponent("native-ready.json"), options: .atomic)
             try Data("self-tests-complete; routing".utf8).write(to:folder.appendingPathComponent("native-smoke-stage.txt"),options:.atomic)
+            if let capture=args.first(where:{$0.hasPrefix("-PlainWalkCapture=")})?.split(separator:"=",maxSplits:1).last {
+                guard args.contains("-PlainWalkScreenshotFixture") else {throw NativeError.message("Capture routes require an isolated screenshot fixture.")}
+                let key=String(capture)
+                captureContentReady=key != "badgeDetail"
+                captureRoute=NativeCaptureDestination(id:key)
+                return
+            }
             if args.contains("-PlainWalkNativeSettingsSmokeTest") { model.openSettings() }
             if let route = args.first(where: { $0.hasPrefix("-PlainWalkScreen=") })?.split(separator: "=").last {
                 switch String(route) {
+                case "settings": model.openSettings()
+                case "stats": model.present(.stats)
+                case "replayAll": model.present(.replay(nil))
+                case "replayWalk": model.present(.replay(NativeScreenshotFixtures.walkID))
+                case "walk": model.present(.walk(NativeScreenshotFixtures.walkID))
+                case "health": model.present(.health)
                 case "records": model.tab = .records
                 case "profile": model.tab = .profile
                 case "layers": model.openLayers()
@@ -150,7 +198,8 @@ import UniformTypeIdentifiers
                 case "noteEditor":
                     let formatter=DateFormatter();formatter.locale=Locale(identifier:"en_US_POSIX");formatter.calendar=Calendar(identifier:.gregorian);formatter.dateFormat="yyyy-MM-dd"
                     model.present(.noteEditor(formatter.string(from:Date())))
-                default: break
+                default:
+                    if route.hasPrefix("collection:"),let collection=NativeCollection(rawValue:String(route.dropFirst("collection:".count))) {model.openCollection(collection)}
                 }
             }
         } catch {
@@ -303,3 +352,7 @@ struct NativeShareView:UIViewControllerRepresentable {
         }
     }
 }
+
+#if DEBUG
+private struct NativeCaptureDestination:Identifiable {let id:String}
+#endif

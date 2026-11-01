@@ -30,6 +30,7 @@ import UIKit
     var body: some View {
         let weekWalks = walks(in: currentWeek)
         let priorWalks = walks(in: previousWeek)
+        ScrollViewReader { captureProxy in
         ScrollView {
             VStack(spacing: 22) {
                 weekCard(walks: weekWalks, previous: priorWalks)
@@ -59,6 +60,19 @@ import UIKit
             .padding(.horizontal, 16).padding(.top, 18).padding(.bottom, 28)
             .frame(maxWidth: 720)
             .frame(maxWidth: .infinity)
+            .id("native-capture-records-bottom")
+        }.task {
+            #if DEBUG
+            guard ProcessInfo.processInfo.arguments.contains("-PlainWalkCapture=recordsBottom") else { return }
+            do {
+                try await Task.sleep(nanoseconds: 400_000_000)
+                captureProxy.scrollTo("native-capture-records-bottom", anchor: .bottom)
+                try await Task.sleep(nanoseconds: 500_000_000)
+                try Task.checkCancellation()
+                nrCaptureSignal("capture-scroll.ready", value: "recordsBottom")
+            } catch {}
+            #endif
+        }
         }
         .background(Color(uiColor: .systemBackground))
         .navigationTitle("記録").navigationBarTitleDisplayMode(.inline)
@@ -314,6 +328,7 @@ struct NativeTrailThumbnail: View {
         NavigationStack {
             Group {
                 if let walk {
+                    ScrollViewReader { captureProxy in
                     ScrollView {
                         VStack(spacing: 18) {
                             NativeTrailThumbnail(points: walk.points, lineWidth: 1.5, inset: 25)
@@ -349,6 +364,19 @@ struct NativeTrailThumbnail: View {
                             }
                             if !photos.isEmpty { photoStrip }
                         }.padding(16).frame(maxWidth: 720).frame(maxWidth: .infinity)
+                    }.task {
+                        #if DEBUG
+                        guard ProcessInfo.processInfo.arguments.contains("-PlainWalkCapture=walkPhotos") else { return }
+                        do {
+                            try await Task.sleep(nanoseconds: 400_000_000)
+                            guard !photos.isEmpty else { return }
+                            captureProxy.scrollTo("native-capture-walk-photos", anchor: .bottom)
+                            try await Task.sleep(nanoseconds: 500_000_000)
+                            try Task.checkCancellation()
+                            nrCaptureSignal("capture-scroll.ready", value: "walkPhotos")
+                        } catch {}
+                        #endif
+                    }
                     }
                 } else {
                     ContentUnavailableView("さんぽが見つかりません", systemImage: "shoeprints.fill", description: Text("削除された記録の可能性があります。"))
@@ -383,6 +411,10 @@ struct NativeTrailThumbnail: View {
                         Button("保存") { model.renameWalk(id: walkID, name: String(name.prefix(60)), note: String(note.prefix(3000))); naming = false }
                     }
                 }
+            }.onAppear {
+                #if DEBUG
+                if ProcessInfo.processInfo.arguments.contains("-PlainWalkCapture=walkRename") { nrCaptureSignal("capture-dialog.ready", value: "walkRename") }
+                #endif
             }.presentationDetents([.medium, .large])
         }
         .confirmationDialog("このさんぽを削除しますか？", isPresented: $confirmingDelete, titleVisibility: .visible) {
@@ -435,7 +467,7 @@ struct NativeTrailThumbnail: View {
                     }
                 }
             }
-        }.frame(maxWidth: .infinity, alignment: .leading)
+        }.frame(maxWidth: .infinity, alignment: .leading).id("native-capture-walk-photos")
     }
 }
 
@@ -526,3 +558,48 @@ enum NativeRecordDates {
         return "\(safe / 60)分"
     }
 }
+
+#if DEBUG
+@MainActor @ViewBuilder func nativeCaptureRecordScreen(_ key: String, model: NativeAppModel) -> some View {
+    switch key {
+    case "walk", "walkPhotos":
+        if let walk = model.walks.first { NativeWalkDetailView(model: model, walkID: walk.id) }
+        else { ContentUnavailableView("さんぽの確認データがありません", systemImage: "shoeprints.fill") }
+    case "recordsBottom": NavigationStack { NativeRecordsView(model: model) }
+    case "walkRename":
+        if let walk = model.walks.first { NativeWalkDetailView.captureRenaming(model: model, walk: walk) }
+        else { ContentUnavailableView("さんぽの確認データがありません", systemImage: "shoeprints.fill") }
+    case "day":
+        if let walk = model.walks.first { NativeDayRecordsView(model: model, date: NativeRecordDates.date(walk.start), onSelectWalk: model.openWalk) }
+        else { ContentUnavailableView("日別の確認データがありません", systemImage: "calendar") }
+    case "week":
+        let date = model.walks.first.map { NativeRecordDates.date($0.start) } ?? Date()
+        NativeWeekReviewView(model: model, interval: NativeRecordDates.week(containing: date), onSelectWalk: model.openWalk)
+    case "walkPhoto":
+        if let spot = model.spots.first(where: { $0.photoData != nil }) { NativeWalkPhotoPreview(spot: spot) }
+        else { ContentUnavailableView("写真の確認データがありません", systemImage: "photo") }
+    case "trackEditor":
+        if let walk = model.walks.first { NativeTrackEditorView(model: model, walkID: walk.id) }
+        else { ContentUnavailableView("軌跡の確認データがありません", systemImage: "point.topleft.down.to.point.bottomright.curvepath") }
+    default: ContentUnavailableView("未登録の記録画面", systemImage: "exclamationmark.triangle")
+    }
+}
+
+@MainActor private extension NativeWalkDetailView {
+    static func captureRenaming(model: NativeAppModel, walk: NativeWalk) -> NativeWalkDetailView {
+        var screen = NativeWalkDetailView(model: model, walkID: walk.id)
+        screen._name = State(initialValue: walk.name)
+        screen._note = State(initialValue: walk.note)
+        screen._naming = State(initialValue: true)
+        return screen
+    }
+}
+#endif
+
+#if DEBUG
+@MainActor private func nrCaptureSignal(_ file: String, value: String) {
+    let folder = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("PlainWalk", isDirectory: true)
+    try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+    try? Data(value.utf8).write(to: folder.appendingPathComponent(file), options: .atomic)
+}
+#endif

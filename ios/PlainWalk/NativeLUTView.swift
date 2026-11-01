@@ -209,6 +209,16 @@ enum NativePhotoEffects {
     @State private var removing = false
     @State private var failure: String?
     @State private var storedCube: NativeCubeLUT?
+    init(model: NativeAppModel) {
+        _model = ObservedObject(wrappedValue: model)
+        #if DEBUG
+        if NativeScreenshotFixtures.isEnabled,
+           ProcessInfo.processInfo.arguments.contains("-PlainWalkCaptureLUT=selected"),
+           let data = model.spots.first?.photoData {
+            _source = State(initialValue: data)
+        }
+        #endif
+    }
     private var lut: NativeCubeLUT? { storedCube }
     private var renderKey: String { revision.uuidString + film + String(intensity) + String(original) }
     var body: some View {
@@ -251,6 +261,14 @@ enum NativePhotoEffects {
             }
         }.task {
             storedCube = NativePhotoEffects.cube(model.config); film = NativePhotoEffects.film(model.config); intensity = NativePhotoEffects.intensity(model.config)
+            #if DEBUG
+            if NativeScreenshotFixtures.isEnabled,
+               ProcessInfo.processInfo.arguments.contains("-PlainWalkCaptureLUT=selected") {
+                // The existing independent preset exercises the real comparison
+                // pipeline; it is not an extracted or official commercial LUT.
+                film = "sepia(.65) saturate(.7)"; intensity = 0.8
+            }
+            #endif
             do { if source == nil { source = try NativePhotoEffects.sampleJPEG(); revision = UUID() } } catch { failure = error.localizedDescription }
         }.task(id: renderKey) { await renderPreview() }
             .onChange(of: film) { _, _ in persistChoices() }

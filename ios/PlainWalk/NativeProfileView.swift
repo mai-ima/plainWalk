@@ -6,6 +6,7 @@ import SwiftUI
         Set(model.walks.map { NativeRecordDates.calendar.startOfDay(for: NativeRecordDates.date($0.start)) }).count
     }
     var body: some View {
+        ScrollViewReader { proxy in
         ScrollView {
             VStack(spacing: 24) {
                 summary
@@ -40,12 +41,30 @@ import SwiftUI
                 }
                 Text("歩いた道が、あなたの地図になる。")
                     .font(.footnote).foregroundStyle(.secondary).frame(maxWidth: .infinity).padding(.vertical, 4)
+                    .id("profileBottom")
             }
             .padding(.horizontal, 16).padding(.top, 18).padding(.bottom, 28)
             .frame(maxWidth: 720).frame(maxWidth: .infinity)
         }
+        .task { await captureScroll(proxy) }
+        }
         .background(Color(uiColor: .systemGroupedBackground))
         .navigationTitle("プロフィール").navigationBarTitleDisplayMode(.inline)
+    }
+    private func captureScroll(_ proxy: ScrollViewProxy) async {
+        #if DEBUG
+        guard NativeScreenshotFixtures.isEnabled,
+              ProcessInfo.processInfo.arguments.contains("-PlainWalkCaptureScroll=profileBottom") else { return }
+        await Task.yield()
+        guard !Task.isCancelled else { return }
+        var transaction = Transaction(); transaction.disablesAnimations = true
+        withTransaction(transaction) { proxy.scrollTo("profileBottom", anchor: .bottom) }
+        do { try await Task.sleep(nanoseconds: 200_000_000) } catch { return }
+        guard !Task.isCancelled else { return }
+        let folder = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("PlainWalk", isDirectory: true)
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try? Data("profileBottom".utf8).write(to: folder.appendingPathComponent("capture-scroll.ready"), options: .atomic)
+        #endif
     }
     private var summary: some View {
         Button { model.openStats() } label: {

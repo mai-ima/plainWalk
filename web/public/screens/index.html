@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#f7f8f5" />
+    <meta name="description" content="PlainWalk の Web 版と Swift 版の実装済み画面を、iPhone のブラウザから確認できます。" />
+    <title>画面一覧 — PlainWalk</title>
+    <link rel="icon" href="../icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="gallery.css" />
+    <script type="module" src="gallery.js"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="back-link" href="../" aria-label="PlainWalk を開く"><span aria-hidden="true">←</span> アプリを開く</a>
+      <span class="brand">PlainWalk</span>
+    </header>
+    <main>
+      <section class="intro" aria-labelledby="page-title">
+        <p class="eyebrow">SCREEN COLLECTION</p>
+        <h1 id="page-title">画面を見てみる。</h1>
+        <p class="lead">Web 版と Swift 版の、実装済み画面の確認用です。画像をタップすると、大きく見られます。</p>
+        <p class="capture-summary" id="capture-summary" aria-live="polite">画像を読み込んでいます。</p>
+        <details class="scope-note">
+          <summary>撮影対象と確認できていないこと</summary>
+          <ul>
+            <li>記録・写真・場所は撮影用の合成データです。利用者の記録や、本家アプリの画像ではありません。</li>
+            <li>Swift 版は iPhone Simulator、Web 版はモバイル表示のブラウザで撮影しています。iPhone 実機・Safari の検証とは別です。</li>
+            <li>カメラ、権限の全状態、HealthKit、ロック中の動作などは、実機での確認が必要です。</li>
+            <li>未実装の機能や本家で未取得の画面を、撮影済みには数えません。長い画面は分割して載せています。</li>
+          </ul>
+        </details>
+      </section>
+      <section class="browse" aria-label="画面を探す">
+        <div class="filter-bar">
+          <div class="platform-tabs" role="group" aria-label="種類">
+            <button type="button" class="platform-tab active" data-platform="all" aria-pressed="true">すべて</button>
+            <button type="button" class="platform-tab" data-platform="web" aria-pressed="false">Web</button>
+            <button type="button" class="platform-tab" data-platform="native" aria-pressed="false">Swift</button>
+          </div>
+          <div class="search-row">
+            <label class="search-field"><span class="sr-only">画面を検索</span><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="画面を検索" autocomplete="off" /></label>
+            <label class="category-field"><span class="sr-only">分類</span><select id="category"><option value="all">すべての分類</option></select></label>
+          </div>
+        </div>
+        <div class="result-heading"><h2 id="result-title">画面一覧</h2><span id="result-count" aria-live="polite"></span></div>
+        <div id="screen-grid" class="screen-grid" aria-labelledby="result-title"></div>
+        <div id="empty-state" class="empty-state" hidden><span aria-hidden="true">▧</span><h2>画像は準備中です</h2><p>準備ができた画面から、ここに並びます。</p></div>
+      </section>
+      <footer><p id="updated-at"></p><a href="../">PlainWalk を開く <span aria-hidden="true">↗</span></a></footer>
+    </main>
+    <dialog id="viewer" class="viewer" aria-labelledby="viewer-title">
+      <div class="viewer-layout">
+        <header class="viewer-header">
+          <button type="button" id="viewer-close" class="quiet-button" aria-label="一覧に戻る">← 一覧</button>
+          <div class="viewer-heading"><h2 id="viewer-title"></h2><p id="viewer-subtitle"></p></div>
+          <button type="button" id="viewer-zoom" class="quiet-button" aria-pressed="false">拡大</button>
+        </header>
+        <div class="image-stage" id="image-stage" data-zoom="false"><img id="viewer-image" alt="" /></div>
+        <footer class="viewer-controls">
+          <button type="button" id="viewer-prev" class="quiet-button" aria-label="前の画像">← 前へ</button>
+          <span id="viewer-position"></span>
+          <button type="button" id="viewer-next" class="quiet-button" aria-label="次の画像">次へ →</button>
+        </footer>
+      </div>
+    </dialog>
+    <noscript><p class="noscript-note">画面一覧には JavaScript が必要です。ブラウザの設定を確認してください。</p></noscript>
+  </body>
+</html>

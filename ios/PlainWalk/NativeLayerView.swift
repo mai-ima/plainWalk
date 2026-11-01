@@ -15,6 +15,7 @@ import SwiftUI
 
     var body: some View {
         NavigationStack {
+            ScrollViewReader { captureProxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
                     choicesSection("配色", note: "選んだ配色で、白地図と軌跡を描きます。") {
@@ -67,11 +68,11 @@ import SwiftUI
                         card { Toggle("地図の輪郭を表示", isOn: bool("outline", default: false)) }
                         note("市区町村の境と海岸線を薄い線で表示します。日本の境界データに対応しています。")
                         note("境界データ：国土数値情報（国土交通省）を加工。CC BY 4.0。Geo.maderaojen.me の簡略化データを使用。")
-                    }
+                    }.id("boundary")
                     VStack(alignment: .leading, spacing: 10) {
                         card { Toggle("記録中は他の軌跡を薄くする", isOn: bool("fadeOther", default: true)) }
                         note("記録中は、ほかの軌跡を薄くして、いま歩いている形を見やすくします。")
-                    }
+                    }.id("fade")
                     VStack(alignment: .leading, spacing: 10) {
                         sectionTitle("移動手段")
                         card {
@@ -85,7 +86,7 @@ import SwiftUI
                             }
                         }
                         note("オフにすると、その手段で動いた区間を白地図に描きません。記録した距離や開拓距離は変わりません。")
-                    }
+                    }.id("transport")
                     card {
                         VStack(spacing: 0) {
                             preference("よく通る道を太く表示", key: "thicken", initial: true)
@@ -95,18 +96,36 @@ import SwiftUI
                             preference("写真を表示", key: "showPhotos", initial: true)
                             Toggle("つぶやきを表示", isOn: bool("showTweets", default: false))
                         }
-                    }
+                    }.id("display")
                 }.padding(.horizontal, 16).padding(.top, 20).padding(.bottom, 32)
             }
+            .task { await captureInitialScroll(captureProxy) }
             .background(Color(uiColor: .systemGroupedBackground))
             .navigationTitle("地図レイヤー").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("閉じる") { dismiss() }.fontWeight(.semibold).foregroundStyle(.primary) } }
+            }
         }
         .tint(.green)
         .presentationDragIndicator(.visible)
         .presentationDetents([.large])
     }
 
+    private func captureInitialScroll(_ proxy:ScrollViewProxy) async {
+        #if DEBUG
+        let args=ProcessInfo.processInfo.arguments
+        guard args.contains("-PlainWalkScreenshotFixture"),
+              let key=args.first(where:{$0.hasPrefix("-PlainWalkCaptureScroll=")})?.split(separator:"=",maxSplits:1).last.map(String.init),
+              ["palette","line","photoPins","currentLocation","boundary","fade","transport","display"].contains(key) else {return}
+        await Task.yield()
+        var transaction=Transaction();transaction.disablesAnimations=true
+        withTransaction(transaction) {proxy.scrollTo(key,anchor:.top)}
+        do {try await Task.sleep(nanoseconds:200_000_000)} catch {return}
+        guard !Task.isCancelled else {return}
+        let folder=FileManager.default.urls(for:.applicationSupportDirectory,in:.userDomainMask)[0].appendingPathComponent("PlainWalk",isDirectory:true)
+        try? FileManager.default.createDirectory(at:folder,withIntermediateDirectories:true)
+        try? Data(key.utf8).write(to:folder.appendingPathComponent("capture-scroll.ready"),options:.atomic)
+        #endif
+    }
     private func choose(_ key: String, _ value: Any) { model.haptic(); model.updateConfig(key: key, value: value) }
     private func bool(_ key: String, default initial: Bool) -> Binding<Bool> {
         Binding(get: { model.config[key] as? Bool ?? initial }, set: { choose(key, $0) })
@@ -128,7 +147,7 @@ import SwiftUI
             sectionTitle(title)
             card(content)
             if let text { note(text) }
-        }
+        }.id(["配色":"palette","線":"line","写真ピン":"photoPins","現在地":"currentLocation"][title] ?? title)
     }
     private func choice<Sample: View>(_ name: String, selected: Bool, @ViewBuilder sample: () -> Sample, action: @escaping () -> Void) -> some View {
         Button(action: action) {

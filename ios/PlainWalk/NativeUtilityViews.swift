@@ -205,6 +205,13 @@ import Combine
             .navigationTitle("ワークアウトを取り込む").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("閉じる", action: model.closeSheet) } }
             .task {
+                #if DEBUG
+                if ProcessInfo.processInfo.arguments.contains("-PlainWalkScreenshotFixture") {
+                    notice = "画面確認用のデータではヘルスケアに接続しません。実際の許可・ワークアウトは iPhone で確認してください。"
+                    busy = false
+                    return
+                }
+                #endif
                 do { workouts = try await HealthService().workouts() }
                 catch { notice = error.localizedDescription }
                 busy = false

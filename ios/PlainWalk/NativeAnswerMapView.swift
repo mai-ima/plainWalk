@@ -18,6 +18,9 @@ import MapKit
     @State private var locateRevision = 0
     @State private var zoomRevision = 0
     @State private var zoomIn = true
+    #if DEBUG
+    @State private var captureMode: String? = nil
+    #endif
 
     var body: some View {
         ZStack {
@@ -115,6 +118,7 @@ import MapKit
             .task(id: query) { await search() }
         }
         .presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
+        .onAppear { captureSearchSheetRequested() }
     }
     private func cancelSearch() {
         activeSearch?.cancel(); activeSearch = nil
@@ -172,6 +176,14 @@ import MapKit
         catch { model.showError(error.localizedDescription) }
     }
     private func search() async {
+        #if DEBUG
+        if captureMode == "answerSearch",ProcessInfo.processInfo.arguments.contains("-PlainWalkScreenshotFixture") {
+            activeSearch?.cancel();activeSearch=nil;searching=false
+            results=Self.capturePlace(model).map { [NativeAnswerResult(id:"capture-saved-place",place:$0,subtitle:"合成データ（実際の検索結果ではありません）")] } ?? []
+            searchError=results.isEmpty ? "検証用のしおりデータがありません。" : nil
+            return
+        }
+        #endif
         let text = query.trimmingCharacters(in: .whitespacesAndNewlines)
         activeSearch?.cancel(); activeSearch = nil
         results = []; searchError = nil
@@ -194,6 +206,18 @@ import MapKit
             guard !Task.isCancelled else { return }
             searching = false; searchError = "検索できませんでした。通信状態を確認して、もう一度お試しください。"
         }
+    }
+
+
+    private func captureSearchSheetRequested() {
+        #if DEBUG
+        guard captureMode == "answerSearch",ProcessInfo.processInfo.arguments.contains("-PlainWalkScreenshotFixture") else {return}
+        // This is a presentation request marker, not proof that the modal is
+        // visible. The capture runner separately verifies its displayed title.
+        let folder=FileManager.default.urls(for:.applicationSupportDirectory,in:.userDomainMask)[0].appendingPathComponent("PlainWalk",isDirectory:true)
+        try? FileManager.default.createDirectory(at:folder,withIntermediateDirectories:true)
+        try? Data("answerSearch".utf8).write(to:folder.appendingPathComponent("capture-dialog.ready"),options:.atomic)
+        #endif
     }
 
 #if DEBUG
@@ -254,7 +278,12 @@ private struct NativeAnswerResult: Identifiable { var id: String; var place: Nat
     func makeCoordinator() -> Coordinator { Coordinator(self) }
     func makeUIView(context: Context) -> MKMapView {
         let map = MKMapView(); map.delegate = context.coordinator
-        map.showsUserLocation = true; map.showsCompass = false; map.showsBuildings = true; map.isPitchEnabled = true; map.isRotateEnabled = true
+        #if DEBUG
+        map.showsUserLocation = !ProcessInfo.processInfo.arguments.contains("-PlainWalkScreenshotFixture")
+        #else
+        map.showsUserLocation = true
+        #endif
+        map.showsCompass = false; map.showsBuildings = true; map.isPitchEnabled = true; map.isRotateEnabled = true
         map.register(MKMarkerAnnotationView.self, forAnnotationViewWithReuseIdentifier: "destination")
         let scale = MKScaleView(mapView: map); scale.scaleVisibility = .adaptive; scale.translatesAutoresizingMaskIntoConstraints = false
         let compass = MKCompassButton(mapView: map); compass.compassVisibility = .adaptive; compass.translatesAutoresizingMaskIntoConstraints = false
@@ -390,3 +419,43 @@ private final class NativeAnswerFlagAnnotation: NSObject, MKAnnotation {
     let coordinate: CLLocationCoordinate2D; let title: String?
     init(_ flag: NativeFlag) { coordinate = .init(latitude: flag.point.lat, longitude: flag.point.lon); title = flag.name; super.init() }
 }
+
+
+#if DEBUG
+@MainActor fileprivate extension NativeAnswerMapView {
+    init(captureKey:String,model:NativeAppModel) {
+        self._model=ObservedObject(wrappedValue:model)
+        self._captureMode=State(initialValue:captureKey)
+        self._satellite=State(initialValue:captureKey == "answerSatellite")
+        self._pitched=State(initialValue:captureKey == "answer3D")
+        if captureKey == "answerSearch" {
+            self._query=State(initialValue:"東京駅")
+            self._showingSearch=State(initialValue:true)
+        }
+        if captureKey == "answerSelection",let place=Self.capturePlace(model) {
+            self._selected=State(initialValue:place)
+            self._focusRevision=State(initialValue:1)
+        }
+    }
+    static func capturePlace(_ model:NativeAppModel)->NativeAnswerPlace? {
+        guard let raw=(model.library["bookmarks"] as? [[String:Any]])?.first,
+              let point=NativePoint(json:raw) else {return nil}
+        return NativeAnswerPlace(name:"検証用："+(raw["name"] as? String ?? "保存した場所"),lat:point.lat,lon:point.lon)
+    }
+}
+
+/// Instantiates the ordinary answer map with test-only initial state. Search
+/// rows use a labeled saved fixture rather than impersonating an MKLocalSearch response.
+@MainActor @ViewBuilder func nativeCaptureAnswerScreen(_ key:String,model:NativeAppModel)->some View {
+    if ProcessInfo.processInfo.arguments.contains("-PlainWalkScreenshotFixture"),
+       ["answerSearch","answerSelection","answerSatellite","answer3D"].contains(key) {
+        if key == "answerSelection",NativeAnswerMapView.capturePlace(model) == nil {
+            ContentUnavailableView("検証用のしおりがありません",systemImage:"exclamationmark.triangle")
+        } else {
+            NativeAnswerMapView(captureKey:key,model:model)
+        }
+    } else {
+        ContentUnavailableView("未対応の地図撮影キー",systemImage:"exclamationmark.triangle",description:Text(key))
+    }
+}
+#endif

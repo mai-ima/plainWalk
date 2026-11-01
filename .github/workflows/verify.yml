@@ -90,6 +90,39 @@ jobs:
           path: .build/exports
           if-no-files-found: ignore
           overwrite: true
+  native-screens:
+    needs: ios-build
+    runs-on: macos-26
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [records, collections, creation, maps, settings-a, settings-b, layers-developer]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Warm iPhone Simulator
+        run: |
+          PW_SIM_DEVICE=$(xcrun simctl list devices available --json | python3 -c 'import json,sys; data=json.load(sys.stdin); print(next(d["udid"] for group in data["devices"].values() for d in group if "iPhone" in d["name"] and d.get("isAvailable")))')
+          xcrun simctl boot "$PW_SIM_DEVICE" || true
+      - uses: actions/download-artifact@v4
+        with:
+          name: ios-simulator-app
+          path: .build
+      - name: Restore compiled app
+        run: |
+          mkdir -p .build/ios/Build/Products/Debug-iphonesimulator
+          tar -xzf .build/plainwalk-ios-simulator.tar.gz -C .build/ios/Build/Products/Debug-iphonesimulator
+      - name: Capture native screens with isolated fixtures
+        run: python3 scripts/capture-native-screens.py '${{ matrix.group }}'
+      - name: Verify captured screen text and scroll sections
+        run: swift scripts/check-native-captures.swift '.build/native-screens/${{ matrix.group }}/manifest.json'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-all-screens-${{ matrix.group }}
+          path: .build/native-screens/${{ matrix.group }}
+          if-no-files-found: ignore
+          overwrite: true
   playgrounds:
     runs-on: macos-26
     timeout-minutes: 20

@@ -2,12 +2,18 @@
 
 通常の起動先は `NativeRootView` です。SwiftUI のタブ・ナビゲーション・シート、Canvas の白地図、MapKit の答え合わせ地図を使います。Web ページをそのまま表示する起動構成から変更しました。PlainWalk の公開画面と機能を基にした独立実装で、元アプリのソースや署名済みアプリではありません。
 
-**[CI 40922182440](https://github.com/mai-ima/plainWalk/actions/runs/40922182440) で、本体・Live Activity 拡張のコンパイル、iPhone Simulator 起動、保存・復旧・取り込み・地図カメラの自己テスト、主要画面の表示完了待ち、診断画像のタイトル検出が通過しました。実機・配布署名は未検証で、署名済み IPA はありません。**
+**[CI 41297028999](https://github.com/mai-ima/plainWalk/actions/runs/41297028999) で、本体・Live Activity 拡張と Playgrounds のコンパイル、Simulator の保存・復旧・取り込み・写真・ノート・MP4 の自己テスト、14 画面の撮影、診断画像のタイトル検出が通過しました。実機・配布署名は未検証で、署名済み IPA はありません。最新の結果は [ルート README](../README.md#検証と限界)を参照してください。**
+
+## iPhone で使う方針
+
+iPhone を主な利用端末とし、`ios/PlainWalk.xcodeproj` の SwiftUI アプリを使います。インストールと署名は Mac の Xcode から行います。Swift Playgrounds パッケージは iPad / Mac 用で、iPhone に直接インストールする配布ファイルではありません。Web / PWA は補助の利用方法として残します。
+
+Simulator の成功は iPhone 実機での確認とは別です。実機では、画面の操作に加え、ロック中の記録・権限変更・カメラ・HealthKit・電池消費を確認します。TestFlight 配布はまだ設定していません。
 
 ## Mac で開く
 
 1. リポジトリ全体を Mac に展開し、`npm ci` と `npm run build` を実行します。
-2. `ios/PlainWalk.xcodeproj` を Xcode 16 以降で開き、`PlainWalk` スキームを選びます。
+2. `ios/PlainWalk.xcodeproj` を、利用する iPhone の iOS に対応する Xcode で開き、`PlainWalk` スキームを選びます。
 3. Signing & Capabilities で自分の Team と一意の Bundle Identifier を設定します。アプリと Live Activity 拡張の両方を変更してください。
 4. 実機にインストールし、記録開始時に位置情報、必要な機能を使うときにモーション・カメラ・HealthKit 等を許可します。
 
@@ -32,7 +38,7 @@
 
 `PlainWalkApp.swift` 内の `LocalWebApp` と `NativeBridge.swift` は互換コードとして残ります。通常起動の白地図・記録・プロフィールを表示するためには使いません。ネイティブとブラウザは同じ保存キー・バックアップ形式を利用しますが、端末間やアプリとブラウザの保存領域は自動同期されません。
 
-SwiftUI 版には LUT / フィルム、手動の軌跡修正、軌跡の動画書き出しがまだありません。これらは Web 版の機能です。ネイティブのノートは文章・紙・書体、スライダーでの配置調整と PNG 出力に対応し、写真・道・ステッカーの既存配置や未知の追加項目を保持します。キャンバス上の直接ドラッグ編集は Web 版との操作差です。[対応表](../docs/reproduction-audit.md)も参照してください。
+SwiftUI 版にも CoreImage の LUT / フィルム、MapKit の手動軌跡修正、AVFoundation の MP4 書き出しを実装しています。ノートは文章・紙・書体、直接の移動・拡縮・回転、スライダー・透明度・Undo・PNG 出力に対応し、写真・道・ステッカーの既存配置や未知の追加項目を保持します。実際の複数指操作、共有と長時間の出力は実機で確認が必要です。動画への写真挿入・実地図の透かし、1 日複数ページのノートは未対応です。[対応表](../docs/reproduction-audit.md)も参照してください。
 
 ## 端末 API
 

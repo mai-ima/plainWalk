@@ -15,18 +15,35 @@ private struct DiagnosticExport: Identifiable { let id = UUID(); let url: URL }
     private func record(_ code: String, count: Int? = nil) { var item=["time": ISO8601DateFormatter().string(from: Date()),"code":code];if let count {item["count"]=String(count)}; events.append(item); if events.count > 100 { events.removeFirst(events.count - 100) } }
     private func value(_ key: String) -> String { (report[key] is NSNull) ? "未取得" : (report[key].map { String(describing: $0) } ?? "不明") }
     private func refresh() async { report = await DiagnosticService.snapshot(recorder: recorder); record("snapshotRead") }
+    private func captureInitialScroll(_ proxy:ScrollViewProxy) async {
+        #if DEBUG
+        let args=ProcessInfo.processInfo.arguments
+        guard args.contains("-PlainWalkScreenshotFixture"),
+              let key=args.first(where:{$0.hasPrefix("-PlainWalkCaptureScroll=")})?.split(separator:"=",maxSplits:1).last.map(String.init),
+              ["status","permissions","storage","checklist","logs"].contains(key) else {return}
+        await Task.yield()
+        var transaction=Transaction();transaction.disablesAnimations=true
+        withTransaction(transaction) {proxy.scrollTo(key,anchor:.top)}
+        do {try await Task.sleep(nanoseconds:200_000_000)} catch {return}
+        guard !Task.isCancelled else {return}
+        let folder=FileManager.default.urls(for:.applicationSupportDirectory,in:.userDomainMask)[0].appendingPathComponent("PlainWalk",isDirectory:true)
+        try? FileManager.default.createDirectory(at:folder,withIntermediateDirectories:true)
+        try? Data(key.utf8).write(to:folder.appendingPathComponent("capture-scroll.ready"),options:.atomic)
+        #endif
+    }
     var body: some View {
         NavigationStack {
+            ScrollViewReader { captureProxy in
             Form {
                 Section("実機の状態") {
                     LabeledContent("実行環境", value: value("flavor")); LabeledContent("OS", value: value("systemVersion")); LabeledContent("端末", value: value("deviceFamily"))
                     LabeledContent("記録", value: recorder.session?.recording == true ? "記録中" : "停止・一時停止")
                     LabeledContent("記録点", value: String(recorder.session?.points.count ?? 0)); LabeledContent("GPS 精度", value: value("lastAccuracy") + " m")
                     Button("状態を更新") { Task { await refresh() } }
-                }
+                }.id("status")
                 Section("権限（確認だけでは要求しません）") {
                     LabeledContent("位置情報", value: value("locationAuthorization")); LabeledContent("位置の精度", value: value("accuracyAuthorization")); LabeledContent("モーション", value: value("motionAuthorization")); LabeledContent("カメラ", value: value("cameraAuthorization")); LabeledContent("マイク", value: value("microphoneAuthorization")); LabeledContent("通知", value: value("notificationAuthorization"))
-                }
+                }.id("permissions")
                 Section("保存と復元の検証") {
                     Button("保存を往復テスト") { do { let output = try DiagnosticService.storageTest(); result = "保存と読み取りが一致 · \(output["durationMs"] ?? 0) ms"; record("storagePassed") } catch { result = "保存の往復テストに失敗しました"; record("storageFailed") } }
                     #if DEBUG
@@ -41,16 +58,17 @@ private struct DiagnosticExport: Identifiable { let id = UUID(); let url: URL }
                     }
                     #endif
                     Text(result).font(.footnote).foregroundStyle(.secondary)
-                }
+                }.id("storage")
                 Section { ForEach(checks, id: \.0) { key, label in
                     Button { var next=checkValues; next[key]=((next[key] ?? 0)+1)%3; if let bytes=try? JSONSerialization.data(withJSONObject: next), let text=String(data:bytes,encoding:.utf8) {checksJSON=text} } label: { HStack {Text(label).foregroundStyle(.primary); Spacer(); Text(["未確認","確認済み","不具合あり"][min(2,max(0,checkValues[key] ?? 0))]).font(.footnote).foregroundStyle(.secondary)} }
-                }} header: { Text("自分で確認した実機結果") } footer: { Text("背景 GPS は Xcode 版で検証します。Playgrounds 版は前面記録用です。チェック結果は自動で合格にしません。") }
+                }} header: { Text("自分で確認した実機結果") } footer: { Text("背景 GPS は Xcode 版で検証します。Playgrounds 版は前面記録用です。チェック結果は自動で合格にしません。") }.id("checklist")
                 Section("診断の書き出し") {
                     Button("診断 JSON を共有") { Task { await refresh(); do { var output=report; output["version"]=1; output["createdAt"]=ISO8601DateFormatter().string(from:Date()); output["checks"]=Dictionary(uniqueKeysWithValues:checks.map { ($0.0, min(2,max(0,checkValues[$0.0] ?? 0))) }); output["events"]=events; let folder=FileManager.default.temporaryDirectory.appendingPathComponent("diagnostic-"+UUID().uuidString,isDirectory:true); try FileManager.default.createDirectory(at:folder,withIntermediateDirectories:true); let url=folder.appendingPathComponent("plainwalk-native-diagnostics.json"); try JSONSerialization.data(withJSONObject:output,options:[.prettyPrinted,.sortedKeys]).write(to:url,options:.atomic); exportFolder=folder; export=DiagnosticExport(url:url) } catch {result="診断ファイルを書き出せませんでした"} } }
                     Button("診断ログを消去", role: .destructive) {events=[]}
                     Text("座標・軌跡・写真・メモ・場所名を含めず、自動送信しません。保存テストは実際の記録を変更しない別の領域で行います。").font(.footnote).foregroundStyle(.secondary)
-                }
-            }.navigationTitle("実機検証").navigationBarTitleDisplayMode(.inline).toolbar { ToolbarItem(placement: .topBarTrailing) {Button("閉じる") {dismiss()} } }.task {await refresh()}
+                }.id("logs")
+            }.navigationTitle("実機検証").navigationBarTitleDisplayMode(.inline).toolbar { ToolbarItem(placement: .topBarTrailing) {Button("閉じる") {dismiss()} } }.task {await refresh();await captureInitialScroll(captureProxy)}
+            }
         }.sheet(item:$export,onDismiss:{if let exportFolder {try? FileManager.default.removeItem(at:exportFolder)};exportFolder=nil;export=nil}) { item in DiagnosticShareSheet(url:item.url) }
         .onChange(of:recorder.session?.points.count) { _, value in if let value {record("locationUpdate",count:value)} }
         .onChange(of:recorder.session?.recording) { _, value in record(value == true ? "recording" : "pausedOrStopped") }

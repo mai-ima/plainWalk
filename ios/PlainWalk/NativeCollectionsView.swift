@@ -283,6 +283,7 @@ private struct NCNoteExport: Identifiable { let id=UUID(); let url:URL }
     private var preview: some View { NCNotebookPreview(day: day, text: text, paper: paper, font: font, layout: layout, stickers: stickers) }
     var body: some View {
         NavigationStack {
+            ScrollViewReader { captureProxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     Text(day).font(.subheadline).foregroundStyle(.secondary)
@@ -299,15 +300,31 @@ private struct NCNoteExport: Identifiable { let id=UUID(); let url:URL }
                         Button("選択を解除") { selectedID=nil }.disabled(selectedID==nil)
                     }.font(.subheadline)
                     insertMenu
-                    itemControls
+                    itemControls.id("native-capture-note-controls")
                     Button { share() } label: { Label("画像にして共有", systemImage: "square.and.arrow.up").frame(maxWidth: .infinity).padding(12) }.buttonStyle(.bordered)
                 }.padding(20)
+            }.task {
+                #if DEBUG
+                guard ProcessInfo.processInfo.arguments.contains("-PlainWalkCapture=noteControls") else { return }
+                do {
+                    try await Task.sleep(nanoseconds: 400_000_000)
+                    guard !layout.isEmpty, selectedID != nil else { return }
+                    captureProxy.scrollTo("native-capture-note-controls", anchor: .bottom)
+                    try await Task.sleep(nanoseconds: 500_000_000)
+                    try Task.checkCancellation()
+                    ncCaptureSignal("capture-scroll.ready", value: "noteControls")
+                } catch {}
+                #endif
+            }
             }.navigationTitle("ノート").navigationBarTitleDisplayMode(.inline).toolbar {
                 ToolbarItem(placement: .topBarLeading) { Button("閉じる") { if hasChanges {confirmingClose=true} else {dismiss()} } }
                 ToolbarItem(placement: .topBarTrailing) { Button("保存") { save() } }
             }.onAppear {
                 guard !loaded else { return }
                 text = note["text"] as? String ?? ""; paper = note["paper"] as? String ?? "plain"; font = note["font"] as? String ?? "serif"; layout = note["layout"] as? [[String: Any]] ?? []; stickers = note["stickers"] as? String ?? ""; initialDraft=draft; loaded = true
+                #if DEBUG
+                if ProcessInfo.processInfo.arguments.contains("-PlainWalkCapture=noteControls") { selectedID = layout.first?["id"] as? String }
+                #endif
             }
         }.interactiveDismissDisabled(hasChanges)
             .confirmationDialog("変更を保存せずに閉じますか？",isPresented:$confirmingClose,titleVisibility:.visible) {
@@ -588,7 +605,7 @@ private enum NCBadgeEngine {
             if loading { ProgressView("歩いたエリアを調べています…").frame(maxWidth: .infinity, maxHeight: .infinity) }
             else if let failure { ContentUnavailableView("エリアを読み込めません", systemImage: "exclamationmark.map", description: Text(failure)) }
             else if badges.isEmpty { NCEmptyView(symbol: "map", title: "まだバッジがありません", detail: "どこかを歩くと、最初のバッジがここに出ます。日本の市区町村の境界から記録を集計します。") }
-            else { ScrollView { LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) { ForEach(badges) { badge in NavigationLink { VStack(spacing: 18) { NCBadgeImage(badge: badge).frame(height: 320); Text(badge.area.name).font(.title2.weight(.semibold)); Text(badge.area.parent).foregroundStyle(.secondary); Text("\(model.distanceText(badge.distance)) \(model.distanceUnit) ・ \(badge.walkIDs.count) 回のさんぽ"); Text("色のついた点は歩いた場所の目安です。境界は公開の市区町村データを使用しています。").font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center).padding(.horizontal, 24); Spacer() }.navigationTitle("エリアバッジ").navigationBarTitleDisplayMode(.inline) } label: { VStack(spacing: 7) { NCBadgeImage(badge: badge).frame(height: 150); Text(badge.area.name).font(.subheadline.weight(.medium)); Text("\(model.distanceText(badge.distance)) \(model.distanceUnit)").font(.caption).foregroundStyle(.secondary) }.foregroundStyle(.primary).padding(12).background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 20)) }.buttonStyle(.plain) } }.padding(16) } }
+            else { ScrollView { LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) { ForEach(badges) { badge in NavigationLink { NCBadgeDetail(model: model, badge: badge) } label: { VStack(spacing: 7) { NCBadgeImage(badge: badge).frame(height: 150); Text(badge.area.name).font(.subheadline.weight(.medium)); Text("\(model.distanceText(badge.distance)) \(model.distanceUnit)").font(.caption).foregroundStyle(.secondary) }.foregroundStyle(.primary).padding(12).background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 20)) }.buttonStyle(.plain) } }.padding(16) } }
         }.task(id: signature) { await load() }
     }
     private func load() async {
@@ -612,3 +629,83 @@ private struct NCBadgeImage: View {
         for point in badge.visited { let center = p(point); clipped.fill(Path(ellipseIn: CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2)), with: .color(Color.primary.opacity(0.7))) }
     }.accessibilityLabel(badge.area.name + "の歩いたエリア") }
 }
+
+
+/// The list and capture route render the same detail body.
+@MainActor private struct NCBadgeDetail: View {
+    @ObservedObject var model: NativeAppModel
+    let badge: NCBadge
+    var body: some View {
+        VStack(spacing: 18) {
+            NCBadgeImage(badge: badge).frame(height: 320)
+            Text(badge.area.name).font(.title2.weight(.semibold))
+            Text(badge.area.parent).foregroundStyle(.secondary)
+            Text("\(model.distanceText(badge.distance)) \(model.distanceUnit) ・ \(badge.walkIDs.count) 回のさんぽ")
+            Text("色のついた点は歩いた場所の目安です。境界は公開の市区町村データを使用しています。")
+                .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center).padding(.horizontal, 24)
+            Spacer()
+        }.navigationTitle("エリアバッジ").navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+#if DEBUG
+/// These routes expose existing views to the isolated screenshot host; they do
+/// not add product navigation or write into the normal library.
+@MainActor @ViewBuilder func nativeCaptureCollectionScreen(_ key: String, model: NativeAppModel, onContentReady: @escaping () -> Void = {}) -> some View {
+    switch key {
+    case "spotDetail":
+        if let spot = model.spots.first { NavigationStack { NCSpotDetail(model: model, spotID: spot.id) } }
+        else { ContentUnavailableView("写真の確認データがありません", systemImage: "camera") }
+    case "stickerPicker": NCStickerPicker(model: model)
+    case "bookmarkDetail":
+        if let id = ncItems(model.library["bookmarks"]).first?.id { NavigationStack { NCBookmarkDetail(model: model, itemID: id) } }
+        else { ContentUnavailableView("しおりの確認データがありません", systemImage: "bookmark") }
+    case "paperEditor": NCPaperEditor(model: model)
+    case "paperDetail":
+        if let id = ncItems(model.library["sharedMaps"]).first?.id { NavigationStack { NCPaperDetail(model: model, itemID: id) } }
+        else { ContentUnavailableView("共有地図の確認データがありません", systemImage: "map") }
+    case "doodleEditor": NCDoodleEditor(model: model)
+    case "doodleDetail":
+        if let id = ncItems(model.library["doodles"]).first?.id { NavigationStack { NCDoodleDetail(model: model, itemID: id) } }
+        else { ContentUnavailableView("らくがきの確認データがありません", systemImage: "pencil.tip") }
+    case "badgeDetail": NCCaptureBadgeDetail(model: model, onContentReady: onContentReady)
+    default: ContentUnavailableView("未登録のコレクション画面", systemImage: "exclamationmark.triangle")
+    }
+}
+
+@MainActor private struct NCCaptureBadgeDetail: View {
+    @ObservedObject var model: NativeAppModel
+    let onContentReady: () -> Void
+    @State private var badge: NCBadge?
+    @State private var failure: String?
+    var body: some View {
+        NavigationStack {
+            Group {
+                if let badge { NCBadgeDetail(model: model, badge: badge) }
+                else if let failure { ContentUnavailableView("バッジの確認データを表示できません", systemImage: "map", description: Text(failure)) }
+                else { ProgressView("歩いたエリアを調べています…") }
+            }
+        }.task {
+            let tracks = model.walks.map { NCAreaTrack(id: $0.id, points: $0.points.map { NCAreaCoordinate(lat: $0.lat, lon: $0.lon) }, breaks: $0.points.map(\.isBreak)) }
+            let worker = Task.detached(priority: .userInitiated) { try NCBadgeEngine.compute(tracks: tracks) }
+            do {
+                let values = try await withTaskCancellationHandler(operation: { try await worker.value }, onCancel: { worker.cancel() })
+                guard !Task.isCancelled else { return }
+                if let first = values.first { badge = first; onContentReady() }
+                else { failure = "保存した軌跡から日本の区域を見つけられませんでした。" }
+            } catch {
+                guard !Task.isCancelled else { return }
+                failure = error.localizedDescription
+            }
+        }
+    }
+}
+#endif
+
+#if DEBUG
+@MainActor private func ncCaptureSignal(_ file: String, value: String) {
+    let folder = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("PlainWalk", isDirectory: true)
+    try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+    try? Data(value.utf8).write(to: folder.appendingPathComponent(file), options: .atomic)
+}
+#endif

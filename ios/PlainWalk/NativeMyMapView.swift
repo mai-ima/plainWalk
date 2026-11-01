@@ -610,3 +610,17 @@ struct NativePaperCompanion: View {
         } message: { Text(removalError ?? "") }
     }
 }
+
+#if DEBUG
+@MainActor @ViewBuilder func nativeCaptureMapScreen(_ key: String, model: NativeAppModel) -> some View {
+    switch key {
+    case "mapSpot":
+        if let spot = model.spots.first { NativeMapSpotPreview(spot: spot) }
+        else { ContentUnavailableView("写真ピンの確認データがありません", systemImage: "camera") }
+    case "mapFlag":
+        if let flag = model.flags.first { NativeMapFlagPreview(model: model, flag: flag) }
+        else { ContentUnavailableView("目的地の確認データがありません", systemImage: "flag") }
+    default: ContentUnavailableView("未登録の白地図画面", systemImage: "exclamationmark.triangle")
+    }
+}
+#endif

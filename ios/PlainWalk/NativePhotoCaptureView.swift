@@ -36,6 +36,23 @@ import UniformTypeIdentifiers
     @State private var placementSource = "current"
     @State private var awaitingCurrentPlacement = false
     @State private var failure: String?
+    init(model: NativeAppModel) {
+        _model = ObservedObject(wrappedValue: model)
+        #if DEBUG
+        if NativeScreenshotFixtures.isEnabled,
+           ProcessInfo.processInfo.arguments.contains("-PlainWalkCapturePhoto=selected"),
+           let data = model.spots.first?.photoData {
+            let metadata = NativePhotoMetadata(data: data)
+            _imageData = State(initialValue: data)
+            _originalImageData = State(initialValue: data)
+            _photoMetadata = State(initialValue: metadata)
+            _captureTimestamp = State(initialValue: metadata.capturedAt)
+            _importedPhoto = State(initialValue: true)
+            _placementSource = State(initialValue: "unplaced")
+            _caption = State(initialValue: "検証用の合成イラストを選択した状態です。")
+        }
+        #endif
+    }
     private var recentCurrentPoint: NativePoint? {
         guard let point = model.currentPoint, abs(point.t - Date().timeIntervalSince1970 * 1000) < 120_000,
               (point.accuracy ?? 0) >= 0, (point.accuracy ?? 0) <= 1000 else { return nil }; return point
@@ -48,6 +65,7 @@ import UniformTypeIdentifiers
     private var busy: Bool { processing || rendering || (originalImageData != nil && renderedKey != renderKey && !renderFailed) }
     var body: some View {
         NavigationStack {
+            ScrollViewReader { proxy in
             ScrollView {
                 VStack(spacing: 20) {
                     Group {
@@ -78,10 +96,12 @@ import UniformTypeIdentifiers
                     if busy { ProgressView("写真・動画を準備しています…") }
                     TextField("どんなところでしたか？", text: $caption, axis: .vertical).lineLimit(3...6).padding(16).background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 17))
                     HStack { Text("しるし"); Spacer(); Picker("しるし", selection: $emoji) { ForEach(["♡", "☕", "🌿", "🌸", "✨", "📷"], id: \.self) { Text($0).tag($0) } }.pickerStyle(.menu) }
-                    placementControls
+                    placementControls.id("photoLocation")
                     if let failure { Text(failure).font(.footnote).foregroundStyle(.red).frame(maxWidth: .infinity, alignment: .leading) }
                 }.padding(20)
-            }.navigationTitle("ここいいな").navigationBarTitleDisplayMode(.inline).toolbar {
+            }.task { await captureScroll(proxy) }
+            }
+            .navigationTitle("ここいいな").navigationBarTitleDisplayMode(.inline).toolbar {
                 ToolbarItem(placement: .topBarLeading) { Button("キャンセル") { dismiss() } }
                 ToolbarItem(placement: .topBarTrailing) { Button("残す") { save() }.disabled(availablePoint == nil || busy || renderFailed || (imageData == nil && videoData == nil && caption.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)) }
             }
@@ -99,6 +119,21 @@ import UniformTypeIdentifiers
                 }
             }
             .onDisappear { player?.pause(); if let mediaFolder { try? FileManager.default.removeItem(at: mediaFolder) } }
+    }
+    private func captureScroll(_ proxy: ScrollViewProxy) async {
+        #if DEBUG
+        guard NativeScreenshotFixtures.isEnabled,
+              ProcessInfo.processInfo.arguments.contains("-PlainWalkCaptureScroll=photoLocation") else { return }
+        await Task.yield()
+        guard !Task.isCancelled else { return }
+        var transaction = Transaction(); transaction.disablesAnimations = true
+        withTransaction(transaction) { proxy.scrollTo("photoLocation", anchor: .bottom) }
+        do { try await Task.sleep(nanoseconds: 200_000_000) } catch { return }
+        guard !Task.isCancelled else { return }
+        let folder = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("PlainWalk", isDirectory: true)
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try? Data("photoLocation".utf8).write(to: folder.appendingPathComponent("capture-scroll.ready"), options: .atomic)
+        #endif
     }
     private func openCamera() async {
         failure = nil
