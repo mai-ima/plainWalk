@@ -36,25 +36,25 @@ import UniformTypeIdentifiers
     }
     private var usesFixedTabBar: Bool { UIDevice.current.userInterfaceIdiom == .phone }
     private var appContent:some View {
-        TabView(selection:$model.tab) {
-            NavigationStack {NativeMyMapView(model:model).toolbar(.hidden,for:.navigationBar).background {smokeProbe("map")}}.toolbar(usesFixedTabBar ? .hidden : .automatic, for: .tabBar).tabItem{Label("マイマップ",systemImage:"sparkles")}.tag(NativeTab.map)
-            NavigationStack {NativeRecordsView(model:model).background { smokeProbe("records") }}.toolbar(usesFixedTabBar ? .hidden : .automatic, for: .tabBar).tabItem{Label("記録",systemImage:"chart.bar.fill")}.tag(NativeTab.records)
-            NavigationStack(path: $model.profilePath) {
-                NativeProfileView(model:model).background { smokeProbe("profile") }.onAppear(perform:model.profileDidAppear)
-                    .navigationDestination(for: NativeProfileDestination.self) { destination in
-                        switch destination {
-                        case .collection(let item):
-                            NativeCollectionsView(model:model,collection:item)
-                                .background { smokeProbe("collection:"+item.rawValue) }
-                        case .settings:
-                            NativeSettingsView(config:model.config,onChange:model.saveConfig,onAction:model.settingsAction,onClose:model.closeSettings,embedded:true)
-                                .toolbar(.hidden,for:.navigationBar)
-                                .background { smokeProbe("settings") }
+        VStack(spacing: 0) {
+            TabView(selection:$model.tab) {
+                NavigationStack {NativeMyMapView(model:model).toolbar(.hidden,for:.navigationBar).background {smokeProbe("map")}}.toolbar(usesFixedTabBar ? .hidden : .automatic, for: .tabBar).tabItem{Label("マイマップ",systemImage:"sparkles")}.tag(NativeTab.map)
+                NavigationStack {NativeRecordsView(model:model).background { smokeProbe("records") }}.toolbar(usesFixedTabBar ? .hidden : .automatic, for: .tabBar).tabItem{Label("記録",systemImage:"chart.bar.fill")}.tag(NativeTab.records)
+                NavigationStack(path: $model.profilePath) {
+                    NativeProfileView(model:model).background { smokeProbe("profile") }.onAppear(perform:model.profileDidAppear)
+                        .navigationDestination(for: NativeProfileDestination.self) { destination in
+                            switch destination {
+                            case .collection(let item):
+                                NativeCollectionsView(model:model,collection:item)
+                                    .background { smokeProbe("collection:"+item.rawValue) }
+                            case .settings:
+                                NativeSettingsView(config:model.config,onChange:model.saveConfig,onAction:model.settingsAction,onClose:model.closeSettings,embedded:true)
+                                    .toolbar(.hidden,for:.navigationBar)
+                                    .background { smokeProbe("settings") }
+                            }
                         }
-                    }
-            }.toolbar(usesFixedTabBar ? .hidden : .automatic, for: .tabBar).tabItem{Label("プロフィール",systemImage:"person")}.tag(NativeTab.profile)
-        }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
+                }.toolbar(usesFixedTabBar ? .hidden : .automatic, for: .tabBar).tabItem{Label("プロフィール",systemImage:"person")}.tag(NativeTab.profile)
+            }
             if usesFixedTabBar {
                 NativeFixedTabBar(selected: model.tab) { tab in
                     guard model.tab != tab else { return }

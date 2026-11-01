@@ -75,10 +75,18 @@ private func ncDate(_ ms: Double) -> String { Date(timeIntervalSince1970: ms / 1
                     ForEach(model.spots.reversed()) { spot in
                         NavigationLink { NCSpotDetail(model: model, spotID: spot.id) } label: {
                             VStack(alignment: .leading, spacing: 8) {
-                                Group { if let data = spot.photoData, let image = UIImage(data: data) { Image(uiImage: image).resizable().scaledToFill() } else { ZStack { Color(uiColor: .secondarySystemBackground); Image(systemName: video(for: spot.id) ? "video" : "heart").font(.largeTitle).foregroundStyle(.secondary) } } }.frame(height: 165).frame(maxWidth: .infinity).clipped().clipShape(RoundedRectangle(cornerRadius: 18))
+                                Color.clear.frame(height: 165)
+                                    .overlay {
+                                        if let data = spot.photoData, let image = UIImage(data: data) {
+                                            Image(uiImage: image).resizable().scaledToFill()
+                                        } else {
+                                            ZStack { Color(uiColor: .secondarySystemBackground); Image(systemName: video(for: spot.id) ? "video" : "heart").font(.largeTitle).foregroundStyle(.secondary) }
+                                        }
+                                    }
+                                    .clipped().clipShape(RoundedRectangle(cornerRadius: 18))
                                 Text(spot.text.isEmpty ? "ここいいな" : spot.text).font(.subheadline.weight(.medium)).lineLimit(2)
                                 Text(ncDate(spot.point.t)).font(.caption2).foregroundStyle(.secondary)
-                            }.foregroundStyle(.primary)
+                            }.frame(maxWidth: .infinity, alignment: .leading).foregroundStyle(.primary)
                         }.buttonStyle(.plain)
                     }
                 }.padding(16) }
