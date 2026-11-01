@@ -86,7 +86,7 @@ private func ncDate(_ ms: Double) -> String { Date(timeIntervalSince1970: ms / 1
                                     .clipped().clipShape(RoundedRectangle(cornerRadius: 18))
                                 Text(spot.text.isEmpty ? "ここいいな" : spot.text).font(.subheadline.weight(.medium)).lineLimit(2)
                                 Text(ncDate(spot.point.t)).font(.caption2).foregroundStyle(.secondary)
-                            }.frame(maxWidth: .infinity, alignment: .leading).foregroundStyle(.primary)
+                            }.frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle()).foregroundStyle(.primary)
                         }.buttonStyle(.plain)
                     }
                 }.padding(16) }

@@ -74,7 +74,7 @@ export function createDeveloperUI(ctx) {
                     : "オフ",
               ],
               [
-                "空き容量",
+                snapshot.native?.freeBytes != null ? "端末の空き容量" : "サイト保存の残り目安",
                 snapshot.native?.freeBytes != null
                   ? `${Math.round(snapshot.native.freeBytes / 1048576)} MB`
                   : snapshot.browser.storageQuota

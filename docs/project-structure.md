@@ -11,7 +11,9 @@ web/
 
 ios/
   PlainWalk/           SwiftUI の画面・状態・端末 API・権限の正本
-    NativeRootView     標準タブ、ナビゲーション、シート
+    NativeRootView     タブ選択、ナビゲーション、シート
+    NativeFixedTabBar  iPhoneの固定フッター
+    NativeMapProjection 日付変更線を跨ぐ局所座標
     NativeMyMapView    Canvas の白地図
     NativeAnswerMapView MapKit の地図・検索・目的地
     NativeRecordsView / NativeProfileView / NativeCollectionsView

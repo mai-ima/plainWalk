@@ -221,47 +221,138 @@ import MapKit
     }
 
 #if DEBUG
-    /// Exercise MapKit's real configuration/region/camera interaction, including
-    /// the initial nil-to-flat pitch transition that previously reset the map.
-    static func cameraSelfTest() throws -> Bool {
+    /// Verify committed MapKit camera state, rather than waiting for tiles or
+    /// accepting a screenshot whose controls rendered over a wrong viewport.
+    static func cameraSelfTest() async throws -> Bool {
         func require(_ condition: @autoclosure () -> Bool, _ name: String) throws {
             guard condition() else { throw NativeError.message("答え合わせマップのカメラ検証に失敗: " + name) }
         }
-        func configuredMap(walks: [NativeWalk] = [], current: NativePoint? = nil) -> MKMapView {
-            let map = MKMapView(frame: CGRect(x: 0, y: 0, width: 320, height: 600))
+        typealias Harness = (map: MKMapView, coordinator: NativeAnswerMapSurface.Coordinator, surface: NativeAnswerMapSurface)
+        let controller = UIViewController()
+        let window: UIWindow
+        if let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first {
+            window = UIWindow(windowScene: scene)
+            window.frame = CGRect(x: 0, y: 0, width: 320, height: 600)
+        } else { window = UIWindow(frame: CGRect(x: 0, y: 0, width: 320, height: 600)) }
+        window.rootViewController = controller
+        // Do not replace the application's key window or request any location
+        // permission. The temporary host only lets MapKit commit its layout.
+        window.isHidden = false
+        var retained: [(MKMapView, NativeAnswerMapSurface.Coordinator)] = []
+        defer {
+            for (map, coordinator) in retained { map.delegate = nil; coordinator.cancelCameraChanges(); coordinator.map = nil }
+            window.isHidden = true
+        }
+        func configuredMap(walks: [NativeWalk] = [], current: NativePoint? = nil,
+                           pitched: Bool = false, focus: NativeAnswerPlace? = nil, zoom: Bool = false) -> Harness {
+            controller.view.subviews.forEach { $0.removeFromSuperview() }
+            let map = MKMapView(frame: controller.view.bounds)
+            map.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            controller.view.addSubview(map)
             let surface = NativeAnswerMapSurface(walks: walks, activePoints: [], libraryRevision: 0,
-                flags: [], current: current, satellite: false, pitched: false,
-                focus: nil, focusRevision: 0, locateRevision: 0, zoomRevision: 0, zoomIn: true,
+                flags: [], current: current, satellite: false, pitched: pitched,
+                focus: focus, focusRevision: focus == nil ? 0 : 1, locateRevision: 0, zoomRevision: zoom ? 1 : 0, zoomIn: true,
                 onRegion: { _ in }, onPick: { _ in })
             let coordinator = NativeAnswerMapSurface.Coordinator(surface)
+            retained.append((map, coordinator))
             coordinator.map = map; map.delegate = coordinator
-            // Reproduce makeUIView's initial region before the configuration is
-            // applied, then exercise the exact update path used by SwiftUI.
             map.setRegion(.init(center: .init(latitude: 36.5, longitude: 137.2), span: .init(latitudeDelta: 16, longitudeDelta: 16)), animated: false)
             coordinator.update(surface, map: map)
             map.layoutIfNeeded()
-            coordinator.update(surface, map: map)
-            map.delegate = nil; coordinator.map = nil
-            return map
+            return (map, coordinator, surface)
         }
+        func settle(_ harness: Harness, _ name: String) async throws {
+            let deadline = ProcessInfo.processInfo.systemUptime + 5
+            while ProcessInfo.processInfo.systemUptime < deadline {
+                harness.map.layoutIfNeeded()
+                if harness.coordinator.cameraChangesSettled { return }
+                try await Task.sleep(nanoseconds: 20_000_000)
+            }
+            let camera = harness.map.camera
+            throw NativeError.message("答え合わせマップのカメラ確定を確認できません: \(name), center=\(camera.centerCoordinate.latitude),\(camera.centerCoordinate.longitude), distance=\(camera.centerCoordinateDistance), pitch=\(camera.pitch)")
+        }
+        func near(_ map: MKMapView, _ coordinate: CLLocationCoordinate2D, meters: Double = 250) -> Bool {
+            MKMetersBetweenMapPoints(MKMapPoint(map.camera.centerCoordinate), MKMapPoint(coordinate)) < meters
+        }
+        func distanceRatio(_ map: MKMapView, _ distance: Double) -> Double { map.camera.centerCoordinateDistance / distance }
+        func contains(_ map: MKMapView, _ point: NativePoint) -> Bool {
+            let rect = map.visibleMapRect, projected = MKMapPoint(CLLocationCoordinate2D(latitude: point.lat, longitude: point.lon))
+            let x = NativeMapProjection.nearest(projected.x, to: rect.midX, period: MKMapRect.world.width)
+            return rect.contains(MKMapPoint(x: x, y: projected.y))
+        }
+
         let empty = configuredMap()
-        try require((30...45).contains(empty.region.center.latitude) && (125...150).contains(empty.region.center.longitude), "空データで日本を表示")
-        try require(empty.region.span.latitudeDelta > 5, "空データで地域全体を表示")
-        try require(abs(empty.camera.pitch) < 0.1, "初期表示は平面")
+        try await settle(empty, "空データ・平面")
+        try require((30...45).contains(empty.map.region.center.latitude) && (125...150).contains(empty.map.region.center.longitude), "空データで日本を表示")
+        try require(empty.map.region.span.latitudeDelta > 5, "空データで地域全体を表示")
+        try require(abs(empty.map.camera.pitch) < 0.1, "初期表示は平面")
 
         let point = NativePoint(lat: 35.6812, lon: 139.7671, t: 1_000)
-        let located = configuredMap(current: point)
-        try require(abs(located.region.center.latitude - point.lat) < 0.01 && abs(located.region.center.longitude - point.lon) < 0.01, "初回の平面設定でGPS中心を保持")
-        try require(located.region.span.latitudeDelta < 0.1, "GPSの表示倍率を保持")
+        let coordinate = CLLocationCoordinate2D(latitude: point.lat, longitude: point.lon)
+        var located = configuredMap(current: point)
+        try await settle(located, "GPS・平面")
+        try require(near(located.map, coordinate), "初回の平面設定でGPS中心を保持")
+        try require(located.map.region.span.latitudeDelta < 0.1, "GPSの表示倍率を保持")
+        let flatDistance = located.map.camera.centerCoordinateDistance
+        located.surface.pitched = true; located.coordinator.update(located.surface, map: located.map)
+        try await settle(located, "平面から3D")
+        try require(near(located.map, coordinate) && (0.9...1.1).contains(distanceRatio(located.map, flatDistance)), "3D切り替えで中心と倍率を保持")
+        try require(abs(located.map.camera.pitch - 55) < 1, "3Dの角度を適用")
+        let beforeZoom = located.map.camera.centerCoordinateDistance
+        located.surface.zoomRevision += 1; located.coordinator.update(located.surface, map: located.map)
+        try await settle(located, "3Dで拡大")
+        try require(near(located.map, coordinate) && (0.4...0.6).contains(distanceRatio(located.map, beforeZoom)), "3Dで拡大しても中心と角度を保持")
+        try require(abs(located.map.camera.pitch - 55) < 1, "拡大後も3Dを保持")
+
+        let initial3D = configuredMap(current: point, pitched: true)
+        try await settle(initial3D, "初回からGPS・3D")
+        try require(near(initial3D.map, coordinate) && (0.9...1.1).contains(distanceRatio(initial3D.map, flatDistance)), "初回3DでGPS中心と倍率を保持")
+        try require(abs(initial3D.map.camera.pitch - 55) < 1, "初回3Dの角度を適用")
 
         let points = [NativePoint(lat: 34.68, lon: 135.50, t: 1_000), NativePoint(lat: 34.69, lon: 135.52, t: 11_000)]
-        guard let walk = NativeWalk(json: ["id": "camera-self-test", "name": "camera", "start": 1_000.0, "end": 11_000.0, "points": points.map(\.json)]) else {
-            throw NativeError.message("カメラ検証用の軌跡を生成できません。")
+        func walk(_ points: [NativePoint]) throws -> NativeWalk {
+            guard let result = NativeWalk(json: ["id": "camera-self-test", "name": "camera", "start": 1_000.0, "end": 11_000.0, "points": points.map(\.json)]) else {
+                throw NativeError.message("カメラ検証用の軌跡を生成できません。")
+            }
+            return result
         }
-        let routed = configuredMap(walks: [walk])
-        try require(points.allSatisfy { routed.visibleMapRect.contains(MKMapPoint(CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon))) }, "初回の平面設定で軌跡全体を保持")
-        try require(abs(routed.region.center.latitude - 34.685) < 0.05 && abs(routed.region.center.longitude - 135.51) < 0.05, "軌跡の中心を保持")
-        try require(routed.region.span.latitudeDelta < 0.2, "軌跡の表示倍率を保持")
+        let trail = try walk(points)
+        let routed = configuredMap(walks: [trail])
+        try await settle(routed, "軌跡・平面")
+        try require(points.allSatisfy { contains(routed.map, $0) }, "初回の平面設定で軌跡全体を保持")
+        try require(abs(routed.map.region.center.latitude - 34.685) < 0.05 && abs(routed.map.region.center.longitude - 135.51) < 0.05, "軌跡の中心を保持")
+        try require(routed.map.region.span.latitudeDelta < 0.2, "軌跡の表示倍率を保持")
+        let trailDistance = routed.map.camera.centerCoordinateDistance
+        let routed3D = configuredMap(walks: [trail], pitched: true)
+        try await settle(routed3D, "初回から軌跡・3D")
+        try require(near(routed3D.map, routed.map.camera.centerCoordinate, meters: 100) && (0.9...1.1).contains(distanceRatio(routed3D.map, trailDistance)), "初回3Dで軌跡中心と倍率を保持")
+        try require(points.allSatisfy { contains(routed3D.map, $0) }, "初回3Dで軌跡が表示範囲に残る")
+
+        let focus = NativeAnswerPlace(name: "カメラ検証", lat: 35.0116, lon: 135.7681)
+        let focused = configuredMap(current: point, focus: focus)
+        try await settle(focused, "初期フォーカス")
+        let focusDistance = focused.map.camera.centerCoordinateDistance
+        var focused3D = configuredMap(current: point, pitched: true, focus: focus, zoom: true)
+        try await settle(focused3D, "初回3D・フォーカス・拡大の同時更新")
+        try require(near(focused3D.map, focus.coordinate) && (0.4...0.6).contains(distanceRatio(focused3D.map, focusDistance)), "初回3Dのフォーカスと倍率を保持")
+        try require(abs(focused3D.map.camera.pitch - 55) < 1, "フォーカス後も3Dを保持")
+        let beforeFlat = focused3D.map.camera.centerCoordinateDistance
+        focused3D.surface.pitched = false; focused3D.coordinator.update(focused3D.surface, map: focused3D.map)
+        try await settle(focused3D, "フォーカス後に平面")
+        try require(near(focused3D.map, focus.coordinate) && (0.9...1.1).contains(distanceRatio(focused3D.map, beforeFlat)), "平面へ戻してもフォーカスと倍率を保持")
+
+        let crossing = [NativePoint(lat: 0.01, lon: 179.9999, t: 1_000), NativePoint(lat: 0.0101, lon: -179.9999, t: 11_000)]
+        let crossingMap = configuredMap(walks: [try walk(crossing)])
+        try await settle(crossingMap, "日付変更線の軌跡")
+        try require(abs(crossingMap.map.camera.centerCoordinate.longitude) > 179, "日付変更線の近くに中心を保持")
+        try require(crossingMap.map.region.span.longitudeDelta < 1 && crossing.allSatisfy { contains(crossingMap.map, $0) }, "日付変更線を跨ぐ軌跡を局所的に表示")
+        let lines = crossingMap.map.overlays.compactMap { $0 as? MKPolyline }
+        try require(lines.count == 1, "日付変更線を跨ぐ連続区間を保持")
+        let expectedWidth = MKMapRect.world.width * 0.0002 / 360
+        try require(abs(lines[0].boundingMapRect.width - expectedWidth) < 1, "22mの軌跡overlayを世界幅にしない")
+        let pixels = crossing.map { crossingMap.map.convert(CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon), toPointTo: crossingMap.map) }
+        try require(pixels.allSatisfy { $0.x.isFinite && $0.x >= 0 && $0.x <= crossingMap.map.bounds.width }
+            && abs(pixels[0].x - pixels[1].x) < crossingMap.map.bounds.width, "日付変更線の軌跡overlayと画面座標を同じworldコピーに表示")
         return true
     }
 #endif
@@ -301,7 +392,7 @@ private struct NativeAnswerResult: Identifiable { var id: String; var place: Nat
         return map
     }
     func updateUIView(_ map: MKMapView, context: Context) { context.coordinator.update(self, map: map) }
-    static func dismantleUIView(_ map: MKMapView, coordinator: Coordinator) { map.delegate = nil; coordinator.map = nil }
+    static func dismantleUIView(_ map: MKMapView, coordinator: Coordinator) { map.delegate = nil; coordinator.cancelCameraChanges(); coordinator.map = nil }
 
     final class Coordinator: NSObject, MKMapViewDelegate {
         var parent: NativeAnswerMapSurface
@@ -316,6 +407,13 @@ private struct NativeAnswerResult: Identifiable { var id: String; var place: Nat
         private var zoomedRevision = 0
         private var satellite: Bool?
         private var pitched: Bool?
+        private var pendingPitch = false
+        private var awaitingViewport = false
+        private var pendingZoom = 1.0
+        private var cameraWork: DispatchWorkItem?
+        private var viewportCenter: CLLocationCoordinate2D?
+        private var viewportRadius: CLLocationDistance = 0
+        private var animateCamera = false
         private var initialized = false
         private var waitingForFix = false
         private var focusPin: MKPointAnnotation?
@@ -341,11 +439,16 @@ private struct NativeAnswerResult: Identifiable { var id: String; var place: Nat
             if !initialized {
                 initialized = true
                 if let current = next.current { locate(current, map: map, animated: false) }
-                else if let first = savedLines.first { var rect = first.boundingMapRect; for line in savedLines.dropFirst() { rect = rect.union(line.boundingMapRect) }; map.setVisibleMapRect(rect, edgePadding: .init(top: 60, left: 35, bottom: 70, right: 70), animated: false) }
+                else if !savedLines.isEmpty, let rect = Self.fitRect(next.walks) {
+                    let center = MKMapPoint(x: rect.midX, y: rect.midY).coordinate
+                    prepareViewport(center: .init(latitude: center.latitude, longitude: NativeMapProjection.delta(center.longitude, period: 360)),
+                        radius: max(1000, hypot(rect.width, rect.height) * MKMetersPerMapPointAtLatitude(center.latitude) * 2))
+                    map.setVisibleMapRect(rect, edgePadding: .init(top: 60, left: 35, bottom: 70, right: 70), animated: false)
+                }
                 else {
                     // Apply the empty-library viewport after MapKit's map
                     // configuration, which can reset a region set in makeUIView.
-                    map.setRegion(.init(center: .init(latitude: 36.5, longitude: 137.2), span: .init(latitudeDelta: 16, longitudeDelta: 16)), animated: false)
+                    setRegion(.init(center: .init(latitude: 36.5, longitude: 137.2), span: .init(latitudeDelta: 16, longitudeDelta: 16)), map: map, animated: false)
                 }
             }
             if focusedRevision != next.focusRevision {
@@ -354,36 +457,87 @@ private struct NativeAnswerResult: Identifiable { var id: String; var place: Nat
                 focusPin = nil
                 if let focus = next.focus {
                     let pin = MKPointAnnotation(); pin.coordinate = focus.coordinate; pin.title = focus.name; focusPin = pin; map.addAnnotation(pin)
-                    map.setRegion(.init(center: focus.coordinate, latitudinalMeters: 800, longitudinalMeters: 800), animated: !UIAccessibility.isReduceMotionEnabled)
+                    setRegion(.init(center: focus.coordinate, latitudinalMeters: 800, longitudinalMeters: 800), map: map, animated: !UIAccessibility.isReduceMotionEnabled)
                 }
             } else if next.focus == nil, let focusPin { map.removeAnnotation(focusPin); self.focusPin = nil }
             if locatedRevision != next.locateRevision { locatedRevision = next.locateRevision; waitingForFix = true }
             if waitingForFix, let point = next.current { waitingForFix = false; locate(point, map: map, animated: !UIAccessibility.isReduceMotionEnabled) }
             if zoomedRevision != next.zoomRevision {
-                zoomedRevision = next.zoomRevision; let camera = map.camera.copy() as! MKMapCamera
-                camera.centerCoordinateDistance = min(30_000_000, max(100, camera.centerCoordinateDistance * (next.zoomIn ? 0.5 : 2)))
-                map.setCamera(camera, animated: !UIAccessibility.isReduceMotionEnabled)
+                zoomedRevision = next.zoomRevision
+                pendingZoom *= next.zoomIn ? 0.5 : 2
+                animateCamera = !UIAccessibility.isReduceMotionEnabled
             }
             if pitched != next.pitched {
-                let changesPitch = pitched != nil || next.pitched
+                if pitched != nil { animateCamera = !UIAccessibility.isReduceMotionEnabled }
                 pitched = next.pitched
-                // The first flat configuration already has zero pitch. Reading
-                // its camera here can return MapKit's pre-region default and
-                // overwrite the initial Japan/GPS/trail viewport.
-                if changesPitch {
-                    let camera = map.camera.copy() as! MKMapCamera; camera.pitch = next.pitched ? 55 : 0
-                    map.setCamera(camera, animated: !UIAccessibility.isReduceMotionEnabled)
-                }
+                pendingPitch = true
             }
+            scheduleCameraChanges(map)
         }
-        private func locate(_ point: NativePoint, map: MKMapView, animated: Bool) { map.setRegion(.init(center: .init(latitude: point.lat, longitude: point.lon), latitudinalMeters: 1000, longitudinalMeters: 1000), animated: animated) }
+        private func prepareViewport(center: CLLocationCoordinate2D, radius: CLLocationDistance) {
+            awaitingViewport = true; pendingPitch = true; viewportCenter = center; viewportRadius = radius
+        }
+        private func setRegion(_ region: MKCoordinateRegion, map: MKMapView, animated: Bool) {
+            let corner = CLLocationCoordinate2D(latitude: min(85, max(-85, region.center.latitude + region.span.latitudeDelta / 2)), longitude: region.center.longitude)
+            prepareViewport(center: region.center, radius: max(1000, MKMetersBetweenMapPoints(MKMapPoint(region.center), MKMapPoint(corner)) * 4))
+            map.setRegion(region, animated: animated)
+        }
+        private func locate(_ point: NativePoint, map: MKMapView, animated: Bool) { setRegion(.init(center: .init(latitude: point.lat, longitude: point.lon), latitudinalMeters: 1000, longitudinalMeters: 1000), map: map, animated: animated) }
+        private func scheduleCameraChanges(_ map: MKMapView) {
+            guard cameraWork == nil else { return }
+            let work = DispatchWorkItem { [weak self, weak map] in
+                guard let self, let map, self.map === map else { return }
+                self.cameraWork = nil
+                // Region fitting and camera properties do not commit together.
+                // Never copy a pre-region camera, including initial 3D, focus
+                // and a zoom requested in the same SwiftUI update as a new fit.
+                guard !self.awaitingViewport else { return }
+                guard self.pendingPitch || self.pendingZoom != 1 || self.viewportCenter != nil else { return }
+                let camera = map.camera.copy() as! MKMapCamera
+                guard CLLocationCoordinate2DIsValid(camera.centerCoordinate),
+                      camera.centerCoordinateDistance.isFinite, camera.centerCoordinateDistance > 0 else { return }
+                if let center = self.viewportCenter {
+                    guard MKMetersBetweenMapPoints(MKMapPoint(camera.centerCoordinate), MKMapPoint(center)) <= self.viewportRadius else { return }
+                }
+                let pitch: CGFloat = self.parent.pitched ? 55 : 0
+                let needsChange = (self.pendingPitch && abs(camera.pitch - pitch) > 0.1) || self.pendingZoom != 1
+                self.pendingPitch = false
+                self.viewportCenter = nil
+                let animated = self.animateCamera; self.animateCamera = false
+                guard needsChange else { return }
+                let oldDistance = camera.centerCoordinateDistance, oldPitch = camera.pitch
+                camera.pitch = pitch
+                camera.centerCoordinateDistance = min(30_000_000, max(100, camera.centerCoordinateDistance * self.pendingZoom))
+                self.pendingZoom = 1
+                guard abs(camera.pitch - oldPitch) > 0.1 || abs(camera.centerCoordinateDistance - oldDistance) > 0.01 else { return }
+                self.awaitingViewport = true
+                map.setCamera(camera, animated: animated)
+            }
+            cameraWork = work
+            DispatchQueue.main.async(execute: work)
+        }
+        func cancelCameraChanges() { cameraWork?.cancel(); cameraWork = nil }
+        #if DEBUG
+        var cameraChangesSettled: Bool { !awaitingViewport && !pendingPitch && cameraWork == nil && viewportCenter == nil && pendingZoom == 1 }
+        #endif
+        private static func fitRect(_ walks: [NativeWalk]) -> MKMapRect? {
+            let points = walks.flatMap(\.points).filter { $0.lat.isFinite && $0.lon.isFinite && abs($0.lat) <= 85 && abs($0.lon) <= 180 }
+                .map { MKMapPoint(CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)) }
+            guard let arc = NativeMapProjection.minimumArc(points.map(\.x), period: MKMapRect.world.width),
+                  let lowerY = points.map(\.y).min(), let upperY = points.map(\.y).max() else { return nil }
+            // Fit the local world copy across ±180°, rather than the empty
+            // nearly-worldwide gap between the same saved coordinates.
+            return MKMapRect(x: arc.lowerBound, y: lowerY, width: max(1, arc.width), height: max(1, upperY - lowerY))
+        }
         private static func lines(_ points: [NativePoint], active: Bool) -> [MKPolyline] {
-            var output: [MKPolyline] = []; var segment: [CLLocationCoordinate2D] = []
-            func flush() { if segment.count > 1 { let line = NativeAnswerPolyline(coordinates: segment, count: segment.count); line.active = active; output.append(line) }; segment = [] }
+            var output: [MKPolyline] = []; var segment: [MKMapPoint] = []
+            func flush() { if segment.count > 1 { let line = NativeAnswerPolyline(points: segment, count: segment.count); line.active = active; output.append(line) }; segment = [] }
             for p in points {
                 guard p.lat.isFinite, p.lon.isFinite, abs(p.lat) <= 85, abs(p.lon) <= 180 else { flush(); continue }
                 if p.isBreak { flush() }
-                segment.append(.init(latitude: p.lat, longitude: p.lon))
+                var projected = MKMapPoint(CLLocationCoordinate2D(latitude: p.lat, longitude: p.lon))
+                if let previous = segment.last { projected.x = NativeMapProjection.nearest(projected.x, to: previous.x, period: MKMapRect.world.width) }
+                segment.append(projected)
             }
             flush(); return output
         }
@@ -394,11 +548,13 @@ private struct NativeAnswerResult: Identifiable { var id: String; var place: Nat
             parent.onPick(.init(name: "選んだ場所", lat: coordinate.latitude, lon: coordinate.longitude))
         }
         func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
+            awaitingViewport = false
+            scheduleCameraChanges(mapView)
             // MapKit can call back synchronously from updateUIView; publish camera
             // changes on the next turn to avoid mutating SwiftUI state mid-render.
             let region = mapView.region
-            DispatchQueue.main.async { [weak self] in
-                guard let self, self.map != nil else { return }
+            DispatchQueue.main.async { [weak self, weak mapView] in
+                guard let self, let mapView, self.map === mapView else { return }
                 self.parent.onRegion(region)
             }
         }

@@ -32,7 +32,7 @@ import UIKit
         let priorWalks = walks(in: previousWeek)
         ScrollViewReader { captureProxy in
         ScrollView {
-            VStack(spacing: 22) {
+            VStack(spacing: 16) {
                 weekCard(walks: weekWalks, previous: priorWalks)
                 quickActions
                 monthHeading
@@ -102,7 +102,7 @@ import UIKit
     }
 
     private func weekCard(walks: [NativeWalk], previous: [NativeWalk]) -> some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 12) {
             HStack {
                 Text("今週").font(.subheadline.weight(.semibold))
                 Spacer()
@@ -128,10 +128,10 @@ import UIKit
                     Text("今週のふりかえり").font(.subheadline)
                     Spacer()
                     Image(systemName: "chevron.right").font(.caption).foregroundStyle(.secondary)
-                }.frame(minHeight: 34).contentShape(Rectangle())
+                }.frame(minHeight: 44).contentShape(Rectangle())
             }.buttonStyle(.plain)
         }
-        .padding(18)
+        .padding(16)
         .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 24))
         .overlay(RoundedRectangle(cornerRadius: 24).strokeBorder(Color.primary.opacity(0.07), lineWidth: 0.7))
     }

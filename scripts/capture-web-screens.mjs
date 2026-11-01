@@ -94,7 +94,7 @@ add("map","マイマップ","地図",async p=>{await action(p,"allMap");await ac
 add("map-empty","マイマップ・初期状態","地図",async()=>{},{data:empty,state:"empty"});
 add("map-dark","マイマップ・ダーク","地図",p=>action(p,"allMap"),{dark:true});
 add("answer","答え合わせマップ","地図",async p=>{await action(p,"allMap");await action(p,"answer");await p.waitForTimeout(700);});
-add("answer-tilt","答え合わせ・傾斜表示","地図",async p=>{await action(p,"allMap");await action(p,"answer");await action(p,"tilt");await p.waitForTimeout(500);});
+add("answer-tilt","答え合わせ・平面表示（Webの3Dは未対応）","地図",async p=>{await action(p,"allMap");await action(p,"answer");await action(p,"tilt");await p.waitForTimeout(500);},{state:"flat-fallback-not-3D"});
 A("menu","メニュー","menu",{category:"地図",scroll:true});
 A("layers","地図レイヤー・全区間","layers",{category:"地図",scroll:true});
 A("record-start","記録を始める","recordOptions",{category:"記録",data:empty,state:"before-recording"});

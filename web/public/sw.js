@@ -1,10 +1,11 @@
-const CACHE = "plainwalk-v6";
+const CACHE = "plainwalk-v7";
 const FILES = [
   "./",
   "./index.html",
   "./style.css",
   "./app.js",
   "./core.js",
+  "./map-geometry.js",
   "./diagnostics.js",
   "./developer-ui.js",
   "./collections.js",

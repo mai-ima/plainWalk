@@ -25,7 +25,9 @@ Simulator の成功は iPhone 実機での確認とは別です。実機では�
 
 | ファイル | 担当 |
 |---|---|
-| `NativeRootView.swift` | 標準タブ、NavigationStack、シート、ファイル取り込み |
+| `NativeRootView.swift` | タブ選択、NavigationStack、シート、ファイル取り込み |
+| `NativeFixedTabBar.swift` | iPhoneの固定フッター、選択状態と読み上げ |
+| `NativeMapProjection.swift` | 日付変更線とworld座標の周期・表示範囲 |
 | `NativeMyMapView.swift` | Canvas、パン・拡大縮小、軌跡・写真ピン・現在地、記録ボタン |
 | `NativeAnswerMapView.swift` | MapKit、標準・航空写真・3D、場所検索、旗・しおり |
 | `NativeRecordsView.swift`, `NativeProfileView.swift` | 履歴、カレンダー、詳細、プロフィール |

@@ -17,19 +17,19 @@ import SwiftUI
         NavigationStack {
             ScrollViewReader { captureProxy in
             ScrollView {
-                VStack(alignment: .leading, spacing: 28) {
+                VStack(alignment: .leading, spacing: 20) {
                     choicesSection("配色", note: "選んだ配色で、白地図と軌跡を描きます。") {
                         ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 12) {
+                            HStack(spacing: 8) {
                                 ForEach(Array(NativeLayerPalette.all.enumerated()), id: \.offset) { index, item in
                                     choice(item.name, selected: theme == index) {
                                         NativePaperLineSample(dashed: false)
                                             .stroke(item.ink, style: StrokeStyle(lineWidth: 2, lineCap: .round))
                                             .padding(11).background(item.paper, in: Circle())
                                     } action: { choose("theme", index) }
-                                    .containerRelativeFrame(.horizontal, count: 5, spacing: 12)
+                                    .containerRelativeFrame(.horizontal, count: 5, spacing: 8)
                                 }
-                            }.padding(4)
+                            }.padding(.vertical, 2)
                         }
                     }
                     choicesSection("線") {
@@ -41,7 +41,7 @@ import SwiftUI
                                 lineSample(dashed: true)
                             } action: { choose("line", "dashed") }
                             Spacer(minLength: 0)
-                        }.padding(4)
+                        }.padding(.vertical, 2)
                     }
                     choicesSection("写真ピン") {
                         HStack(spacing: 0) {
@@ -51,7 +51,7 @@ import SwiftUI
                                 } action: { choose("pin", item.0) }
                                 .frame(maxWidth: .infinity)
                             }
-                        }.padding(.vertical, 4)
+                        }.padding(.vertical, 2)
                     }
                     choicesSection("現在地", note: "歩くと猫も歩きます。地図を大きく引いたときは、現在地を点で表示します。") {
                         HStack(spacing: 0) {
@@ -62,7 +62,7 @@ import SwiftUI
                                 } action: { choose("locationMark", item.0) }
                                 .frame(maxWidth: .infinity)
                             }
-                        }.padding(.vertical, 4)
+                        }.padding(.vertical, 2)
                     }
                     VStack(alignment: .leading, spacing: 10) {
                         card { Toggle("地図の輪郭を表示", isOn: bool("outline", default: false)) }
@@ -97,7 +97,7 @@ import SwiftUI
                             Toggle("つぶやきを表示", isOn: bool("showTweets", default: false))
                         }
                     }.id("display")
-                }.padding(.horizontal, 16).padding(.top, 20).padding(.bottom, 32)
+                }.padding(.horizontal, 16).padding(.top, 16).padding(.bottom, 32)
             }
             .task { await captureInitialScroll(captureProxy) }
             .background(Color(uiColor: .systemGroupedBackground))
@@ -138,26 +138,28 @@ import SwiftUI
     }
     private func sectionTitle(_ title: String) -> some View { Text(title).font(.headline).foregroundStyle(.secondary).padding(.horizontal, 15) }
     private func note(_ text: String) -> some View { Text(text).font(.footnote).foregroundStyle(.secondary).lineSpacing(3).padding(.horizontal, 15).fixedSize(horizontal: false, vertical: true) }
-    private func card<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
-        content().font(.body).padding(.horizontal, 16).padding(.vertical, 17).frame(maxWidth: .infinity, alignment: .leading)
+    private func card<Content: View>(verticalPadding: CGFloat = 17, @ViewBuilder _ content: () -> Content) -> some View {
+        content().font(.body).padding(.horizontal, 16).padding(.vertical, verticalPadding).frame(maxWidth: .infinity, alignment: .leading)
             .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 27))
     }
     private func choicesSection<Content: View>(_ title: String, note text: String? = nil, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             sectionTitle(title)
-            card(content)
+            card(verticalPadding: 12, content)
             if let text { note(text) }
         }.id(["配色":"palette","線":"line","写真ピン":"photoPins","現在地":"currentLocation"][title] ?? title)
     }
     private func choice<Sample: View>(_ name: String, selected: Bool, @ViewBuilder sample: () -> Sample, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            VStack(spacing: 8) {
-                sample().frame(width: 43, height: 43)
-                    .frame(width: 47, height: 47)
+            VStack(spacing: 6) {
+                sample().frame(width: 40, height: 40)
+                    .frame(width: 44, height: 44)
                     .background(Color(uiColor: .tertiarySystemFill), in: Circle())
-                    .overlay { Circle().stroke(selected ? model.ink : model.ink.opacity(0.13), lineWidth: selected ? 2 : 1) }
-                Text(name).font(.system(size: 10)).foregroundStyle(selected ? .primary : .secondary).lineLimit(1).minimumScaleFactor(0.6)
-            }.frame(minWidth: 47, minHeight: 72).contentShape(Rectangle())
+                    .overlay { Circle().strokeBorder(selected ? model.ink : model.ink.opacity(0.13), lineWidth: selected ? 2 : 1) }
+                Text(name).font(.caption2).foregroundStyle(selected ? .primary : .secondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }.frame(minWidth: 44, minHeight: 64).contentShape(Rectangle())
         }.buttonStyle(.plain).accessibilityLabel(name).accessibilityValue(selected ? "選択中" : "")
     }
     private func lineSample(dashed: Bool) -> some View {

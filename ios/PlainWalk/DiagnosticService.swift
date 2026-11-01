@@ -29,8 +29,19 @@ import UserNotifications
         #else
         let flavor = "xcode"
         #endif
+        let family = UIDevice.current.userInterfaceIdiom == .pad ? "iPad" : "iPhone"
+        #if targetEnvironment(simulator)
+        let deviceFamily = family + " Simulator"
+        let executionEnvironment = "simulator"
+        let isSimulator = true
+        #else
+        let deviceFamily = family
+        let executionEnvironment = "device"
+        let isSimulator = false
+        #endif
         return [
-            "flavor": flavor, "systemVersion": UIDevice.current.systemVersion, "deviceFamily": UIDevice.current.userInterfaceIdiom == .pad ? "iPad" : "iPhone",
+            "flavor": flavor, "systemVersion": UIDevice.current.systemVersion, "deviceFamily": deviceFamily,
+            "executionEnvironment": executionEnvironment, "isSimulator": isSimulator,
             "appVersion": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown",
             "locationAuthorization": locationName(recorder.manager.authorizationStatus),
             "accuracyAuthorization": recorder.manager.accuracyAuthorization == .fullAccuracy ? "precise" : "reduced",

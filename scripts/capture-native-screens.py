@@ -54,7 +54,7 @@ def startup_ready():
         return False
 
 manifest = {"version": 1, "platform": "native", "group": args.group,
-            "device": device["name"], "sourceCommit": os.environ.get("GITHUB_SHA", "local"),
+            "device": device["name"], "locale": "ja-JP", "sourceCommit": os.environ.get("GITHUB_SHA", "local"),
             "generatedAt": datetime.datetime.now(datetime.timezone.utc).isoformat(),
             "complete": False, "screens": [], "limitations": catalog["limitations"]}
 failed = []
@@ -66,6 +66,7 @@ for scene in scenes:
     for path in [ready, marker, trace, signals / "capture-scroll.ready", signals / "capture-dialog.ready"]:
         path.unlink(missing_ok=True)
     launch = ["xcrun", "simctl", "launch", udid, "org.example.plainwalkweb",
+              "-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP",
               "-PlainWalkSmokeTest", "-PlainWalkScreenOnly", "-PlainWalkScreenshotFixture"]
     if "capture" in scene:
         launch.append("-PlainWalkCapture=" + scene["capture"])

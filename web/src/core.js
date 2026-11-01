@@ -51,51 +51,157 @@ export function trailDistance(points) {
     0,
   );
 }
-// 12 m cells in a local latitude-scaled metric grid; crossings are sampled every 3 m.
-export function cellKeys(a, b) {
-  if (!validPoint(a) || !validPoint(b)) return [];
-  const d = distance(a, b),
-    n = Math.max(1, Math.ceil(d / 3)),
-    keys = new Set();
-  // A location jump is a gap, not a road to sample millions of times.
-  if (d > 50000) return [];
-  for (let i = 0; i <= n; i++) {
-    const t = i / n,
-      p = {
-        lat: a.lat + (b.lat - a.lat) * t,
-        lon: a.lon + (b.lon - a.lon) * t,
-      };
-    const y = Math.floor((p.lat * 111195.08) / 12),
-      mid = ((y + 0.5) * 12) / 111195.08;
-    keys.add(
-      `${y}:${Math.floor((p.lon * 111195.08 * Math.cos((mid * Math.PI) / 180)) / 12)}`,
-    );
+// Independent 12 m approximation: clip a trail into cells, then retain the
+// largest continuous passage's 16-direction projected diameter per new cell.
+// It is invariant to collinear GPS subdivision and retracing. The directional
+// diameter is a lower bound within 1 - cos(pi / 32) (<0.49%) of the true diameter;
+// curved paths still use a 12 m cell approximation, not the original app's formula.
+const GRID_METERS_PER_DEGREE = 111195.08;
+const GRID_DIRECTIONS = Array.from({ length: 16 }, (_, i) => [
+  Math.cos((i * Math.PI) / 16), Math.sin((i * Math.PI) / 16),
+]);
+const normalizedLongitude = (lon) => ((lon + 180) % 360 + 360) % 360 - 180;
+function longitudeDelta(a, b) {
+  let delta = b - a;
+  if (delta > 180) delta -= 360;
+  if (delta < -180) delta += 360;
+  return delta;
+}
+function pointCell(p) {
+  const row = Math.floor((p.lat * GRID_METERS_PER_DEGREE) / 12);
+  const mid = ((row + 0.5) * 12) / GRID_METERS_PER_DEGREE;
+  return `${row}:${Math.floor((normalizedLongitude(p.lon) * GRID_METERS_PER_DEGREE * Math.cos(mid * Math.PI / 180)) / 12)}`;
+}
+function gridPieces(a, b, visit) {
+  if (!validPoint(a) || !validPoint(b)) return;
+  const meters = distance(a, b);
+  if (!(meters > 0) || meters > 50000) return;
+  const dLat = b.lat - a.lat, dLon = longitudeDelta(a.lon, b.lon);
+  const y0 = a.lat * GRID_METERS_PER_DEGREE, y1 = b.lat * GRID_METERS_PER_DEGREE;
+  const cuts = [0, 1];
+  if (y0 !== y1) {
+    for (let k = Math.floor(Math.min(y0, y1) / 12) + 1; k < Math.ceil(Math.max(y0, y1) / 12); k++) {
+      const t = (k * 12 - y0) / (y1 - y0);
+      if (t > 0 && t < 1) cuts.push(t);
+    }
   }
+  for (const seam of [-180, 180]) {
+    if (dLon !== 0) { const t = (seam - a.lon) / dLon; if (t > 0 && t < 1) cuts.push(t); }
+  }
+  cuts.sort((x, y) => x - y);
+  for (let i = 1; i < cuts.length; i++) {
+    const ta = cuts[i - 1], tb = cuts[i];
+    if (tb - ta < 1e-12) continue;
+    const midT = (ta + tb) / 2;
+    const row = Math.floor(((a.lat + dLat * midT) * GRID_METERS_PER_DEGREE) / 12);
+    const midLat = ((row + 0.5) * 12) / GRID_METERS_PER_DEGREE;
+    const scale = GRID_METERS_PER_DEGREE * Math.cos(midLat * Math.PI / 180);
+    const rawMid = a.lon + dLon * midT;
+    const shift = normalizedLongitude(rawMid) - rawMid;
+    const xa = (a.lon + dLon * ta + shift) * scale;
+    const xb = (a.lon + dLon * tb + shift) * scale;
+    const columns = [ta, tb];
+    if (xa !== xb) {
+      for (let k = Math.floor(Math.min(xa, xb) / 12) + 1; k < Math.ceil(Math.max(xa, xb) / 12); k++) {
+        const t = ta + ((k * 12 - xa) / (xb - xa)) * (tb - ta);
+        if (t > ta && t < tb) columns.push(t);
+      }
+    }
+    columns.sort((x, y) => x - y);
+    for (let j = 1; j < columns.length; j++) {
+      const start = columns[j - 1], end = columns[j];
+      if (end - start < 1e-12) continue;
+      const column = Math.floor(((a.lon + dLon * ((start + end) / 2) + shift) * scale) / 12);
+      visit(`${row}:${column}`, start, end, scale, shift, dLat, dLon);
+    }
+  }
+}
+export function cellKeys(a, b) {
+  if (!validPoint(a) || !validPoint(b) || distance(a, b) > 50000) return [];
+  const keys = new Set();
+  gridPieces(a, b, (key) => keys.add(key));
+  if (!keys.size) keys.add(pointCell(a));
   return [...keys];
 }
-export function exploration(walks) {
-  const cells = new Set(),
-    byWalk = Object.create(null);
-  for (const walk of walks) {
-    let n = 0;
-    const ps = walk.points || [];
-    for (let i = 1; i < ps.length; i++) {
-      const a = ps[i - 1],
-        b = ps[i];
-      if (b.break) continue;
-      const ks = cellKeys(a, b);
-      if (!ks.length) continue;
-      const fresh = ks.filter((k) => !cells.has(k)).length;
-      n += (distance(a, b) * fresh) / ks.length;
-      ks.forEach((k) => cells.add(k));
-    }
-    byWalk[walk.id] = n;
+function localDayRange(day) {
+  const start = new Date(day); start.setHours(0, 0, 0, 0);
+  const end = new Date(start); end.setDate(end.getDate() + 1);
+  return [start.getTime(), end.getTime()];
+}
+export class ExplorationAccumulator {
+  constructor(visitedCells = new Set(), day = Date.now()) {
+    // Treat the history Set as immutable; rebuild the accumulator when history changes.
+    // Sharing it avoids copying the entire explored map for every saved walk.
+    this.visited = visitedCells instanceof Set ? visitedCells : new Set(visitedCells);
+    this.cells = new Set(); this.best = new Map();
+    this.total = 0; this.dayTotal = 0; this.walked = 0;
+    [this.dayStart, this.dayEnd] = localDayRange(day);
+    this.passage = null;
   }
-  return {
-    total: Object.values(byWalk).reduce((a, b) => a + b, 0),
-    byWalk,
-    cells,
-  };
+  resetPassage() { this.passage = null; }
+  append(a, b) {
+    if (!validPoint(a) || !validPoint(b) || b.break || distance(a, b) > 50000) {
+      this.resetPassage(); return;
+    }
+    this.walked += distance(a, b);
+    gridPieces(a, b, (key, start, end, scale, shift, dLat, dLon) => {
+      this.cells.add(key);
+      if (this.visited.has(key)) { this.resetPassage(); return; }
+      const cuts = [start, end], dt = b.t - a.t;
+      if (Number.isFinite(a.t) && Number.isFinite(b.t) && dt > 0) {
+        for (const boundary of [this.dayStart, this.dayEnd]) {
+          const t = (boundary - a.t) / dt;
+          if (t > start && t < end) cuts.push(t);
+        }
+      }
+      cuts.sort((x, y) => x - y);
+      for (let i = 1; i < cuts.length; i++) {
+        const ta = cuts[i - 1], tb = cuts[i];
+        const p = (t) => ({ lat: a.lat + dLat * t, lon: normalizedLongitude(a.lon + dLon * t) });
+        const x0 = (a.lon + dLon * ta + shift) * scale, y0 = (a.lat + dLat * ta) * GRID_METERS_PER_DEGREE;
+        const x1 = (a.lon + dLon * tb + shift) * scale, y1 = (a.lat + dLat * tb) * GRID_METERS_PER_DEGREE;
+        if (!this.passage || this.passage.key !== key) {
+          this.passage = { key, originX: x0, originY: y0, minimum: Array(16).fill(0), maximum: Array(16).fill(0) };
+        }
+        const passage = this.passage;
+        let diameter = 0;
+        for (let direction = 0; direction < 16; direction++) {
+          const [dx, dy] = GRID_DIRECTIONS[direction];
+          const startProjection = (x0 - passage.originX) * dx + (y0 - passage.originY) * dy;
+          const endProjection = (x1 - passage.originX) * dx + (y1 - passage.originY) * dy;
+          passage.minimum[direction] = Math.min(passage.minimum[direction], startProjection, endProjection);
+          passage.maximum[direction] = Math.max(passage.maximum[direction], startProjection, endProjection);
+          diameter = Math.max(diameter, passage.maximum[direction] - passage.minimum[direction]);
+        }
+        const previous = this.best.get(key) || 0;
+        if (diameter > previous) {
+          this.best.set(key, diameter);
+          // Geodesic clipping also prevents tiny projection round-off from
+          // making exploration exceed the actual new portion walked.
+          const delta = Math.min(diameter - previous, distance(p(ta), p(tb)), Math.max(0, this.walked - this.total));
+          this.total += delta;
+          const timestamp = dt > 0 && Number.isFinite(dt) ? a.t + dt * ((ta + tb) / 2) : b.t;
+          if (timestamp >= this.dayStart && timestamp < this.dayEnd) this.dayTotal += delta;
+        }
+      }
+    });
+  }
+}
+export function exploration(walks, day = Date.now()) {
+  const cells = new Set(), byWalk = Object.create(null);
+  let total = 0, dayTotal = 0;
+  const chronological = [...walks].sort((a, b) => {
+    const start = (w) => Number.isFinite(w.start) ? w.start : Number.isFinite(w.points?.[0]?.t) ? w.points[0].t : 0;
+    return start(a) - start(b) || (String(a.id) < String(b.id) ? -1 : String(a.id) > String(b.id) ? 1 : 0);
+  });
+  for (const walk of chronological) {
+    const accumulator = new ExplorationAccumulator(cells, day), points = walk.points || [];
+    for (let i = 1; i < points.length; i++) accumulator.append(points[i - 1], points[i]);
+    byWalk[walk.id] = accumulator.total;
+    total += accumulator.total; dayTotal += accumulator.dayTotal;
+    for (const key of accumulator.cells) cells.add(key);
+  }
+  return { total, byWalk, cells, dayTotal, dayKey: new Date(day).toDateString() };
 }
 export function parseTrack(xml) {
   const doc = new DOMParser().parseFromString(xml, "application/xml");

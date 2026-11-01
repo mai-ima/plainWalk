@@ -157,7 +157,7 @@ import ImageIO
             HStack(alignment: .bottom, spacing: 0) {
                 VStack(alignment: .leading, spacing: 13) {
                     metric("今日の歩数", value: stepsText, unit: "歩", symbol: "shoeprints.fill")
-                    metric("開拓した道", value: model.distanceText(model.todayPioneered), unit: model.distanceUnit, symbol: "pencil.tip")
+                    metric("開拓した道", value: model.distanceText(model.todayPioneered), unit: model.distanceUnit, symbol: "pencil")
                     metric("総開拓距離", value: model.distanceText(model.totalPioneered), unit: model.distanceUnit, symbol: "flag")
                 }
                 .frame(width: min(166, size.width * 0.44), alignment: .leading)
@@ -338,6 +338,44 @@ import ImageIO
     }
 }
 
+#if DEBUG
+extension NativeMyMapView {
+    static func projectionSelfTest() async throws -> Bool {
+        func require(_ condition: @autoclosure () -> Bool, _ label: String) throws {
+            guard condition() else { throw NativeError.message("白地図の投影検証に失敗: " + label) }
+        }
+        let route = [NativePoint(lat: 0, lon: 179.9999, t: 1_000), NativePoint(lat: 0, lon: -179.9999, t: 2_000)]
+        let size = CGSize(width: 393, height: 700)
+        var camera = NativePaperCamera()
+        camera.fit(route, size: size)
+        try require(camera.metersPerPixel < 2, "22mの軌跡を街区の縮尺で表示")
+        let pixels = route.map { camera.screen(NativePaperPoint($0), size: size) }
+        try require(pixels.allSatisfy { $0.x > 0 && $0.x < size.width }, "日付変更線の両端を同じ画面に表示")
+        try require(abs(pixels[0].x - pixels[1].x) < 100, "短い軌跡を世界周回の線にしない")
+        let saved = await NativePaperGeometry.build([.init(id: "projection-test", points: route.map(NativePaperGeoPoint.init))], countVisits: false)
+        let active = await NativePaperGeometry.activeTraces(route.map(NativePaperGeoPoint.init))
+        for traces in [saved, active] {
+            try require(traces.count == 1, "連続区間を保持")
+            try require((21...24).contains(traces[0].maxX - traces[0].minX), "保存・記録中とも局所座標で描画")
+            let shift = NativeMapProjection.shift(minX: traces[0].minX, maxX: traces[0].maxX, near: camera.center.x)
+            let drawn = traces[0].points.map { camera.screen($0, size: size, worldShift: shift) }
+            try require(drawn.allSatisfy { $0.x > 0 && $0.x < size.width }, "描画とカメラのworldコピーが一致")
+        }
+        var gap = route.map(NativePaperGeoPoint.init)
+        gap[1].isBreak = true
+        let broken = await NativePaperGeometry.activeTraces(gap)
+        try require(broken.isEmpty, "欠損を跨いだ線を作らない")
+        let tokyo = NativePaperPoint(lat: 35.6812, lon: 139.7671)
+        camera.center = tokyo
+        let normal = camera.screen(tokyo, size: size)
+        camera.center.x += NativePaperCamera.world
+        let repeated = camera.screen(tokyo, size: size)
+        try require(abs(normal.x - repeated.x) < 0.00001, "同じ経度の世界コピーでピンが消えない")
+        return true
+    }
+}
+#endif
+
 private struct NativePaperPoint: Sendable, Equatable {
     var x: Double
     var y: Double
@@ -346,16 +384,20 @@ private struct NativePaperPoint: Sendable, Equatable {
     init(lat: Double, lon: Double) { x = 6378137 * lon * .pi / 180; let latitude = min(85, max(-85, lat)); y = 6378137 * log(tan(.pi / 4 + latitude * .pi / 360)) }
 }
 private struct NativePaperCamera: Sendable, Equatable {
-    static let world = 40075016.68557849
+    static let world = NativeMapProjection.world
     static let halfWorld = world / 2
     var center = NativePaperPoint(lat: 35.6762, lon: 139.6503)
     var zoom = 16.0
     var metersPerPixel: Double { Self.world / (256 * pow(2, zoom)) }
-    func screen(_ p: NativePaperPoint, size: CGSize) -> CGPoint { CGPoint(x: (p.x - center.x) / metersPerPixel + Double(size.width) / 2, y: (center.y - p.y) / metersPerPixel + Double(size.height) / 2) }
+    func screen(_ p: NativePaperPoint, size: CGSize) -> CGPoint { CGPoint(x: NativeMapProjection.delta(p.x - center.x) / metersPerPixel + Double(size.width) / 2, y: (center.y - p.y) / metersPerPixel + Double(size.height) / 2) }
+    func screen(_ p: NativePaperPoint, size: CGSize, worldShift: Double) -> CGPoint {
+        CGPoint(x: (p.x + worldShift - center.x) / metersPerPixel + Double(size.width) / 2, y: (center.y - p.y) / metersPerPixel + Double(size.height) / 2)
+    }
     mutating func fit(_ points: [NativePoint], size: CGSize) {
         guard !points.isEmpty else { return }
         let ps = points.map(NativePaperPoint.init)
-        let minX = ps.map(\.x).min() ?? 0, maxX = ps.map(\.x).max() ?? 0, minY = ps.map(\.y).min() ?? 0, maxY = ps.map(\.y).max() ?? 0
+        guard let arc = NativeMapProjection.minimumArc(ps.map(\.x)) else { return }
+        let minX = arc.lowerBound, maxX = arc.upperBound, minY = ps.map(\.y).min() ?? 0, maxY = ps.map(\.y).max() ?? 0
         center = .init(x: (minX + maxX) / 2, y: (minY + maxY) / 2)
         let mpp = max(max((maxX - minX) / max(150, Double(size.width) - 80), (maxY - minY) / max(200, Double(size.height) - 320)), 0.7)
         zoom = min(19, max(3, log2(Self.world / (256 * mpp))))
@@ -387,9 +429,10 @@ private enum NativePaperGeometry {
                 var seen = Set<NativePaperCell>()
                 for i in walk.points.indices where i > 0 && !walk.points[i].isBreak {
                     let a = walk.points[i - 1], b = walk.points[i]
-                    let meters = hypot((a.lon - b.lon) * 111195.08 * cos((a.lat + b.lat) / 2 * .pi / 180), (a.lat - b.lat) * 111195.08)
+                    let longitudeDelta = NativeMapProjection.delta(b.lon - a.lon, period: 360)
+                    let meters = hypot(longitudeDelta * 111195.08 * cos((a.lat + b.lat) / 2 * .pi / 180), (a.lat - b.lat) * 111195.08)
                     let n = min(1200, max(1, Int(ceil(meters / 6))))
-                    for k in 0...n { let t = Double(k) / Double(n); seen.insert(cell(.init(lat: a.lat + (b.lat - a.lat) * t, lon: a.lon + (b.lon - a.lon) * t, isBreak: false, mode: b.mode))) }
+                    for k in 0...n { let t = Double(k) / Double(n); let longitude = NativeMapProjection.delta(a.lon + longitudeDelta * t, period: 360); seen.insert(cell(.init(lat: a.lat + (b.lat - a.lat) * t, lon: longitude, isBreak: false, mode: b.mode))) }
                 }
                 for key in seen { visits[key, default: 0] += 1 }
             }
@@ -406,7 +449,9 @@ private enum NativePaperGeometry {
                 let nextLevel = min(4, max(0, Int(log2(Double(max(1, visitsCount))))))
                 if !points.isEmpty && (mode != p.mode || level != nextLevel) { flush() }
                 if points.isEmpty { mode = p.mode; level = nextLevel; points.append(before.projected) }
-                points.append(p.projected)
+                var projected = p.projected
+                projected.x = NativeMapProjection.nearest(projected.x, to: points.last!.x)
+                points.append(projected)
             }
             flush()
         }
@@ -421,7 +466,9 @@ private enum NativePaperGeometry {
             if p.isBreak { flush(); continue }
             if !group.isEmpty && mode != p.mode { flush() }
             if group.isEmpty { mode = p.mode; group.append(points[i - 1].projected) }
-            group.append(p.projected)
+            var projected = p.projected
+            projected.x = NativeMapProjection.nearest(projected.x, to: group.last!.x)
+            group.append(projected)
         }
         flush(); return output
     }
@@ -472,12 +519,13 @@ private enum NativePaperPainter {
         let my = camera.metersPerPixel * Double(size.height) / 2
         var path = Path()
         for ring in snapshot.rings {
-            guard ring.bounds.intersects(minX: camera.center.x - mx, minY: camera.center.y - my,
-                maxX: camera.center.x + mx, maxY: camera.center.y + my) else { continue }
+            let shift = NativeMapProjection.shift(minX: ring.bounds.minX, maxX: ring.bounds.maxX, near: camera.center.x)
+            guard ring.bounds.intersects(minX: camera.center.x - mx - shift, minY: camera.center.y - my,
+                maxX: camera.center.x + mx - shift, maxY: camera.center.y + my) else { continue }
             let points = camera.zoom < 10 ? ring.coarse : camera.zoom < 13 ? ring.medium : ring.points
             guard let first = points.first else { continue }
             func screen(_ point: NativeBoundaryGeometry.Point) -> CGPoint {
-                camera.screen(NativePaperPoint(x: point.x, y: point.y), size: size)
+                camera.screen(NativePaperPoint(x: point.x, y: point.y), size: size, worldShift: shift)
             }
             path.move(to: screen(first))
             for point in points.dropFirst() { path.addLine(to: screen(point)) }
@@ -489,8 +537,9 @@ private enum NativePaperPainter {
     static func trails(_ traces: [NativePaperTrace], context: inout GraphicsContext, size: CGSize, camera: NativePaperCamera, color: Color, dashed: Bool, smooth: Bool, thicken: Bool, focusedID: String?, active: Bool = false) {
         let mx = camera.metersPerPixel * Double(size.width) / 2, my = camera.metersPerPixel * Double(size.height) / 2
         for trace in traces {
-            guard trace.maxX >= camera.center.x - mx, trace.minX <= camera.center.x + mx, trace.maxY >= camera.center.y - my, trace.minY <= camera.center.y + my else { continue }
-            let points = trace.points.map { camera.screen($0, size: size) }
+            let shift = NativeMapProjection.shift(minX: trace.minX, maxX: trace.maxX, near: camera.center.x)
+            guard trace.maxX + shift >= camera.center.x - mx, trace.minX + shift <= camera.center.x + mx, trace.maxY >= camera.center.y - my, trace.minY <= camera.center.y + my else { continue }
+            let points = trace.points.map { camera.screen($0, size: size, worldShift: shift) }
             guard let first = points.first else { continue }
             var path = Path(); path.move(to: first)
             if smooth && points.count > 2 {

@@ -48,7 +48,10 @@ private struct NativeImportPayload: @unchecked Sendable {
     private var activeReadFailure = false
     private let doodleProgress = NativeDoodleProgress()
     private var explored = Set<String>()
-    private var activeExplored = Set<String>()
+    private var activeExploration = NativeTrackMath.Accumulator()
+    private var savedOnlyExploration = NativeTrackMath.Summary()
+    private var precedingExploration = NativeTrackMath.Summary()
+    private var followingWalks: [NativeWalk] = []
     private var activePioneered = 0.0
     private var activeTodayPioneered = 0.0
     private var recorderDistanceOffset = 0.0
@@ -61,7 +64,6 @@ private struct NativeImportPayload: @unchecked Sendable {
     private var clock: AnyCancellable?
     private var savedToday = 0.0
     private var savedTotal = 0.0
-    private var pioneeredByDay: [Date:Double] = [:]
     private var lastDay = Calendar.current.startOfDay(for:Date())
     var distanceUnit: String { config["units"] as? String == "mi" ? "mi" : "km" }
     private var palette: NativeLayerPalette { let index=Int(min(Double(NativeLayerPalette.all.count-1),max(0,nativeNumber(config["theme"]) ?? 0)));return NativeLayerPalette.all[index] }
@@ -179,8 +181,8 @@ private struct NativeImportPayload: @unchecked Sendable {
     private func clearFinalizedRecording() throws {
         try recorder.stop(end:true)
         try store.write("active",nil)
-        active=nil;activeReadFailure=false;activePoints=[];activeExplored=[];activePioneered=0;activeTodayPioneered=0;recorderDistanceOffset=0
-        isRecording=false;isPaused=false;recordingDistance=0;elapsed=0;refreshTotals()
+        active=nil;activeReadFailure=false;activePoints=[];activeExploration=NativeTrackMath.Accumulator(visited:explored);activePioneered=0;activeTodayPioneered=0;recorderDistanceOffset=0
+        isRecording=false;isPaused=false;recordingDistance=0;elapsed=0;rebuildActiveExploration()
     }
     private func adoptActiveIfNeeded() throws {
         guard recorder.session==nil,let active,let id=active["id"] as? String,let start=nativeTime(active["start"]) else{return}
@@ -207,64 +209,79 @@ private struct NativeImportPayload: @unchecked Sendable {
         mapFocus = nil
         mapFocusRevision += 1
         rebuildLibrary()
-        rebuildActiveExploration()
         haptic()
     }
     private func rebuildLibrary(){
         var values=(library["walks"] as? [[String:Any]] ?? []).compactMap{NativeWalk(json:$0)}
-        let totals=NativeTrackMath.exploration(values);for i in values.indices{values[i].pioneered=totals[values[i].id] ?? 0};walks=values.sorted{$0.start>$1.start}
-        spots=(library["spots"] as? [[String:Any]] ?? []).compactMap(NativeSpot.init(json:));flags=(library["flags"] as? [[String:Any]] ?? []).compactMap(NativeFlag.init(json:))
-        explored = []
-        pioneeredByDay = [:]
-        for walk in values.sorted(by: { $0.start == $1.start ? $0.id < $1.id : $0.start < $1.start }) where walk.points.count > 1 {
-            for index in 1..<walk.points.count where !walk.points[index].isBreak {
-                let before = walk.points[index - 1], point = walk.points[index]
-                let keys = NativeTrackMath.cellKeys(before, point)
-                guard !keys.isEmpty else { continue }
-                let fresh = keys.filter { !explored.contains($0) }.count
-                let contribution = NativeTrackMath.distance(before, point) * Double(fresh) / Double(keys.count)
-                let day = Calendar.current.startOfDay(for: Date(timeIntervalSince1970: point.t / 1000))
-                pioneeredByDay[day, default: 0] += contribution
-                explored.formUnion(keys)
-            }
-        }
-        refreshTotals();libraryRevision+=1
+        let summary=NativeTrackMath.summary(values)
+        for index in values.indices {values[index].pioneered=summary.byWalk[values[index].id] ?? 0}
+        walks=values.sorted{$0.start>$1.start}
+        spots=(library["spots"] as? [[String:Any]] ?? []).compactMap(NativeSpot.init(json:))
+        flags=(library["flags"] as? [[String:Any]] ?? []).compactMap(NativeFlag.init(json:))
+        savedOnlyExploration=summary
+        explored=summary.cells;savedTotal=summary.total;savedToday=summary.dayTotal
+        // Imports, corrections and deletions can change prior visited cells while
+        // a recording is open. Rebuild once per library mutation, never per GPS fix.
+        rebuildActiveExploration();libraryRevision+=1
     }
     private func refreshTotals() {
-        let calendar = Calendar.current
-        let day = calendar.startOfDay(for: Date())
-        savedTotal = walks.reduce(0) { $0 + $1.pioneered }
-        savedToday = pioneeredByDay[day] ?? 0
         totalPioneered = savedTotal + activePioneered
         todayPioneered = savedToday + activeTodayPioneered
     }
+    private func applySavedExploration(_ values: [String:Double]) {
+        var updated=walks,changed=false
+        for index in updated.indices {
+            if let value=values[updated[index].id],abs(updated[index].pioneered-value)>1e-9 {
+                updated[index].pioneered=value;changed=true
+            }
+        }
+        if changed {walks=updated}
+    }
     private func rebuildActiveExploration() {
-        activeExplored = []
+        precedingExploration=savedOnlyExploration
+        followingWalks=[]
+        savedTotal=savedOnlyExploration.total;savedToday=savedOnlyExploration.dayTotal
+        if let id=active?["id"] as? String,let start=nativeTime(active?["start"]),!activeWasSaved {
+            followingWalks=walks.filter {$0.start>start || ($0.start==start && $0.id>id)}
+            if !followingWalks.isEmpty {
+                let before=walks.filter {$0.start<start || ($0.start==start && $0.id<id)}
+                precedingExploration=NativeTrackMath.summary(before)
+            }
+        }
+        activeExploration = NativeTrackMath.Accumulator(visited: precedingExploration.cells)
         activePioneered = 0
         activeTodayPioneered = 0
         if !activeWasSaved && activePoints.count > 1 {
             for index in 1..<activePoints.count { appendExploration(activePoints[index - 1], activePoints[index]) }
         }
+        rebuildFollowingExploration()
         refreshTotals()
     }
-    private func appendExploration(_ a: NativePoint, _ b: NativePoint) {
-        guard !b.isBreak else { return }
-        let keys = NativeTrackMath.cellKeys(a, b)
-        guard !keys.isEmpty else { return }
-        let fresh = keys.filter { !explored.contains($0) && !activeExplored.contains($0) }.count
-        let contribution = NativeTrackMath.distance(a, b) * Double(fresh) / Double(keys.count)
-        activePioneered += contribution
-        if Calendar.current.isDateInToday(Date(timeIntervalSince1970: b.t / 1000)) {
-            activeTodayPioneered += contribution
+    private func rebuildFollowingExploration() {
+        guard !followingWalks.isEmpty else {
+            // Discarding an earlier active walk restores saved-only attribution.
+            if active==nil || activeWasSaved {applySavedExploration(savedOnlyExploration.byWalk)}
+            return
         }
-        activeExplored.formUnion(keys)
+        // Usually all saved walks precede an active recording. Only a rare
+        // future-dated/imported saved suffix needs reevaluation per accepted fix.
+        let visited=precedingExploration.cells.union(activeExploration.cells)
+        let following=NativeTrackMath.summary(followingWalks,visited:visited)
+        savedTotal=precedingExploration.total+following.total
+        savedToday=precedingExploration.dayTotal+following.dayTotal
+        applySavedExploration(following.byWalk)
     }
-    private func receive(_ value:RecordedPoint,id:String?){let point=NativePoint(value);currentPoint=point;accuracy=value.accuracy;guard let id,id==active?["id"] as? String,!activeWasSaved else{return};if let last=activePoints.last {guard point.t>last.t else{return};appendExploration(last,point)};activePoints.append(point);recordingDistance=(recorder.session?.distance ?? 0)+recorderDistanceOffset;totalPioneered=savedTotal+activePioneered;todayPioneered=savedToday+activeTodayPioneered
+    private func appendExploration(_ a: NativePoint, _ b: NativePoint) {
+        activeExploration.append(a,b)
+        activePioneered=activeExploration.total
+        activeTodayPioneered=activeExploration.dayTotal
+    }
+    private func receive(_ value:RecordedPoint,id:String?){let point=NativePoint(value);currentPoint=point;accuracy=value.accuracy;guard let id,id==active?["id"] as? String,!activeWasSaved else{return};if let last=activePoints.last {guard point.t>last.t else{return};appendExploration(last,point)};activePoints.append(point);recordingDistance=(recorder.session?.distance ?? 0)+recorderDistanceOffset;rebuildFollowingExploration();refreshTotals()
         let completions=doodleProgress.completedPoints(in:library["doodles"] as? [[String:Any]] ?? [],at:point,revision:libraryRevision)
         if !completions.isEmpty {do{try updateLibrary{data in data["doodles"]=NativeDoodleProgress.applying(completions,to:data["doodles"] as? [[String:Any]] ?? [])};doodleProgress.didApply(revision:libraryRevision)}catch{showError(error.localizedDescription)}}
     }
     private func persistActive() throws {guard var value=active else{try store.write("active",nil);return};value["points"]=activePoints.map(\.json);try store.write("active",value)}
-    func beginRecording(){guard !readFailure && !activeReadFailure else{showError("保存データの復元が必要です。元のファイルを保護しています。");return};if active != nil {togglePause();return};let now=Date().timeIntervalSince1970*1000;active=["id":UUID().uuidString,"name":"さんぽ","start":now,"end":now,"pausedMs":0,"note":""];do{try persistActive();try recorder.start(id:active?["id"] as? String,start:now,recording:true);haptic()}catch{if recorder.session==nil {active=nil;try? store.write("active",nil)};showError(error.localizedDescription)}}
+    func beginRecording(){guard !readFailure && !activeReadFailure else{showError("保存データの復元が必要です。元のファイルを保護しています。");return};if active != nil {togglePause();return};let now=Date().timeIntervalSince1970*1000;active=["id":UUID().uuidString,"name":"さんぽ","start":now,"end":now,"pausedMs":0,"note":""];do{try persistActive();rebuildActiveExploration();try recorder.start(id:active?["id"] as? String,start:now,recording:true);haptic()}catch{if recorder.session==nil {active=nil;try? store.write("active",nil);rebuildActiveExploration()};showError(error.localizedDescription)}}
     func togglePause() {
         guard var value = active else { return }
         guard !readFailure && !activeReadFailure else {
@@ -325,7 +342,6 @@ private struct NativeImportPayload: @unchecked Sendable {
                 data["walks"] = list
             }
             // From this point the walk is durable. Retries only clear recovery files.
-            rebuildActiveExploration()
             try clearFinalizedRecording()
             closeSheet()
             haptic()
@@ -339,7 +355,7 @@ private struct NativeImportPayload: @unchecked Sendable {
         catch { showError(error.localizedDescription) }
     }
     func renameWalk(id:String,name:String,note:String){do{try updateLibrary{data in var list=data["walks"] as? [[String:Any]] ?? [];if let index=list.firstIndex(where:{$0["id"] as? String==id}){list[index]["name"]=String(name.prefix(60));list[index]["note"]=String(note.prefix(3000))};data["walks"]=list}}catch{showError(error.localizedDescription)}}
-    func deleteWalk(id:String){do{try updateLibrary{data in data["walks"]=(data["walks"] as? [[String:Any]] ?? []).filter{$0["id"] as? String != id}};rebuildActiveExploration();closeSheet()}catch{showError(error.localizedDescription)}}
+    func deleteWalk(id:String){do{try updateLibrary{data in data["walks"]=(data["walks"] as? [[String:Any]] ?? []).filter{$0["id"] as? String != id}};closeSheet()}catch{showError(error.localizedDescription)}}
     func exportWalk(id:String){guard let walk=walks.first(where:{$0.id==id})else{return};shareData(NativeTrackIO.gpx(walks:[walk]),name:"PlainWalk-"+id+".gpx")}
     func shareData(_ data:Data,name:String){do{let folder=FileManager.default.temporaryDirectory.appendingPathComponent("PlainWalk-"+UUID().uuidString);try FileManager.default.createDirectory(at:folder,withIntermediateDirectories:true);let url=folder.appendingPathComponent(URL(fileURLWithPath:name).lastPathComponent);try data.write(to:url,options:.atomic);present(.share(url))}catch{showError(error.localizedDescription)}}
     func exportBackup(){do{let data=readFailure ? try Data(contentsOf:store.url("library")) : try JSONSerialization.data(withJSONObject:library,options:[.sortedKeys]);shareData(data,name:"PlainWalk-backup.json")}catch{showError(error.localizedDescription)}}
@@ -373,7 +389,6 @@ private struct NativeImportPayload: @unchecked Sendable {
                         data["walks"] = walks
                     }
                 }
-                rebuildActiveExploration()
             } catch { showError(error.localizedDescription) }
         }
     }
@@ -518,6 +533,82 @@ private struct NativeImportPayload: @unchecked Sendable {
               clean.config["units"] as? String == "mi", clean.totalPioneered == 0 else {
             throw NativeError.message("Reset was not durable or deleted independent preferences.")
         }
+        // One incremental engine must agree with final save and disk recovery,
+        // including a walk that started before the current local midnight.
+        let mathStore=NativeStore(directory:folder.appendingPathComponent("exploration",isDirectory:true))
+        try mathStore.write("library",NativeStore.emptyLibrary)
+        let midnight=Calendar.current.startOfDay(for:Date()).timeIntervalSince1970*1000
+        let start=midnight-60_000
+        let deltaLon=1000/(111_195.08*cos(35 * Double.pi/180))
+        let fixes=(0...200).map { index in NativePoint(lat:35,lon:139+deltaLon*Double(index)/200,t:start+120_000*Double(index)/200) }
+        try mathStore.write("active",["id":"incremental-road","start":start,"pauseAt":start+120_000,"points":[fixes[0].json]])
+        let incremental=NativeAppModel(store:mathStore,runtimeServicesEnabled:false)
+        for index in 1..<fixes.count {
+            let point=fixes[index]
+            incremental.receive(RecordedPoint(lat:point.lat,lon:point.lon,t:point.t,accuracy:5,seq:index+1,gap:false),id:"incremental-road")
+        }
+        let activeTotal=incremental.totalPioneered,activeToday=incremental.todayPioneered
+        guard abs(activeTotal-1000)<0.001,abs(activeToday-500)<0.001 else {
+            throw NativeError.message("Incremental exploration lost a dense or overnight road.")
+        }
+        incremental.finishRecording()
+        let reloaded=NativeAppModel(store:mathStore,runtimeServicesEnabled:false)
+        guard incremental.activePoints.isEmpty,incremental.walks.count==1,reloaded.walks.count==1,
+              abs(incremental.totalPioneered-activeTotal)<0.001,abs(reloaded.totalPioneered-activeTotal)<0.001,
+              abs(incremental.todayPioneered-activeToday)<0.001,abs(reloaded.todayPioneered-activeToday)<0.001 else {
+            throw NativeError.message("Active, saved, and restored daily exploration diverged.")
+        }
+        // Importing a later-start walk while an earlier recording is open must
+        // use the same chronological order before and after final save. Include
+        // the start-time tie where stable IDs decide the order.
+        for (index,suffixStart) in [midnight+21_000,midnight+1_000].enumerated() {
+            let base=midnight+1_000
+            let chronologyStore=NativeStore(directory:folder.appendingPathComponent("chronology-\(index)",isDirectory:true))
+            try chronologyStore.write("library",NativeStore.emptyLibrary)
+            let a=NativePoint(lat:0.00001,lon:0.00001,t:base)
+            let b=NativePoint(lat:0.00001,lon:0.000099,t:base+10_000)
+            let later:[String:Any]=["id":"zz-later","start":suffixStart,"end":base+21_000,
+                                   "points":[NativePoint(lat:0.00001,lon:0.00005,t:base+20_000).json,
+                                             NativePoint(lat:0.00001,lon:0.000059,t:base+21_000).json]]
+            let open:[String:Any]=["id":"aa-open","start":base,"pauseAt":base+10_000,"points":[a.json]]
+            try chronologyStore.write("active",open)
+            let live=NativeAppModel(store:chronologyStore,runtimeServicesEnabled:false)
+            var imported=NativeStore.emptyLibrary;imported["walks"]=[later]
+            try live.mergeImportedLibrary(imported)
+            guard abs(live.totalPioneered-1.0007557195751158)<0.00001,
+                  abs((live.walks.first?.pioneered ?? -1)-1.0007557195751158)<0.00001 else {
+                throw NativeError.message("A one-point active recording preempted a later saved road.")
+            }
+            live.receive(RecordedPoint(lat:b.lat,lon:b.lon,t:b.t,accuracy:5,seq:2,gap:false),id:"aa-open")
+            let expected=9.896362119995612
+            guard abs(live.totalPioneered-expected)<0.00001,abs(live.todayPioneered-expected)<0.00001,
+                  abs(live.walks.first?.pioneered ?? -1)<0.00001 else {
+                throw NativeError.message("A later imported walk preempted an earlier active road.")
+            }
+            try live.persistActive()
+            let resumed=NativeAppModel(store:chronologyStore,runtimeServicesEnabled:false)
+            guard abs(resumed.totalPioneered-expected)<0.00001 else {
+                throw NativeError.message("Chronological active exploration changed on recovery.")
+            }
+            live.finishRecording()
+            let completed=NativeAppModel(store:chronologyStore,runtimeServicesEnabled:false)
+            guard completed.walks.count==2,abs(live.totalPioneered-expected)<0.00001,
+                  abs(completed.totalPioneered-expected)<0.00001,abs(completed.todayPioneered-expected)<0.00001,
+                  completed.walks.first(where:{$0.id=="zz-later"})?.pioneered==0 else {
+                throw NativeError.message("Chronological exploration changed on final save.")
+            }
+            let discardStore=NativeStore(directory:folder.appendingPathComponent("chronology-discard-\(index)",isDirectory:true))
+            try discardStore.write("library",imported)
+            var discardOpen=open;discardOpen["points"]=[a.json,b.json]
+            try discardStore.write("active",discardOpen)
+            let discard=NativeAppModel(store:discardStore,runtimeServicesEnabled:false)
+            discard.discardRecording()
+            guard discard.active==nil,abs(discard.totalPioneered-1.0007557195751158)<0.00001,
+                  abs(discard.todayPioneered-1.0007557195751158)<0.00001,
+                  abs((discard.walks.first?.pioneered ?? -1)-1.0007557195751158)<0.00001 else {
+                throw NativeError.message("Discard did not restore saved-only exploration attribution.")
+            }
+        }
         return true
     }
     nonisolated static func importSelfTest() throws -> Bool {
@@ -573,7 +664,7 @@ private struct NativeImportPayload: @unchecked Sendable {
         let day = Calendar.current.startOfDay(for: Date())
         if day != lastDay {
             lastDay = day
-            rebuildActiveExploration()
+            rebuildLibrary()
             refreshSteps()
         }
         if isRecording && Date().timeIntervalSince(lastStepRefresh) >= 30 { refreshSteps() }

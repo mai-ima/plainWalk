@@ -1,3 +1,4 @@
+import { WORLD_WIDTH, nearestWorldX, projectTrail, unprojectWrapped } from "./map-geometry.js";
 import { createDiagnostics } from "./diagnostics.js";
 import { createDeveloperUI } from "./developer-ui.js";
 import { createCollections } from "./collections.js";
@@ -13,11 +14,11 @@ let photoImportQueue = null, photoLoadRevision = 0;
 import { native, nativeCall, nativeDownload, onNative } from "./native.js";
 import {
   project,
-  unproject,
   distance,
   validPoint,
   trailDistance,
   exploration,
+  ExplorationAccumulator,
   parseTrack,
   gpx,
   validateBackup,
@@ -212,7 +213,68 @@ let noteDraft = null,
   lassoState = null;
 let areaState = { index: null, stats: [], revision: -1 },
   areaRevision = 0;
-let exp = exploration(data.walks);
+function explorationDayRangeKey(now = Date.now()) {
+  const start=new Date(now);start.setHours(0,0,0,0);
+  const end=new Date(start);end.setDate(end.getDate()+1);
+  return `${start.getTime()}:${end.getTime()}`;
+}
+let exp = exploration(data.walks), explorationDayBoundary=explorationDayRangeKey();
+let explorationHistory = data.walks.map(w => ({ walk:w, points:w.points, length:w.points.length, last:w.points.at(-1), start:w.start }));
+let activeExploration = null, activeExplorationID = null, activeExplorationPoints = null,
+  activeExplorationCount = 0, activeExplorationLast = null, activeExplorationBaseline = null,
+  activePrefix = null, activeFuture = [], activeTotals = null, activeAlreadySaved = false;
+function historyChanged() {
+  return explorationHistory.length !== data.walks.length || data.walks.some((w,i) => {
+    const saved=explorationHistory[i];
+    return saved.walk !== w || saved.points !== w.points || saved.length !== w.points.length || saved.last !== w.points.at(-1) || saved.start !== w.start;
+  });
+}
+function refreshExploration(now = Date.now(), checkHistory = false) {
+  const boundary=explorationDayRangeKey(now);
+  if ((checkHistory && historyChanged()) || explorationDayBoundary !== boundary) {
+    exp=exploration(data.walks,now);explorationDayBoundary=boundary;
+    explorationHistory=data.walks.map(w => ({walk:w,points:w.points,length:w.points.length,last:w.points.at(-1),start:w.start}));
+    activeExploration=null;
+    return true;
+  }
+  return false;
+}
+function walkChronology(a,b) {
+  const stamp=w=>Number.isFinite(w.start)?w.start:Number.isFinite(w.points?.[0]?.t)?w.points[0].t:0;
+  return stamp(a)-stamp(b) || (String(a.id)<String(b.id)?-1:String(a.id)>String(b.id)?1:0);
+}
+function explorationForActive(now = Date.now()) {
+  if (!active) {activeExploration=null;return {total:exp.total,dayTotal:exp.dayTotal};}
+  if (!activeExploration || activeExplorationID !== active.id || activeExplorationPoints !== active.points ||
+      activeExplorationBaseline !== exp.cells || activeExplorationCount > active.points.length ||
+      (activeExplorationCount > 0 && activeExplorationLast !== active.points[activeExplorationCount-1])) {
+    activeAlreadySaved=data.walks.some(w=>w.id===active.id);
+    activeFuture=data.walks.filter(w=>w.id!==active.id && walkChronology(w,active)>0).sort(walkChronology);
+    activePrefix=activeFuture.length ? exploration(data.walks.filter(w=>w.id!==active.id && walkChronology(w,active)<0),now) : exp;
+    activeExploration=new ExplorationAccumulator(activePrefix.cells,now);
+    activeExplorationID=active.id;activeExplorationPoints=active.points;
+    activeExplorationBaseline=exp.cells;activeExplorationCount=0;activeTotals=null;
+  }
+  if(activeAlreadySaved)return {total:exp.total,dayTotal:exp.dayTotal};
+  const changed=activeExplorationCount!==active.points.length;
+  for(let i=Math.max(1,activeExplorationCount);i<active.points.length;i++)activeExploration.append(active.points[i-1],active.points[i]);
+  activeExplorationCount=active.points.length;activeExplorationLast=active.points.at(-1);
+  if(activeTotals && !changed)return activeTotals;
+  let total=activePrefix.total+activeExploration.total,dayTotal=activePrefix.dayTotal+activeExploration.dayTotal;
+  // An imported workout can start after a still-active recording. Only this
+  // uncommon suffix must be re-evaluated after the active passage changes.
+  if(activeFuture.length) {
+    const visited=new Set(activePrefix.cells);
+    for(const cell of activeExploration.cells)visited.add(cell);
+    for(const walk of activeFuture) {
+      const future=new ExplorationAccumulator(visited,now);
+      for(let i=1;i<walk.points.length;i++)future.append(walk.points[i-1],walk.points[i]);
+      total+=future.total;dayTotal+=future.dayTotal;
+      for(const cell of future.cells)visited.add(cell);
+    }
+  }
+  activeTotals={total,dayTotal};return activeTotals;
+}
 let visits = new Map();
 function countVisits() {
   visits = new Map();
@@ -282,8 +344,7 @@ async function save() {
       count: data.walks.length,
     });
     areaRevision++;
-    exp = exploration(data.walks);
-    countVisits();
+    if (refreshExploration(Date.now(),true)) countVisits();
     updateStats();
   } catch (e) {
     toast(
@@ -331,47 +392,40 @@ applyTheme();
 function metersPerPixel() {
   return (2 * Math.PI * 6378137) / (256 * 2 ** view.zoom);
 }
+function projectedToScreen([x,y]) {
+  const el=$("#mapViewport");
+  return [(x-view.x)/metersPerPixel()+el.clientWidth/2,(view.y-y)/metersPerPixel()+el.clientHeight/2];
+}
 function pointToScreen(p) {
-  const [x, y] = project(p),
-    el = $("#mapViewport");
-  return [
-    (x - view.x) / metersPerPixel() + el.clientWidth / 2,
-    (view.y - y) / metersPerPixel() + el.clientHeight / 2,
-  ];
+  const [x,y]=project(p);
+  return projectedToScreen([nearestWorldX(x,view.x),y]);
 }
 function screenToPoint(x, y) {
   const el = $("#mapViewport");
-  return unproject(
+  return unprojectWrapped(
     view.x + (x - el.clientWidth / 2) * metersPerPixel(),
     view.y - (y - el.clientHeight / 2) * metersPerPixel(),
   );
 }
 function paths(points, limit = points.length) {
-  const groups = [];
-  for (const p of points.slice(0, limit)) {
-    if (!groups.length || p.break) groups.push([]);
-    groups.at(-1).push(pointToScreen(p));
+  const groups = [], source=points.slice(0,limit), projected=projectTrail(source,view.x);
+  let interrupted=true;
+  for(let i=0;i<source.length;i++) {
+    if(!projected[i]){interrupted=true;continue;}
+    if(!groups.length || source[i].break || interrupted)groups.push([]);
+    groups.at(-1).push(projectedToScreen(projected[i]));interrupted=false;
   }
-  return groups
-    .map((ps) => {
-      if (!ps.length) return "";
-      let d = `M${ps[0][0].toFixed(1)},${ps[0][1].toFixed(1)} `;
-      if (config.smooth === false || ps.length < 3)
-        return (
-          d +
-          ps
-            .slice(1)
-            .map(([x, y]) => `L${x.toFixed(1)},${y.toFixed(1)}`)
-            .join(" ")
-        );
-      for (let i = 1; i < ps.length - 1; i++) {
-        const [x, y] = ps[i],
-          next = ps[i + 1];
-        d += `Q${x.toFixed(1)},${y.toFixed(1)} ${((x + next[0]) / 2).toFixed(1)},${((y + next[1]) / 2).toFixed(1)} `;
-      }
-      return d + `L${ps.at(-1)[0].toFixed(1)},${ps.at(-1)[1].toFixed(1)}`;
-    })
-    .join(" ");
+  return groups.map(ps=>{
+    if(!ps.length)return "";
+    let d=`M${ps[0][0].toFixed(1)},${ps[0][1].toFixed(1)} `;
+    // GPS point controls must lie on the editable line, even when the map is smoothed.
+    if(config.smooth === false || editing || ps.length < 3)return d+ps.slice(1).map(([x,y])=>`L${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+    for(let i=1;i<ps.length-1;i++) {
+      const [x,y]=ps[i],next=ps[i+1];
+      d+=`Q${x.toFixed(1)},${y.toFixed(1)} ${((x+next[0])/2).toFixed(1)},${((y+next[1])/2).toFixed(1)} `;
+    }
+    return d+`L${ps.at(-1)[0].toFixed(1)},${ps.at(-1)[1].toFixed(1)}`;
+  }).join(" ");
 }
 function trailMarkup(w, color) {
   const groups = [];
@@ -480,7 +534,7 @@ function draw() {
     const scale =
       metersPerPixel() *
       45 *
-      Math.cos(((current?.lat || 35.6) * Math.PI) / 180);
+      Math.cos((unprojectWrapped(view.x,view.y).lat * Math.PI) / 180);
     $("#scaleText").textContent =
       scale >= 1000
         ? `${fmt(scale)} ${distanceUnit()}`
@@ -498,8 +552,8 @@ function drawTiles() {
   const z = Math.round(view.zoom),
     size = 256 * 2 ** (view.zoom - z),
     world = 256 * 2 ** view.zoom,
-    cx = (view.x / (2 * Math.PI * 6378137) + 0.5) * world,
-    cy = (0.5 - view.y / (2 * Math.PI * 6378137)) * world,
+    cx = (view.x / WORLD_WIDTH + 0.5) * world,
+    cy = (0.5 - view.y / WORLD_WIDTH) * world,
     w = $("#mapViewport").clientWidth,
     h = $("#mapViewport").clientHeight;
   let html = "";
@@ -523,12 +577,15 @@ function drawTiles() {
 }
 function fit(points) {
   if (!points?.length) return;
-  const ps = points.map(project);
+  const ps = projectTrail(points).filter(Boolean);
+  if (!ps.length) return;
   let minx = Infinity,
     maxx = -Infinity,
     miny = Infinity,
     maxy = -Infinity;
-  for (const [x, y] of ps) {
+  for (const coordinate of ps) {
+    if (!coordinate) continue;
+    const [x,y]=coordinate;
     minx = Math.min(minx, x);
     maxx = Math.max(maxx, x);
     miny = Math.min(miny, y);
@@ -548,23 +605,12 @@ function fit(points) {
   follow = false;
   draw();
 }
-let expCache = { length: -1, value: 0 };
 function updateStats() {
-  $$(".map-stats em")
-    .slice(1)
-    .forEach((el) => (el.textContent = distanceUnit()));
-  const todayWalks = data.walks.filter((w) => dateKey(w.start) === today());
-  if (active && expCache.length !== active.points.length) {
-    expCache = {
-      length: active.points.length,
-      value: exploration([...data.walks, active]).byWalk[active.id] || 0,
-    };
-  }
-  const activeExp = active ? expCache.value : 0;
-  $("#todayNew").textContent = fmt(
-    todayWalks.reduce((n, w) => n + (exp.byWalk[w.id] || 0), 0) + activeExp,
-  );
-  $("#totalNew").textContent = fmt(exp.total + activeExp);
+  if(refreshExploration())countVisits();
+  const activeExp=explorationForActive();
+  $$(".map-stats em").slice(1).forEach(el=>el.textContent=distanceUnit());
+  $("#todayNew").textContent=fmt(activeExp.dayTotal);
+  $("#totalNew").textContent=fmt(activeExp.total);
   const manual = data.notes?.[today()]?.steps;
   $("#steps").textContent = Number.isFinite(manual) ? manual.toLocaleString("ja-JP") : "—";
   $(".map-scale").hidden = !config.beta;
@@ -740,7 +786,7 @@ async function begin() {
       status: "started",
       source: native ? "native" : "web",
     });
-    expCache = { length: -1, value: 0 };
+    activeExploration = null;
     follow = true;
     startWatch();
     requestWake();
@@ -968,12 +1014,15 @@ function switchTab(next) {
 }
 function miniSvg(points, cls = "") {
   if (!points.length) return `<svg viewBox="0 0 100 80" class="${cls}"></svg>`;
-  const ps = points.map(project);
+  const ps = projectTrail(points);
+  if (!ps.some(Boolean)) return `<svg viewBox="0 0 100 80" class="${cls}"></svg>`;
   let minx = Infinity,
     miny = Infinity,
     maxx = -Infinity,
     maxy = -Infinity;
-  for (const [x, y] of ps) {
+  for (const coordinate of ps) {
+    if (!coordinate) continue;
+    const [x,y]=coordinate;
     minx = Math.min(minx, x);
     maxx = Math.max(maxx, x);
     miny = Math.min(miny, y);
@@ -981,10 +1030,7 @@ function miniSvg(points, cls = "") {
   }
   const scale = Math.max((maxx - minx) / 80, (maxy - miny) / 60, 1);
   const d = ps
-    .map(
-      ([x, y], i) =>
-        `${!i || points[i].break ? "M" : "L"}${((x - (minx + maxx) / 2) / scale + 50).toFixed(2)} ${(40 - (y - (miny + maxy) / 2) / scale).toFixed(2)}`,
-    )
+    .map((coordinate,i)=>coordinate ? `${!i || points[i].break || !ps[i-1] ? "M" : "L"}${((coordinate[0]-(minx+maxx)/2)/scale+50).toFixed(2)} ${(40-(coordinate[1]-(miny+maxy)/2)/scale).toFixed(2)}` : "")
     .join(" ");
   return `<svg viewBox="0 0 100 80" class="${cls}"><path class="mini-trail" d="${d}" vector-effect="non-scaling-stroke"/></svg>`;
 }
@@ -1090,7 +1136,7 @@ function flags() {
 function flagAdd(p) {
   sheet(
     "旗を立てる",
-    `<label class="form-label">目的地の名前</label><input id="flagName" maxlength="60" placeholder="気になっていた喫茶店"><div style="display:flex;gap:10px"><label class="grow form-label">緯度<input id="flagLat" type="number" step="any" min="-85" max="85" value="${p?.lat ?? current?.lat ?? ""}"></label><label class="grow form-label">経度<input id="flagLon" type="number" step="any" min="-180" max="180" value="${p?.lon ?? current?.lon ?? ""}"></label></div><button class="primary" data-action="flagSave">この場所に旗を立てる</button><button class="secondary" data-action="flagPick">白地図から選ぶ</button>`,
+    `<label class="form-label">目的地の名前</label><input id="flagName" maxlength="60" placeholder="気になっていた喫茶店"><div style="display:flex;gap:10px"><label class="grow form-label">緯度<input id="flagLat" type="number" step="any" min="-85" max="85" value="${p?.lat ?? current?.lat ?? ""}"></label><label class="grow form-label">経度<input id="flagLon" type="number" step="any" min="-180" max="180" value="${p?.lon ?? current?.lon ?? ""}"></label></div><button class="primary" data-action="flagSave">この場所に旗を立てる</button><button class="secondary" data-action="flagBookmark">気になる場所に保存</button><button class="secondary" data-action="flagPick">白地図から選ぶ</button>`,
   );
 }
 function updateFlag() {
@@ -1158,7 +1204,7 @@ function addSpot(p = current, { explicitLocation = false } = {}) {
   }
   sheet(
     "ここいいな",
-    `<form id="spotForm" data-lat="${p.lat}" data-lon="${p.lon}" data-chosen-lat="${p.lat}" data-chosen-lon="${p.lon}" data-explicit-location="${explicitLocation}" data-location-source="selected"><div class="segmented capture-tabs"><button type="button" class="chosen" data-spot-mode="photo">写真</button><button type="button" data-spot-mode="video">1〜2 秒の動画</button></div><div id="spotPhotoPanel"><input type="file" id="spotPhoto" accept="image/*" hidden><label for="spotPhoto" class="photo-stage"><span id="photoStageHint">${icon("camera")}<strong>今日の「ここいいな」を撮る</strong><small>カメラ・写真ライブラリから</small></span><img id="spotPreview" alt="選んだ写真" hidden></label></div><div id="spotVideoPanel" hidden><input type="file" id="spotVideo" accept="video/mp4,video/webm,video/quicktime" hidden><label for="spotVideo" class="video-picker">${icon("play")}<span>短い動画を選ぶ</span></label><video id="spotVideoPreview" class="spot-preview" playsinline controls hidden></video><video id="spotLive" class="spot-preview" playsinline muted hidden></video><label class="row"><span class="grow">音も残す</span><input id="spotAudio" class="switch" type="checkbox" aria-label="撮影時の音声"></label><div class="two-buttons"><button type="button" data-action="videoCamera">${icon("camera")}カメラを開く</button><button type="button" id="videoRecordButton" data-action="videoRecord" disabled>${icon("play")}2 秒を残す</button></div></div><label class="form-label">フィルム</label><select id="spotFilm" hidden><option value="none">そのまま</option><option value="sepia(.65) saturate(.7)">あたたかなフィルム</option><option value="grayscale(1)">モノクローム</option><option value="saturate(.65) contrast(.9)">やわらかな色</option>${config.lut ? '<option value="custom">自分の LUT</option>' : ""}</select><div class="film-options">${[["none", "そのまま", "#e7e9de"], ["sepia(.65) saturate(.7)", "あたたか", "#dbc9a5"], ["grayscale(1)", "モノクロ", "#a5aaa5"], ["saturate(.65) contrast(.9)", "やわらか", "#c9d6cf"], ...(config.lut ? [["custom", "自分の LUT", "#bfb4d1"]] : [])].map(([value, label, color]) => `<button type="button" data-spot-filter="${value}" class="${value === "none" ? "chosen" : ""}" aria-label="${label}"><span style="background:${color}"></span><small>${label}</small></button>`).join("")}</div><details class="film-advanced"><summary>自分のフィルムを読み込む</summary><label class="form-label">3D LUT（.cube）</label><input type="file" id="spotLut" accept=".cube,text/plain"><p class="caption-note">サイズ 2〜33 の 3D LUT に対応しています。</p></details><label class="form-label">ひとこと</label><textarea id="spotText" class="spot-caption" maxlength="500" placeholder="路地裏の喫茶店。プリンがかため。"></textarea><label class="form-label">どんな「ここいいな」？</label><select id="spotEmoji" hidden><option>♡</option><option>☕</option><option>🌿</option><option>🐈</option><option>🍰</option><option>📷</option><option>✦</option></select><div class="spot-categories">${[
+    `<form id="spotForm" data-lat="${p.lat}" data-lon="${p.lon}" data-chosen-lat="${p.lat}" data-chosen-lon="${p.lon}" data-explicit-location="${explicitLocation}" data-location-source="selected"><div class="segmented capture-tabs"><button type="button" class="chosen" data-spot-mode="photo">写真</button><button type="button" data-spot-mode="video">1〜2 秒の動画</button></div><div id="spotPhotoPanel"><input type="file" id="spotPhoto" accept="image/*" hidden><label for="spotPhoto" class="photo-stage"><span id="photoStageHint">${icon("camera")}<strong>今日の「ここいいな」を撮る</strong><small>カメラ・写真ライブラリから</small></span><img id="spotPreview" alt="選んだ写真" hidden></label></div><div id="spotVideoPanel" hidden><input type="file" id="spotVideo" accept="video/mp4,video/webm,video/quicktime" hidden><label for="spotVideo" class="video-picker">${icon("play")}<span>短い動画を選ぶ</span></label><video id="spotVideoPreview" class="spot-preview" playsinline controls hidden></video><video id="spotLive" class="spot-preview" playsinline muted hidden></video><label class="row"><span class="grow">音も残す</span><input id="spotAudio" class="switch" type="checkbox" aria-label="撮影時の音声"></label><div class="two-buttons"><button type="button" data-action="videoCamera">${icon("camera")}カメラを開く</button><button type="button" id="videoRecordButton" data-action="videoRecord" disabled>${icon("play")}2 秒を残す</button></div></div><div id="spotPhotoEffects"><label class="form-label">フィルム</label><select id="spotFilm" hidden><option value="none">そのまま</option><option value="sepia(.65) saturate(.7)">あたたかなフィルム</option><option value="grayscale(1)">モノクローム</option><option value="saturate(.65) contrast(.9)">やわらかな色</option>${config.lut ? '<option value="custom">自分の LUT</option>' : ""}</select><div class="film-options">${[["none", "そのまま", "#e7e9de"], ["sepia(.65) saturate(.7)", "あたたか", "#dbc9a5"], ["grayscale(1)", "モノクロ", "#a5aaa5"], ["saturate(.65) contrast(.9)", "やわらか", "#c9d6cf"], ...(config.lut ? [["custom", "自分の LUT", "#bfb4d1"]] : [])].map(([value, label, color]) => `<button type="button" data-spot-filter="${value}" class="${value === "none" ? "chosen" : ""}" aria-label="${label}"><span style="background:${color}"></span><small>${label}</small></button>`).join("")}</div><details class="film-advanced"><summary>自分のフィルムを読み込む</summary><label class="form-label">3D LUT（.cube）</label><input type="file" id="spotLut" accept=".cube,text/plain"><p class="caption-note">サイズ 2〜33 の 3D LUT に対応しています。</p></details></div><p id="spotVideoEffectsNotice" class="caption-note" hidden>フィルム・LUTは写真専用です。動画の色は加工せず保存します。</p><label class="form-label">ひとこと</label><textarea id="spotText" class="spot-caption" maxlength="500" placeholder="路地裏の喫茶店。プリンがかため。"></textarea><label class="form-label">どんな「ここいいな」？</label><select id="spotEmoji" hidden><option>♡</option><option>☕</option><option>🌿</option><option>🐈</option><option>🍰</option><option>📷</option><option>✦</option></select><div class="spot-categories">${[
       ["♡", "好き"],
       ["☕", "お店"],
       ["🌿", "景色"],
@@ -1178,6 +1224,14 @@ function addSpot(p = current, { explicitLocation = false } = {}) {
   if (queuedPhoto) loadSpotPhoto(queuedPhoto).catch((error) => toast(error.message));
 }
 
+function setSpotMode(mode) {
+  const video=mode === "video";
+  if($("#spotPhotoPanel"))$("#spotPhotoPanel").hidden=video;
+  if($("#spotVideoPanel"))$("#spotVideoPanel").hidden=!video;
+  if($("#spotPhotoEffects"))$("#spotPhotoEffects").hidden=video;
+  if($("#spotVideoEffectsNotice"))$("#spotVideoEffectsNotice").hidden=!video;
+  $$("[data-spot-mode]").forEach(el=>el.classList.toggle("chosen",el.dataset.spotMode===mode));
+}
 function photoLocationNotice(form, text) {
   const note = form.querySelector("#spotPhotoLocation");
   if (note) note.textContent = text;
@@ -1478,7 +1532,7 @@ async function badges() {
     renderAreaGrid();
   } catch (e) {
     if ($("#contentPage").dataset.route === "エリアバッジ")
-      $("#pageBody").innerHTML = '<p class="subtle">' + esc(e.message) + "</p>";
+      $("#pageBody").innerHTML = '<section class="collection-message"><h2>街の境界を読み込めませんでした</h2><p>通信を確認して、もう一度お試しください。保存済みのさんぽは残っています。</p><button class="primary" data-action="badges">再試行</button></section>';
   }
 }
 function renderAreaGrid() {
@@ -1536,6 +1590,8 @@ function replay(walkId) {
   replayIndex = 0;
   const original = $("#replayCanvas path");
   if (original) {
+    original.removeAttribute("vector-effect");
+    original.style.strokeWidth = "0.45";
     const len = original.getTotalLength();
     original.style.strokeDasharray = len;
     original.style.strokeDashoffset = len;
@@ -1686,12 +1742,14 @@ async function exportCard(walkId) {
   ctx.font = "20px -apple-system, sans-serif";
   ctx.textAlign = "center";
   ctx.fillText("P L A I N W A L K", 540, 105);
-  const ps = w.points.map(project);
+  const ps = projectTrail(w.points);
   let minx = Infinity,
     maxx = -Infinity,
     miny = Infinity,
     maxy = -Infinity;
-  for (const [x, y] of ps) {
+  for (const coordinate of ps) {
+    if(!coordinate)continue;
+    const [x,y]=coordinate;
     minx = Math.min(minx, x);
     maxx = Math.max(maxx, x);
     miny = Math.min(miny, y);
@@ -1705,10 +1763,12 @@ async function exportCard(walkId) {
   ctx.lineJoin = "round";
   if (config.line === "dashed") ctx.setLineDash([8, 10]);
   ctx.beginPath();
-  ps.forEach(([x, y], i) => {
+  ps.forEach((coordinate, i) => {
+    if (!coordinate) return;
+    const [x,y]=coordinate;
     const sx = (x - (minx + maxx) / 2) / scale + 540,
       sy = (c.height - 100) / 2 - (y - (miny + maxy) / 2) / scale;
-    !i || w.points[i].break ? ctx.moveTo(sx, sy) : ctx.lineTo(sx, sy);
+    !i || w.points[i].break || !ps[i-1] ? ctx.moveTo(sx, sy) : ctx.lineTo(sx, sy);
   });
   ctx.stroke();
   ctx.setLineDash([]);
@@ -1954,8 +2014,8 @@ const actions = {
     if (answer) toast("答え合わせ · 地図タイルの取得に通信を使います。");
   },
   tilt: () => {
-    $("#mapViewport").classList.toggle("tilt");
-    closeSheet();
+    $("#mapViewport").classList.remove("tilt");
+    unavailableNative("地図の傾斜表示", "Web版は位置を正確に選べる平面地図で表示します。建物の3Dや地図の傾斜表示は対応していません。");
   },
   allMap: () => {
     selectedWalk = null;
@@ -1965,6 +2025,13 @@ const actions = {
     if (ps.length) fit(ps);
   },
   flagAdd: () => flagAdd(),
+  flagBookmark: () => {
+    const latText=$("#flagLat").value,lonText=$("#flagLon").value,
+      p={lat:Number(latText),lon:Number(lonText)},name=$("#flagName").value.trim();
+    if(!latText || !lonText || !validPoint(p)){toast("有効な緯度・経度を入力してください。");return;}
+    collections.bookmarkAdd(p);
+    $("#bookmarkName").value=name;
+  },
   flagPick: () => pickMode("flag"),
   spotPick: () => pickMode("spot"),
   spot: () => addSpot(),
@@ -2158,11 +2225,7 @@ async function handleClick(e) {
     return;
   }
   if (d.spotMode) {
-    $("#spotPhotoPanel").hidden = d.spotMode !== "photo";
-    $("#spotVideoPanel").hidden = d.spotMode !== "video";
-    $$("[data-spot-mode]").forEach((el) =>
-      el.classList.toggle("chosen", el.dataset.spotMode === d.spotMode),
-    );
+    setSpotMode(d.spotMode);
     return;
   }
   if (d.spotFilter) {
@@ -2518,13 +2581,7 @@ document.addEventListener("change", async (e) => {
       pendingVideo = await readVideo(el.files[0]);
       $("#spotVideoPreview").src = pendingVideo.data;
       $("#spotVideoPreview").hidden = false;
-      if ($("#spotVideoPanel")) {
-        $("#spotVideoPanel").hidden = false;
-        $("#spotPhotoPanel").hidden = true;
-        $$("[data-spot-mode]").forEach((b) =>
-          b.classList.toggle("chosen", b.dataset.spotMode === "video"),
-        );
-      }
+      setSpotMode("video");
     }
     if (el.id === "spotImportPhoto" && el.files[0]) {
       const file = el.files[0];
@@ -2801,10 +2858,11 @@ document.addEventListener("visibilitychange", () => {
 window.addEventListener("pagehide", () => {
   if (active && !recordingTransition) persistActive();
 });
-let statsDate = today();
+let statsDate = explorationDayRangeKey();
 setInterval(() => {
-  if (active || statsDate !== today()) {
-    statsDate = today();
+  const boundary=explorationDayRangeKey();
+  if (active || statsDate !== boundary) {
+    statsDate = boundary;
     updateStats();
   }
 }, 1000);
@@ -2834,6 +2892,10 @@ async function showNativeMap(satellite) {
   await nativeCall("showMap", { points, satellite });
 }
 async function healthImport() {
+  if (!native) {
+    unavailableNative("ヘルスケアのワークアウト", "Web版ではAppleヘルスケアのワークアウトを読み込めません。Webでは今日の歩数を手入力できます。");
+    return;
+  }
   sheet(
     "ヘルスケアのワークアウト",
     '<p class="subtle">ヘルスケアの読み取りを許可すると、最近の屋外ワークアウトからルートを選べます。</p><button class="primary" data-action="healthLoad">許可して読み込む</button>',
@@ -2841,6 +2903,7 @@ async function healthImport() {
 }
 let healthWorkouts = [];
 actions.healthLoad = async () => {
+  if(!native){await healthImport();return;}
   healthWorkouts = await nativeCall("healthWorkouts");
   sheet(
     "ワークアウトを白地図に",
@@ -3194,13 +3257,7 @@ actions.videoRecord = async () => {
     if ($("#spotVideoPreview")) {
       $("#spotVideoPreview").src = pendingVideo.data;
       $("#spotVideoPreview").hidden = false;
-      if ($("#spotVideoPanel")) {
-        $("#spotVideoPanel").hidden = false;
-        $("#spotPhotoPanel").hidden = true;
-        $$("[data-spot-mode]").forEach((b) =>
-          b.classList.toggle("chosen", b.dataset.spotMode === "video"),
-        );
-      }
+      setSpotMode("video");
     }
     toast("2 秒の動画を撮りました。");
   } finally {
@@ -3222,7 +3279,7 @@ actions.exportReplayVideo = async () => {
   canvas.width = 720;
   canvas.height = 960;
   const ctx = canvas.getContext("2d"),
-    ps = points.map(project);
+    ps = projectTrail(points);
   let minx = Infinity,
     maxx = -Infinity,
     miny = Infinity,
@@ -3234,10 +3291,10 @@ actions.exportReplayVideo = async () => {
     maxy = Math.max(maxy, y);
   }
   const scale = Math.max((maxx - minx) / 560, (maxy - miny) / 620, 1),
-    coords = ps.map(([x, y]) => [
-      (x - (minx + maxx) / 2) / scale + 360,
-      470 - (y - (miny + maxy) / 2) / scale,
-    ]),
+    coords = ps.map(coordinate => coordinate ? [
+      (coordinate[0] - (minx + maxx) / 2) / scale + 360,
+      470 - (coordinate[1] - (miny + maxy) / 2) / scale,
+    ] : null),
     theme = themes[config.theme] || themes[0];
   const mime = ["video/mp4", "video/webm;codecs=vp9", "video/webm"].find((m) =>
     MediaRecorder.isTypeSupported(m),
@@ -3273,13 +3330,16 @@ actions.exportReplayVideo = async () => {
     if (config.line === "dashed") ctx.setLineDash([5, 7]);
     ctx.beginPath();
     const n = Math.max(1, Math.ceil(coords.length * progress));
-    coords.slice(0, n).forEach(([x, y], i) => {
-      !i || points[i].break ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    coords.slice(0, n).forEach((coordinate, i) => {
+      if(!coordinate)return;
+      const [x,y]=coordinate;
+      !i || points[i].break || !coords[i-1] ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
     });
     ctx.stroke();
     ctx.setLineDash([]);
-    if (n) {
-      const [x, y] = coords[n - 1];
+    const lastCoordinate=coords.slice(0,n).findLast(Boolean);
+    if (lastCoordinate) {
+      const [x, y] = lastCoordinate;
       ctx.beginPath();
       ctx.arc(x, y, 5, 0, Math.PI * 2);
       ctx.fill();
@@ -3358,7 +3418,8 @@ actions.noteRoute = async () => {
         'class="mini-trail"',
         'stroke="#293126" stroke-width="1.2" fill="none"',
       )
-      .replace("<svg ", '<svg xmlns="http://www.w3.org/2000/svg" '),
+      .replace(/ vector-effect="non-scaling-stroke"/g, "")
+      .replace("<svg ", '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="480" '),
     src =
       "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svg))),
     image = await loadImage(src),
@@ -3509,7 +3570,8 @@ function drawMapContext(w, h) {
       step = view.zoom < 10 ? 5 : view.zoom < 13 ? 2 : 1;
     for (const f of areaState.index.collection.features) {
       const [x1, y1, x2, y2] = f.bbox;
-      if (x2 < a.lon || x1 > b.lon || y2 < b.lat || y1 > a.lat) continue;
+      const longitudeOutside = a.lon <= b.lon ? x2 < a.lon || x1 > b.lon : x2 < a.lon && x1 > b.lon;
+      if (longitudeOutside || y2 < b.lat || y1 > a.lat) continue;
       const polygons =
         f.geometry.type === "Polygon"
           ? [f.geometry.coordinates]
@@ -3596,7 +3658,10 @@ async function configureNativeSetting(key, element) {
   const desired = element.checked;
   if (!native) {
     element.checked = !!config[key];
-    unavailableNative("iOS アプリの機能");
+    const unavailableHere=["registeredPlaces","stayDeparture","healthAutoSync","healthSave"].includes(key);
+    unavailableNative(unavailableHere ? "未対応の機能" : "iOS アプリの機能", unavailableHere
+      ? "この機能は現在の独立版では未実装です。設定だけを有効にして動作中にはしません。"
+      : "Webブラウザからはこの端末機能を利用できません。対応するSwift版のアプリと端末の許可が必要です。");
     return;
   }
   if (
@@ -3652,9 +3717,10 @@ async function movementPolicy(policy) {
       : "Web ブラウザでは画面を閉じた間の移動検知を実行できません。手動で「軌跡を残す」を使えます。",
   );
 }
-actions.homePlace = () => unavailableNative("自宅");
-actions.workPlace = () => unavailableNative("職場");
-actions.addPlace = () => unavailableNative("よく行く場所");
+const placeAvailability = title => unavailableNative(title,"自宅・職場などを監視して記録を始める機能は、現在のWeb版・Swift版では未実装です。手動で記録を開始してください。");
+actions.homePlace = () => placeAvailability("自宅");
+actions.workPlace = () => placeAvailability("職場");
+actions.addPlace = () => placeAvailability("よく行く場所");
 actions.systemSettings = () => nativeCall("openSettings");
 actions.resetData = () =>
   sheet(
