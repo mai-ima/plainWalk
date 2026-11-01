@@ -33,7 +33,8 @@ for PW_ATTEMPT in $(seq 1 60); do
           if [[ "$PW_SCREEN" == "spots" || "$PW_SCREEN" == "doodles" ]]; then
             PW_SCREEN_FILE="$PW_APP_CONTAINER/Library/Application Support/PlainWalk/screen-collection:$PW_SCREEN.ready"
           fi
-          rm -f "$PW_READY_FILE" "$PW_SCREEN_FILE"
+          PW_SCREEN_TRACE_FILE="${PW_SCREEN_FILE%.ready}.trace"
+          rm -f "$PW_READY_FILE" "$PW_SCREEN_FILE" "$PW_SCREEN_TRACE_FILE"
           xcrun simctl launch "$PW_SIM_DEVICE" org.example.plainwalkweb -PlainWalkSmokeTest -PlainWalkScreenOnly "-PlainWalkScreen=$PW_SCREEN"
           for PW_SCREEN_ATTEMPT in $(seq 1 20); do
             if [[ -f "$PW_SCREEN_FILE" ]]; then break; fi
@@ -41,7 +42,7 @@ for PW_ATTEMPT in $(seq 1 60); do
           done
           if [[ ! -f "$PW_SCREEN_FILE" ]]; then
             xcrun simctl io "$PW_SIM_DEVICE" screenshot ".build/screenshots/ios-failed-$PW_SCREEN.png"
-            cat "$PW_READY_FILE" "$PW_APP_CONTAINER/Library/Application Support/PlainWalk/native-smoke-stage.txt" || true
+            cat "$PW_READY_FILE" "$PW_APP_CONTAINER/Library/Application Support/PlainWalk/native-smoke-stage.txt" "$PW_SCREEN_TRACE_FILE" || true
             xcrun simctl spawn "$PW_SIM_DEVICE" log show --last 1m --style compact --predicate 'process == "PlainWalk"' || true
             echo "Native screen did not finish appearing: $PW_SCREEN"
             exit 1
@@ -55,7 +56,7 @@ for PW_ATTEMPT in $(seq 1 60); do
     done
     xcrun simctl io "$PW_SIM_DEVICE" screenshot .build/screenshots/ios-failed-settings.png || true
     ls -l "$PW_APP_CONTAINER/Library/Application Support/PlainWalk"/*.ready "$PW_READY_FILE" "$PW_APP_CONTAINER/Library/Application Support/PlainWalk/native-settings-ready.json" || true
-    cat "$PW_READY_FILE" "$PW_APP_CONTAINER/Library/Application Support/PlainWalk/native-smoke-stage.txt" || true
+    cat "$PW_READY_FILE" "$PW_APP_CONTAINER/Library/Application Support/PlainWalk/native-smoke-stage.txt" "$PW_APP_CONTAINER/Library/Application Support/PlainWalk/screen-settings.trace" || true
     xcrun simctl spawn "$PW_SIM_DEVICE" log show --last 2m --style compact --predicate 'process == "PlainWalk"' || true
     echo "Native settings did not become ready."
     exit 1

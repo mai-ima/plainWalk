@@ -67,9 +67,22 @@ import UniformTypeIdentifiers
         }
     }
     @ViewBuilder private func smokeProbe(_ name: String) -> some View {
-        if isSmoke {
-            NativeSmokeAppearanceProbe(onReady: { markScreen(name) })
+        if isSmoke && smokeScreenIsCurrent(name) {
+            NativeSmokeAppearanceProbe(onReady: { markScreen(name) }, onWaiting: { markScreenTrace(name, reason:$0) })
                 .frame(width: 1, height: 1).allowsHitTesting(false)
+        }
+    }
+    private func smokeScreenIsCurrent(_ name:String)->Bool {
+        if model.showingAnswer {return name == "answer"}
+        if let sheet=model.sheet {
+            return name == (sheet.id.hasPrefix("noteEditor:") ? "noteEditor" : sheet.id)
+        }
+        if model.tab == .records {return name == "records"}
+        guard model.tab == .profile else {return false}
+        switch model.profilePath.last {
+        case .settings: return name == "settings"
+        case .collection(let item): return name == "collection:"+item.rawValue
+        case nil: return name == "profile"
         }
     }
     private func markScreen(_ name: String) {
@@ -78,6 +91,14 @@ import UniformTypeIdentifiers
         let folder = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("PlainWalk")
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         try? Data("ready".utf8).write(to: folder.appendingPathComponent("screen-" + name + ".ready"), options: .atomic)
+        #endif
+    }
+    private func markScreenTrace(_ name:String,reason:String) {
+        #if DEBUG
+        guard isSmoke else {return}
+        let folder=FileManager.default.urls(for:.applicationSupportDirectory,in:.userDomainMask)[0].appendingPathComponent("PlainWalk")
+        try? FileManager.default.createDirectory(at:folder,withIntermediateDirectories:true)
+        try? Data(reason.utf8).write(to:folder.appendingPathComponent("screen-"+name+".trace"),options:.atomic)
         #endif
     }
     private func runSmoke() async {
@@ -155,13 +176,17 @@ struct NativeShareView:UIViewControllerRepresentable {
 /// insert a background representable after its host already received didAppear.
 @MainActor private struct NativeSmokeAppearanceProbe: UIViewControllerRepresentable {
     let onReady: () -> Void
-    func makeUIViewController(context: Context) -> Controller { Controller(onReady: onReady) }
+    let onWaiting: (String) -> Void
+    func makeUIViewController(context: Context) -> Controller { Controller(onReady:onReady,onWaiting:onWaiting) }
     func updateUIViewController(_ controller: Controller, context: Context) {
         controller.onReady=onReady
+        controller.onWaiting=onWaiting
         controller.observeVisibility()
     }
     final class Controller: UIViewController {
         var onReady: () -> Void
+        var onWaiting: (String) -> Void
+        private var lastReason=""
         private var sent=false
         private var pending: Task<Void,Never>?
         private var expected: Visibility?
@@ -173,7 +198,7 @@ struct NativeShareView:UIViewControllerRepresentable {
             let bounds: CGRect
             let ancestors: [ObjectIdentifier]
         }
-        init(onReady: @escaping () -> Void) { self.onReady=onReady;super.init(nibName:nil,bundle:nil) }
+        init(onReady: @escaping () -> Void,onWaiting: @escaping (String)->Void) { self.onReady=onReady;self.onWaiting=onWaiting;super.init(nibName:nil,bundle:nil) }
         required init?(coder: NSCoder) { fatalError("init(coder:) is unavailable") }
         override func loadView() {
             let surface=Surface();surface.owner=self;surface.backgroundColor = .clear;surface.isOpaque=false
@@ -188,6 +213,7 @@ struct NativeShareView:UIViewControllerRepresentable {
             guard let visible=visibility() else {invalidate();return}
             if expected==visible,pending != nil {return}
             invalidate();expected=visible
+            record("visible; waiting for stable draw")
             // One bounded settle/recheck, triggered only by UIKit lifecycle/draw events.
             pending=Task { @MainActor [weak self] in
                 do {try await Task.sleep(nanoseconds:500_000_000)} catch {return}
@@ -195,6 +221,7 @@ struct NativeShareView:UIViewControllerRepresentable {
                 self.pending=nil
                 guard self.expected==visible,self.visibility()==visible else {self.invalidate();return}
                 self.sent=true;self.expected=nil;self.waitingTransitions=[];self.completedTransitions=[]
+                self.record("ready")
                 self.onReady()
             }
         }
@@ -226,28 +253,39 @@ struct NativeShareView:UIViewControllerRepresentable {
             }
             return true
         }
+        private func record(_ reason:String) {
+            guard lastReason != reason else {return}
+            lastReason=reason;onWaiting(reason)
+        }
+        private func blocked(_ reason:String)->Visibility? {record(reason);return nil}
         private func visibility() -> Visibility? {
-            guard let surface=viewIfLoaded as? Surface,surface.hasDrawn,let window=surface.window,
-                  !window.isHidden,window.alpha>0.01,!isBeingDismissed,
-                  surface.bounds.width>0,surface.bounds.height>0 else {return nil}
+            guard let surface=viewIfLoaded as? Surface else {return blocked("surface not loaded")}
+            guard let window=surface.window else {return blocked("surface outside window")}
+            guard surface.hasDrawn else {return blocked("surface has not drawn")}
+            guard !window.isHidden,window.alpha>0.01,!isBeingDismissed,
+                  surface.bounds.width>0,surface.bounds.height>0 else {return blocked("window hidden or zero surface bounds")}
             let rect=surface.convert(surface.bounds,to:window)
             guard rect.origin.x.isFinite,rect.origin.y.isFinite,rect.width.isFinite,rect.height.isFinite,
-                  window.bounds.contains(rect) else {return nil}
+                  window.bounds.contains(rect) else {return blocked("surface outside window bounds: \(rect)")}
             var views:[ObjectIdentifier]=[],ancestor:UIView?=surface
             while let current=ancestor {
-                guard !current.isHidden,current.alpha>0.01 else {return nil}
-                if current.clipsToBounds,!current.convert(current.bounds,to:window).contains(rect) {return nil}
+                guard !current.isHidden,current.alpha>0.01 else {return blocked("hidden ancestor: \(type(of:current))")}
+                if current.clipsToBounds,!current.convert(current.bounds,to:window).contains(rect) {
+                    return blocked("clipped ancestor: \(type(of:current))")
+                }
                 views.append(ObjectIdentifier(current));ancestor=current.superview
             }
             var controller:UIViewController?=self
             while let current=controller {
-                guard !current.isBeingDismissed,!current.isMovingFromParent,!current.isMovingToParent else {return nil}
-                if let nav=current as? UINavigationController,let visible=nav.visibleViewController,!contains(visible,self) {return nil}
-                if let tabs=current as? UITabBarController,let selected=tabs.selectedViewController,!contains(selected,self) {return nil}
+                guard !current.isBeingDismissed,!current.isMovingFromParent,!current.isMovingToParent else {
+                    return blocked("controller moving: \(type(of:current))")
+                }
+                // SwiftUI's visual hosting tree need not match UIKit's navigation
+                // controller child tree. Check the drawn UIView ancestry instead.
                 if let cover=current.presentedViewController,cover.viewIfLoaded?.window != nil,
-                   !cover.isBeingDismissed,!contains(cover,self) {return nil}
-                if let transition=current.transitionCoordinator,waitForTransition(transition) {return nil}
-                if current.isBeingPresented {return nil}
+                   !cover.isBeingDismissed,!contains(cover,self) {return blocked("covered by modal")}
+                if let transition=current.transitionCoordinator,waitForTransition(transition) {return blocked("waiting for transition")}
+                if current.isBeingPresented {return blocked("controller presenting")}
                 controller=current.parent
             }
             return Visibility(window:ObjectIdentifier(window),rect:rect,bounds:surface.bounds,ancestors:views)
