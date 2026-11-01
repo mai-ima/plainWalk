@@ -2,11 +2,11 @@
 
 通常の起動先は `NativeRootView` です。SwiftUI のタブ・ナビゲーション・シート、Canvas の白地図、MapKit の答え合わせ地図を使います。Web ページをそのまま表示する起動構成から変更しました。PlainWalk の公開画面と機能を基にした独立実装で、元アプリのソースや署名済みアプリではありません。
 
-**[CI 41297028999](https://github.com/mai-ima/plainWalk/actions/runs/41297028999) で、本体・Live Activity 拡張と Playgrounds のコンパイル、Simulator の保存・復旧・取り込み・写真・ノート・MP4 の自己テスト、14 画面の撮影、診断画像のタイトル検出が通過しました。実機・配布署名は未検証で、署名済み IPA はありません。最新の結果は [ルート README](../README.md#検証と限界)を参照してください。**
+**[CI 41302732947](https://github.com/mai-ima/plainWalk/actions/runs/41302732947) で、本体・Live Activity 拡張と Playgrounds のコンパイル、Simulator の保存・復旧・取り込み・写真・ノート・MP4 の自己テスト、基本 14 枚と追加 72 区間の撮影、診断画像のタイトル検出が通過しました。実機・配布署名は未検証で、署名済み IPA はありません。最新の結果は [ルート README](../README.md#検証と限界)を参照してください。**
 
 ## iPhone で使う方針
 
-iPhone を主な利用端末とし、`ios/PlainWalk.xcodeproj` の SwiftUI アプリを使います。インストールと署名は Mac の Xcode から行います。Swift Playgrounds パッケージは iPad / Mac 用で、iPhone に直接インストールする配布ファイルではありません。Web / PWA は補助の利用方法として残します。
+iPhone を主な利用端末とし、`ios/PlainWalk.xcodeproj` の SwiftUI アプリを使います。インストールと署名は Mac の Xcode から行います。Swift Playgrounds パッケージは iPad / Mac 用で、iPhone に直接インストールする配布ファイルではありません。PC を持たない現在の利用経路は Safari / ホーム画面に追加する Web 版です。SwiftUI 版は継続開発し、将来の署名・配布環境が整うまで、iPhone へ直接インストールできるものとして案内しません。
 
 Simulator の成功は iPhone 実機での確認とは別です。実機では、画面の操作に加え、ロック中の記録・権限変更・カメラ・HealthKit・電池消費を確認します。TestFlight 配布はまだ設定していません。
 

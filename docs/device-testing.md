@@ -61,3 +61,8 @@ CI のコンパイル・起動画像、Simulator の自己テスト、iPhone の
 スリープ防止は、Web では beta とスリープ防止の両設定を有効にした記録中に Screen Wake Lock を使います。SwiftUI 版はスリープ防止設定と記録状態に応じて UIApplication の idle timer を使います。停止・一時停止で解除されることを確認してください。
 
 CI の撮影は SwiftUI の onAppear だけでは判定せず、UIKit の実描画・ウィンドウ配置・画面の遷移完了を照合します。各起動前に対象の完了ファイルを消し、前のプロセスの結果を使いません。診断画像には Vision で「実機検証」のタイトルがあることを確認し、別画面の画像を成功扱いにしません。最新の結果は README の CI リンクを参照してください。
+
+
+## 全画面の画像
+
+[画面一覧](https://plainwalk-web-map.jinmai2000.chatgpt.site/screens/)は Swift 86 枚と Web 114 枚をブラウザで確認できます。[撮影と確認の範囲](screen-coverage.md)に、ページ・状態・スクロール・OS の違いを記録しています。画像があることを、実機で全ボタンを操作した結果とは扱いません。

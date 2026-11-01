@@ -17,8 +17,9 @@ ios/
     NativeRecordsView / NativeProfileView / NativeCollectionsView
     NativeAppModel / NativeModels / NativeStore
     NativeTrackMath / NativeTrackIO / NativeDoodleProgress
-    NativeTrackEditor / NativePhotoEffects / NativePhotoMetadata
+    NativeTrackEditorView / NativeLUTView / NativePhotoMetadata
     NativeNoteCanvas / NativeNoteTransform / NativeReplayMovie
+    NativeScreenshotFixtures（DEBUG の隔離した撮影データ）
     NativeSettingsView / NativeDeveloperView
   Shared/              Live Activity の共有データ型
   PlainWalkLive/       Live Activity / Dynamic Island 拡張

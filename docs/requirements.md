@@ -33,3 +33,6 @@
 ## 主な利用端末
 
 2026-11-01 の追加指示で、将来の主な利用端末は iPhone と確認。iPhone 向け SwiftUI アプリの操作・保存・端末機能・実機検証を優先する。インストールと署名は Mac の Xcode、Swift Playgrounds は iPad / Mac 用の別経路とし、Web / PWA も維持する。Simulator の成功を実機確認済みとは扱わない。
+
+
+2026-11-01 の追加確認で、ユーザーは PC を持たず、Apple Developer Program は未登録／不明。現在の利用は iPhone の Safari / ホーム画面に追加する Web 版を優先し、ZIP や Xcode 操作を利用の前提にしない。全画面の画像はブラウザから見られる一覧で提供する。Swift 版の開発は継続するが、署名済みアプリ・TestFlight が利用可能であるとは案内しない。有料登録を現在の作業の前提にしない。
