@@ -19,6 +19,7 @@ PlainWalk の公開情報・提供された画面・APK の静的な構造を参
 - [提供画像 16 枚の分析](docs/app-analysis.md)
 - [追加の画像・一次資料の分析](docs/research-deep-dive.md)
 - [追加画像の目視・実装との比較](docs/research-parity-followup.md)
+- [写真の撮影日時・場所と取り込み](docs/photo-import-parity.md)
 - [APK の静的解析と Android 画像](docs/apk-static-analysis.md)
 - [APK の記録・保存・動作分類の仕組みと差分](docs/apk-mechanism-notes.md)
 - [実装範囲と残差](docs/reproduction-audit.md)
@@ -58,7 +59,7 @@ Playgrounds 版も SwiftUI / Canvas / MapKit を使います。HealthKit、Live 
 | 配色・線・写真ピン・現在地・表示レイヤー | 実装 | ネイティブの選択画面と描画 |
 | 履歴・カレンダー・統計・軌跡再生 | 実装 | SwiftUI で実装 |
 | GPX / TCX 取り込み、GPX 出力、JSON バックアップ | 実装 | Files / 共有シート |
-| 写真・短い動画・ひとこと | 実装 | PhotosPicker・カメラ・動画再生 |
+| 写真・短い動画・ひとこと | JPEG 撮影日時・場所を使う取り込み | ImageIO・PhotosPicker・カメラ・動画再生 |
 | 旗・しおり・らくがき・ステッカー | 実装 | SwiftUI / MapKit / Vision |
 | 日本 1,905 区域のバッジ | 実 GeoJSON の判定 | 同じ実 GeoJSON を Swift で判定 |
 | 共有の白地図 | 選んだ線のファイル交換 | 同じ形式のファイル交換 |
@@ -82,7 +83,7 @@ npm run test:browser
 
 2026-10-29 のローカル検証では、単体テスト 25 件、Chromium の 7 スイート、構文チェック、Web ビルドが通過しました。新しい保存整合性テストは、GPX / TCX、保存失敗、再読み込み、取り込みの再試行、ネイティブ拡張データの保持を確認します。ネイティブ接続のブラウザ試験はモックです。Linux WebKit の以前の操作試験も、iPhone 実機検証とは区別します。
 
-[GitHub Actions 40972605104](https://github.com/mai-ima/plainWalk/actions/runs/40972605104) で Web、Xcode 本体・Live Activity 拡張、Swift Playgrounds パッケージがすべて成功しました。Xcode 版は iPhone Simulator で、保存復旧・保存失敗と再試行・GPX / TCX・共有ファイル・地図カメラ・軌跡編集・実 CoreImage の LUT 変換・境界処理の自己テストが通過しました。設定・写真一覧・地図・LUT など 12 画面を表示完了後に撮影し、診断画像のタイトル検出も通過しています。初回の設定遷移の失敗を修正し、全面表示と地図配置を撮影画像で確認しました。
+前回の [GitHub Actions 40972605104](https://github.com/mai-ima/plainWalk/actions/runs/40972605104) で Web、Xcode 本体・Live Activity 拡張、Swift Playgrounds パッケージがすべて成功しました。Xcode 版は iPhone Simulator で、保存復旧・保存失敗と再試行・GPX / TCX・共有ファイル・地図カメラ・軌跡編集・実 CoreImage の LUT 変換・境界処理の自己テストが通過しました。設定・写真一覧・地図・LUT など 12 画面を表示完了後に撮影し、診断画像のタイトル検出も通過しています。初回の設定遷移の失敗を修正し、全面表示と地図配置を撮影画像で確認しました。
 
 実機の背景 GPS・HealthKit・電池消費・配布署名は未検証で、署名済み IPA はありません。初回の自己テストと、その後の画面撮影専用起動を分けています。Web の背景動作制限や、OS による標準タブの描画差は残ります。
 

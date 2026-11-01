@@ -78,9 +78,9 @@ import SwiftUI
                     }
                     section("自宅・職場・よく行く場所", description: "場所の出入りに合わせて自動で記録する機能は、現在利用できません。") { unsupported("自宅"); Divider(); unsupported("職場"); Divider(); unsupported("場所を追加") }
                     section(description: "白地図と端末の表示モードを切り替えます。") {
-                        HStack { Text("外観"); Spacer(); Picker("外観", selection: choice("dark", fallback: "auto")) { Text("ライト").tag("light"); Text("ダーク").tag("dark"); Text("端末に合わせる").tag("auto") }.pickerStyle(.menu).labelsHidden().tint(.secondary) }.padding(.vertical, 10)
+                        HStack { Text("外観"); Spacer(); Picker("外観", selection: choice("dark", fallback: "auto")) { Text("ライト").tag("light"); Text("ダーク").tag("dark"); Text("端末に合わせる").tag("auto") }.pickerStyle(.menu).labelsHidden().lineLimit(1).minimumScaleFactor(0.8).tint(.secondary) }.padding(.vertical, 10)
                     }
-                    section { HStack { Text("単位"); Spacer(); Picker("単位", selection: choice("units", fallback: "auto")) { Text("地域に合わせる (km)").tag("auto"); Text("キロメートル").tag("km"); Text("マイル").tag("mi") }.pickerStyle(.menu).labelsHidden().tint(.secondary) }.padding(.vertical, 10) }
+                    section { HStack { Text("単位"); Spacer(); Picker("単位", selection: choice("units", fallback: "auto")) { Text("地域に合わせる (km)").tag("auto"); Text("キロメートル").tag("km"); Text("マイル").tag("mi") }.pickerStyle(.menu).labelsHidden().lineLimit(1).minimumScaleFactor(0.8).tint(.secondary) }.padding(.vertical, 10) }
                     section("歩数") { row("1 日の歩数の目標", icon: "target", action: "steps") }
                     section("カメラ") { row("LUT", icon: "camera.filters", action: "lutSettings") }
                     notificationSection

@@ -121,7 +121,9 @@ enum NativePhotoEffects {
         guard let image = context().createCGImage(output, from: source.extent, format: .RGBA8, colorSpace: colorSpace),
               let bytes = CFDataCreateMutable(kCFAllocatorDefault, 0),
               let destination = CGImageDestinationCreateWithData(bytes, UTType.jpeg.identifier as CFString, 1, nil) else { throw NativeError.message("写真の色を調整できませんでした。") }
-        CGImageDestinationAddImage(destination, image, [kCGImageDestinationLossyCompressionQuality: 0.83] as CFDictionary)
+        var properties = NativePhotoMetadata(data: data).jpegProperties
+        properties[kCGImageDestinationLossyCompressionQuality as String] = 0.83
+        CGImageDestinationAddImage(destination, image, properties as CFDictionary)
         guard CGImageDestinationFinalize(destination), CFDataGetLength(bytes) <= 3_500_000 else { throw NativeError.message("写真が大きすぎます。別の写真でお試しください。") }
         return bytes as Data
     }

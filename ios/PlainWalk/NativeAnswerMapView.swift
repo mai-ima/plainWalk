@@ -10,6 +10,7 @@ import MapKit
     @State private var selected: NativeAnswerPlace?
     @State private var searching = false
     @State private var showingSearch = false
+    @State private var showingDoodle = false
     @State private var searchError: String?
     @State private var activeSearch: MKLocalSearch?
     @State private var searchRegion = MKCoordinateRegion(center: .init(latitude: 36.5, longitude: 137.2), span: .init(latitudeDelta: 16, longitudeDelta: 16))
@@ -36,6 +37,9 @@ import MapKit
             .padding(.horizontal, 16).padding(.top, 10).padding(.bottom, 12)
         }
         .sheet(isPresented: $showingSearch, onDismiss: cancelSearch) { searchSheet }
+        .sheet(isPresented: $showingDoodle) {
+            NCDoodleEditor(initialCenter:NativePoint(lat:min(85,max(-85,searchRegion.center.latitude)),lon:searchRegion.center.longitude),model:model)
+        }
         .onDisappear(perform: cancelSearch)
     }
 
@@ -61,7 +65,7 @@ import MapKit
                     .padding(.horizontal, 18).frame(minHeight: 44)
                     .background(Color.black, in: Capsule()).foregroundStyle(.white)
             }.accessibilityHint("場所を検索します。地図の長押しでも選べます。")
-            Button { model.haptic(); model.openCollection(.doodles) } label: {
+            Button { model.haptic(); showingDoodle = true } label: {
                 Label("らくがき", systemImage: "pencil.tip")
                     .padding(.horizontal, 18).frame(minHeight: 44)
                     .background(.regularMaterial, in: Capsule()).foregroundStyle(.primary)

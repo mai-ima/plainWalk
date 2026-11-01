@@ -5,7 +5,7 @@ import AVKit
 import ImageIO
 import UniformTypeIdentifiers
 
-/// A native capture flow. A pin is only saved against a recent real location fix.
+/// Capture uses a recent live fix; imported photos use their own metadata or an explicit placement.
 @MainActor struct NativePhotoCaptureView: View {
     @ObservedObject var model: NativeAppModel
     @Environment(\.dismiss) private var dismiss
@@ -31,10 +31,18 @@ import UniformTypeIdentifiers
     @State private var processing = false
     @State private var capturePoint: NativePoint?
     @State private var captureTimestamp: Double?
+    @State private var photoMetadata: NativePhotoMetadata?
+    @State private var importedPhoto = false
+    @State private var placementSource = "current"
+    @State private var awaitingCurrentPlacement = false
     @State private var failure: String?
+    private var recentCurrentPoint: NativePoint? {
+        guard let point = model.currentPoint, abs(point.t - Date().timeIntervalSince1970 * 1000) < 120_000,
+              (point.accuracy ?? 0) >= 0, (point.accuracy ?? 0) <= 1000 else { return nil }; return point
+    }
     private var availablePoint: NativePoint? {
         if let capturePoint { return capturePoint }
-        guard let point = model.currentPoint, abs(point.t - Date().timeIntervalSince1970 * 1000) < 120_000, (point.accuracy ?? 0) <= 1000 else { return nil }; return point
+        return importedPhoto ? nil : recentCurrentPoint
     }
     private var renderKey: String { imageRevision.uuidString + film + String(intensity) }
     private var busy: Bool { processing || rendering || (originalImageData != nil && renderedKey != renderKey && !renderFailed) }
@@ -50,7 +58,7 @@ import UniformTypeIdentifiers
                     Picker("撮影", selection: $videoMode) { Text("写真").tag(false); Text("2 秒の動画").tag(true) }.pickerStyle(.segmented)
                     HStack(spacing: 12) {
                         Button { Task { await openCamera() } } label: { Label(videoMode ? "動画を撮る" : "写真を撮る", systemImage: videoMode ? "video" : "camera").frame(maxWidth: .infinity).padding(.vertical, 11) }.buttonStyle(.borderedProminent).tint(.primary)
-                        PhotosPicker(selection: $photoItem, matching: .images, photoLibrary: .shared()) { Label("写真を選ぶ", systemImage: "photo").frame(maxWidth: .infinity).padding(.vertical, 11) }.buttonStyle(.bordered)
+                        PhotosPicker(selection: $photoItem, matching: .images, preferredItemEncoding: .current, photoLibrary: .shared()) { Label("写真を選ぶ", systemImage: "photo").frame(maxWidth: .infinity).padding(.vertical, 11) }.buttonStyle(.bordered)
                     }.disabled(busy)
                     if videoData == nil {
                         VStack(alignment: .leading, spacing: 12) {
@@ -70,8 +78,7 @@ import UniformTypeIdentifiers
                     if busy { ProgressView("写真・動画を準備しています…") }
                     TextField("どんなところでしたか？", text: $caption, axis: .vertical).lineLimit(3...6).padding(16).background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 17))
                     HStack { Text("しるし"); Spacer(); Picker("しるし", selection: $emoji) { ForEach(["♡", "☕", "🌿", "🌸", "✨", "📷"], id: \.self) { Text($0).tag($0) } }.pickerStyle(.menu) }
-                    if let point = availablePoint { Label("現在地と一緒に、この端末に保存します。", systemImage: "location.fill").font(.footnote).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading).accessibilityValue("緯度 \(point.lat)、経度 \(point.lon)") }
-                    else { VStack(alignment: .leading, spacing: 10) { Text("保存するには現在地の取得が必要です。位置情報を許可して、取得後に保存してください。").font(.footnote).foregroundStyle(.secondary); Button { model.locate() } label: { Label("現在地を取得", systemImage: "location") } }.frame(maxWidth: .infinity, alignment: .leading) }
+                    placementControls
                     if let failure { Text(failure).font(.footnote).foregroundStyle(.red).frame(maxWidth: .infinity, alignment: .leading) }
                 }.padding(20)
             }.navigationTitle("ここいいな").navigationBarTitleDisplayMode(.inline).toolbar {
@@ -86,6 +93,11 @@ import UniformTypeIdentifiers
             .onChange(of: film) { _, _ in persistFilm() }
             .task(id: renderKey) { await renderPhoto() }
             .onChange(of: photoItem) { _, item in guard let item else { return }; Task { await loadPhoto(item) } }
+            .onChange(of: model.currentPoint) { _, _ in
+                if awaitingCurrentPlacement, let point = recentCurrentPoint {
+                    capturePoint = point; placementSource = "current"; awaitingCurrentPlacement = false
+                }
+            }
             .onDisappear { player?.pause(); if let mediaFolder { try? FileManager.default.removeItem(at: mediaFolder) } }
     }
     private func openCamera() async {
@@ -98,21 +110,62 @@ import UniformTypeIdentifiers
         if videoMode, AVCaptureDevice.authorizationStatus(for: .audio) == .notDetermined { _ = await AVCaptureDevice.requestAccess(for: .audio) }
         camera = true
     }
+    private var placementControls: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if importedPhoto {
+                if let capturedAt = photoMetadata?.capturedAt {
+                    Text("撮影日時: " + Date(timeIntervalSince1970: capturedAt / 1000).formatted(date: .abbreviated, time: .shortened))
+                } else if let local = photoMetadata?.captureLocal {
+                    Text("写真の時計: " + local + "（タイムゾーン不明）")
+                } else { Text("撮影日時は写真に含まれていません。保存した時刻で一覧に並びます。") }
+            }
+            if let point = availablePoint {
+                Label(placementSource == "photo" ? "写真に記録された撮影場所に保存します。" : placementSource == "walk" ? "撮影時刻に対応するさんぽの道に保存します。" : "選んだ現在地に、この端末で保存します。", systemImage: "location.fill")
+                    .accessibilityValue("緯度 \(point.lat)、経度 \(point.lon)")
+            } else {
+                Text(importedPhoto ? "写真から撮影場所を特定できませんでした。現在地に置く場合は、下のボタンで選んでください。" : "保存するには現在地の取得が必要です。位置情報を許可して、取得後に保存してください。")
+            }
+            if importedPhoto {
+                Button { placeAtCurrentLocation() } label: { Label("現在地に置く", systemImage: "location") }
+            } else if availablePoint == nil {
+                Button { model.locate() } label: { Label("現在地を取得", systemImage: "location") }
+            }
+            if awaitingCurrentPlacement { Text("現在地を取得しています…") }
+        }.font(.footnote).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading)
+    }
+    private func placeAtCurrentLocation() {
+        if let point = recentCurrentPoint { capturePoint = point; placementSource = "current"; awaitingCurrentPlacement = false }
+        else { awaitingCurrentPlacement = true; model.locate() }
+    }
     private func loadPhoto(_ item: PhotosPickerItem) async {
         processing = true; failure = nil; defer { processing = false; photoItem = nil }
-        do { guard let bytes = try await item.loadTransferable(type: Data.self) else { throw NCCaptureError.message("写真を読み取れませんでした。") }; guard bytes.count <= 40_000_000 else { throw NCCaptureError.message("写真が大きすぎます。40 MB 以下の写真を選んでください。") }; let jpeg = try await Task.detached(priority: .userInitiated) { try ncCompressedPhoto(bytes) }.value; player?.pause(); player = nil; videoData = nil; originalImageData = jpeg; imageData = jpeg; imageRevision = UUID(); freezeLocation() } catch { failure = error.localizedDescription }
+        do {
+            guard let bytes = try await item.loadTransferable(type: Data.self) else { throw NCCaptureError.message("写真を読み取れませんでした。") }
+            guard bytes.count <= 40_000_000 else { throw NCCaptureError.message("写真が大きすぎます。40 MB 以下の写真を選んでください。") }
+            let prepared = try await Task.detached(priority: .userInitiated) { (try ncCompressedPhoto(bytes), NativePhotoMetadata(data: bytes)) }.value
+            player?.pause(); player = nil; videoData = nil; originalImageData = prepared.0; imageData = prepared.0; imageRevision = UUID()
+            importedPhoto = true; photoMetadata = prepared.1; captureTimestamp = prepared.1.capturedAt; awaitingCurrentPlacement = false
+            if let coordinate = prepared.1.coordinate {
+                capturePoint = NativePoint(lat: coordinate.lat, lon: coordinate.lon, t: captureTimestamp ?? 0); placementSource = "photo"
+            } else if let point = prepared.1.inferredPoint(in: model.walks.map(\.points) + [model.activePoints]) {
+                capturePoint = point; placementSource = "walk"
+            } else { capturePoint = nil; placementSource = "unplaced" }
+        } catch { failure = error.localizedDescription }
     }
     private func receive(_ media: NCCapturedMedia) async {
         processing = true; failure = nil; defer { processing = false }
         do {
             switch media {
-            case .photo(let bytes): let jpeg = try await Task.detached(priority: .userInitiated) { try ncCompressedPhoto(bytes) }.value; player?.pause(); player = nil; videoData = nil; originalImageData = jpeg; imageData = jpeg; imageRevision = UUID()
+            case .photo(let bytes, let metadata):
+                let jpeg = try await Task.detached(priority: .userInitiated) { try ncCompressedPhoto(bytes, metadata: metadata) }.value
+                player?.pause(); player = nil; videoData = nil; originalImageData = jpeg; imageData = jpeg; imageRevision = UUID(); photoMetadata = metadata
             case .movie(let url):
                 defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
                 let asset = AVURLAsset(url: url); let duration = try await asset.load(.duration).seconds
                 guard duration.isFinite, duration > 0, duration <= 2.6 else { throw NCCaptureError.message("2 秒以内の短い動画を撮影してください。") }
                 let bytes = try Data(contentsOf: url); guard bytes.count <= 15_000_000 else { throw NCCaptureError.message("動画が大きすぎます。短く撮り直してください。") }
                 let folder = FileManager.default.temporaryDirectory.appendingPathComponent("plainwalk-capture-" + UUID().uuidString, isDirectory: true); try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true); let saved = folder.appendingPathComponent("clip.mov"); try bytes.write(to: saved, options: .atomic)
+                photoMetadata = nil
                 if let mediaFolder { try? FileManager.default.removeItem(at: mediaFolder) }; mediaFolder = folder; videoURL = saved; player?.pause(); player = AVPlayer(url: saved); videoData = bytes; imageData = nil; originalImageData = nil; renderFailed = false; imageRevision = UUID()
             }
             freezeLocation()
@@ -133,22 +186,28 @@ import UniformTypeIdentifiers
             if !Task.isCancelled { rendering = false; renderFailed = true; failure = error.localizedDescription }
         }
     }
-    private func freezeLocation() { captureTimestamp = Date().timeIntervalSince1970 * 1000; capturePoint = nil; if let point = availablePoint { capturePoint = point } }
+    private func freezeLocation() { importedPhoto = false; awaitingCurrentPlacement = false; placementSource = "current"; captureTimestamp = Date().timeIntervalSince1970 * 1000; capturePoint = recentCurrentPoint }
     private func save() {
         guard !busy, !renderFailed else { return }
         guard let point = availablePoint else { failure = "現在地を取得してから保存してください。"; return }
-        var spot = point.json; spot["id"] = UUID().uuidString; spot["t"] = captureTimestamp ?? Date().timeIntervalSince1970 * 1000; spot["text"] = String(caption.prefix(240)); spot["emoji"] = emoji
+        let addedAt = Date().timeIntervalSince1970 * 1000
+        var spot = point.json; spot["id"] = UUID().uuidString; spot["addedAt"] = addedAt; spot["t"] = captureTimestamp ?? addedAt; spot["text"] = String(caption.prefix(240)); spot["emoji"] = emoji
+        spot["locationSource"] = placementSource
+        spot["timestampSource"] = captureTimestamp == nil ? "saved" : importedPhoto ? "photo" : "capture"
+        if let photoMetadata { spot["photoMetadata"] = photoMetadata.json }
         if let imageData { spot["photo"] = "data:image/jpeg;base64," + imageData.base64EncodedString(); spot["film"] = film; spot["filmIntensity"] = intensity }
         if let videoData { spot["video"] = "data:video/quicktime;base64," + videoData.base64EncodedString(); spot["videoType"] = "video/quicktime" }
         do { try model.updateLibrary { library in var spots = library["spots"] as? [[String: Any]] ?? []; spots.append(spot); library["spots"] = spots }; UIImpactFeedbackGenerator(style: .light).impactOccurred(); dismiss() } catch { failure = error.localizedDescription }
     }
 }
 private enum NCCaptureError: LocalizedError { case message(String); var errorDescription: String? { switch self { case .message(let message): return message } } }
-private enum NCCapturedMedia { case photo(Data), movie(URL) }
-private func ncCompressedPhoto(_ bytes: Data) throws -> Data {
+private enum NCCapturedMedia { case photo(Data, NativePhotoMetadata), movie(URL) }
+private func ncCompressedPhoto(_ bytes: Data, metadata: NativePhotoMetadata? = nil) throws -> Data {
     guard let source = CGImageSourceCreateWithData(bytes as CFData, nil), let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [kCGImageSourceCreateThumbnailFromImageAlways: true, kCGImageSourceThumbnailMaxPixelSize: 1600, kCGImageSourceCreateThumbnailWithTransform: true] as CFDictionary) else { throw NCCaptureError.message("写真を読み取れませんでした。") }
     guard let output = CFDataCreateMutable(kCFAllocatorDefault, 0), let destination = CGImageDestinationCreateWithData(output, UTType.jpeg.identifier as CFString, 1, nil) else { throw NCCaptureError.message("写真を保存できませんでした。") }
-    CGImageDestinationAddImage(destination, image, [kCGImageDestinationLossyCompressionQuality: 0.83] as CFDictionary); guard CGImageDestinationFinalize(destination), CFDataGetLength(output) <= 3_500_000 else { throw NCCaptureError.message("写真を小さくできませんでした。別の写真でお試しください。") }; return output as Data
+    var properties = (metadata ?? NativePhotoMetadata(data: bytes)).jpegProperties
+    properties[kCGImageDestinationLossyCompressionQuality as String] = 0.83
+    CGImageDestinationAddImage(destination, image, properties as CFDictionary); guard CGImageDestinationFinalize(destination), CFDataGetLength(output) <= 3_500_000 else { throw NCCaptureError.message("写真を小さくできませんでした。別の写真でお試しください。") }; return output as Data
 }
 private struct NCCameraPicker: UIViewControllerRepresentable {
     let video: Bool
@@ -167,7 +226,7 @@ private struct NCCameraPicker: UIViewControllerRepresentable {
             do {
                 if let source = info[.mediaURL] as? URL {
                     let folder = FileManager.default.temporaryDirectory.appendingPathComponent("plainwalk-camera-" + UUID().uuidString, isDirectory: true); try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true); let url = folder.appendingPathComponent("clip.mov"); try FileManager.default.copyItem(at: source, to: url); parent.completion(.success(.movie(url)))
-                } else if let image = info[.originalImage] as? UIImage, let bytes = image.jpegData(compressionQuality: 0.92) { parent.completion(.success(.photo(bytes))) }
+                } else if let image = info[.originalImage] as? UIImage, let bytes = image.jpegData(compressionQuality: 0.92) { parent.completion(.success(.photo(bytes, NativePhotoMetadata(properties: info[.mediaMetadata] as? [String: Any] ?? [:])))) }
                 else { throw NCCaptureError.message("撮影した写真・動画を読み取れませんでした。") }
             } catch { parent.completion(.failure(error)) }
         }

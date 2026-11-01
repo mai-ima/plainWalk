@@ -32,6 +32,8 @@ import SwiftUI
                     row("設定", symbol: "slider.horizontal.3") { model.openSettings() }
                 }
                 group {
+                    row("写真を取り込む", symbol: "photo.on.rectangle") { model.openSpotCapture() }
+                    Divider().padding(.leading, 41)
                     row("ファイルからさんぽを取り込む", symbol: "square.and.arrow.down") { model.importFiles() }
                     Divider().padding(.leading, 41)
                     row("バックアップを書き出す", symbol: "square.and.arrow.up") { model.exportBackup() }

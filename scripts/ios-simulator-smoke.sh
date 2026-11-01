@@ -16,7 +16,7 @@ rm -f "$PW_READY_FILE" "$PW_APP_CONTAINER/Library/Application Support/PlainWalk/
 xcrun simctl launch "$PW_SIM_DEVICE" org.example.plainwalkweb -PlainWalkSmokeTest
 for PW_ATTEMPT in $(seq 1 30); do
   if [[ -f "$PW_READY_FILE" ]]; then
-    python3 -c 'import json,sys; data=json.load(open(sys.argv[1])); assert data.get("ready") is True and data.get("recordingPersistence") is True and data.get("nativeUI") is True and data.get("storage") is True and data.get("trackMath") is True and data.get("trackIO") is True and data.get("importCompatibility") is True and data.get("modelState") is True and data.get("mapCamera") is True and data.get("trackEditor") is True and data.get("photoEffects") is True and data.get("boundaryGeometry") is True; print("Native SwiftUI application, storage, track import and recorder recovery checks passed on iOS Simulator.")' "$PW_READY_FILE"
+    python3 -c 'import json,sys; data=json.load(open(sys.argv[1])); assert data.get("ready") is True and data.get("recordingPersistence") is True and data.get("nativeUI") is True and data.get("storage") is True and data.get("trackMath") is True and data.get("trackIO") is True and data.get("importCompatibility") is True and data.get("modelState") is True and data.get("mapCamera") is True and data.get("trackEditor") is True and data.get("photoEffects") is True and data.get("photoMetadata") is True and data.get("boundaryGeometry") is True; print("Native SwiftUI application, storage, track import and recorder recovery checks passed on iOS Simulator.")' "$PW_READY_FILE"
     mkdir -p .build/screenshots
     sleep 2
     xcrun simctl io "$PW_SIM_DEVICE" screenshot .build/screenshots/ios-native-map.png
@@ -26,7 +26,7 @@ for PW_ATTEMPT in $(seq 1 30); do
     for PW_SETTINGS_ATTEMPT in $(seq 1 20); do
       if [[ -f "$PW_APP_CONTAINER/Library/Application Support/PlainWalk/native-settings-ready.json" && -f "$PW_APP_CONTAINER/Library/Application Support/PlainWalk/screen-settings.ready" ]]; then
         xcrun simctl io "$PW_SIM_DEVICE" screenshot .build/screenshots/ios-native-settings.png
-        for PW_SCREEN in records profile layers answer spots doodles menu stepGoal lut developer; do
+        for PW_SCREEN in records profile layers answer spots doodles menu stepGoal lut spot developer; do
           xcrun simctl terminate "$PW_SIM_DEVICE" org.example.plainwalkweb
           rm -f "$PW_READY_FILE"
           xcrun simctl launch "$PW_SIM_DEVICE" org.example.plainwalkweb -PlainWalkSmokeTest -PlainWalkScreenOnly "-PlainWalkScreen=$PW_SCREEN"

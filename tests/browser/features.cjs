@@ -11,6 +11,7 @@ const assert = require("node:assert/strict");
     isMobile: true,
     hasTouch: true,
     acceptDownloads: true,
+    timezoneId: "UTC",
   });
   const page = await ctx.newPage();
   let errors = [];
@@ -21,13 +22,14 @@ const assert = require("node:assert/strict");
   await page
     .getByRole("button", { name: "GPX / TCX を取り込む", exact: true })
     .click();
+  const fixtureDay = new Date().toISOString().slice(0, 10);
   await page
     .locator("#importFile")
     .setInputFiles({
       name: "park.gpx",
       mimeType: "application/gpx+xml",
       buffer: Buffer.from(
-        '<gpx><trk><trkseg><trkpt lat="35.680" lon="139.76"><time>2026-10-29T10:00:00Z</time></trkpt><trkpt lat="35.681" lon="139.76"><time>2026-10-29T10:03:00Z</time></trkpt><trkpt lat="35.681" lon="139.761"><time>2026-10-29T10:05:00Z</time></trkpt></trkseg></trk></gpx>',
+        `<gpx><trk><trkseg><trkpt lat="35.680" lon="139.76"><time>${fixtureDay}T10:00:00Z</time></trkpt><trkpt lat="35.681" lon="139.76"><time>${fixtureDay}T10:03:00Z</time></trkpt><trkpt lat="35.681" lon="139.761"><time>${fixtureDay}T10:05:00Z</time></trkpt></trkseg></trk></gpx>`,
       ),
     });
   await page

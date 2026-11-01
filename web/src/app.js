@@ -8,6 +8,8 @@ import { drawNotebook, hitItem, loadImage, lassoCutout } from "./notebook.js";
 import { makeIndex, collectAreas, areaSVG } from "./areas.js";
 import { readVideo, openCamera, captureTwoSeconds } from "./media.js";
 import { parseCube, applyEffect } from "./effects.js";
+import { readPhotoMetadata, locatePhotoOnWalks } from "./photo-metadata.js";
+let photoImportQueue = null, photoLoadRevision = 0;
 import { native, nativeCall, nativeDownload, onNative } from "./native.js";
 import {
   project,
@@ -925,6 +927,8 @@ function sheetBack() {
     : $("#sheetBack").focus({ preventScroll: true });
 }
 function closeSheet() {
+  photoImportQueue = null;
+  photoLoadRevision++;
   stopCamera();
   clearInterval(replayTimer);
   replayTimer = null;
@@ -1035,7 +1039,7 @@ function renderRecords() {
 }
 function renderProfile() {
   $("#contentPage").innerHTML =
-    `<h1 class="page-title">プロフィール</h1><div class="profile-avatar">${companionSVG(config.locationMark === "dot" ? "black" : config.locationMark || "black")}</div><h2 class="profile-name">あなたの白地図</h2><p class="center subtle">いつもの一歩が、ちいさな冒険に。</p><div class="center"><span class="pill">${levelName()} · 開拓 ${fmt(exp.total)} ${distanceUnit()}</span></div><div class="stats-row" style="margin:28px 0"><div><b>${data.walks.length}</b><small>さんぽ</small></div><div><b>${new Set(data.walks.map((w) => dateKey(w.start))).size}</b><small>歩いた日</small></div><div><b>${fmt(exp.total)}</b><small>総開拓距離 ${distanceUnit()}</small></div></div><section class="card">${row("stats", "歩行の統計", "chart")}${row("badges", "エリアと開拓のバッジ", "badge")}${row("spots", "ここいいな", "camera")}${row("stickers", "ステッカー", "badge")}${row("doodles", "らくがき", "pen")}${row("sharedMaps", "共有の白地図", "map")}${row("bookmarks", "気になる場所", "flag")}${row("flags", "目的地の旗", "flag")}${row("notes", "ノート", "note")}</section><section class="card">${row("layers", "地図の見た目", "layers", "配色・線・写真ピン・相棒を、自由に。")}${row("settings", "設定", "settings")}${row("backup", "データのバックアップ", "download")}${row("about", "この Web 版について", "info")}</section><p class="center caption-note">PlainWalk Web · 非公式・無料<br>記録はこのブラウザの中に。</p>`;
+    `<h1 class="page-title">プロフィール</h1><div class="profile-avatar">${companionSVG(config.locationMark === "dot" ? "black" : config.locationMark || "black")}</div><h2 class="profile-name">あなたの白地図</h2><p class="center subtle">いつもの一歩が、ちいさな冒険に。</p><div class="center"><span class="pill">${levelName()} · 開拓 ${fmt(exp.total)} ${distanceUnit()}</span></div><div class="stats-row" style="margin:28px 0"><div><b>${data.walks.length}</b><small>さんぽ</small></div><div><b>${new Set(data.walks.map((w) => dateKey(w.start))).size}</b><small>歩いた日</small></div><div><b>${fmt(exp.total)}</b><small>総開拓距離 ${distanceUnit()}</small></div></div><section class="card">${row("stats", "歩行の統計", "chart")}${row("badges", "エリアと開拓のバッジ", "badge")}${row("spots", "ここいいな", "camera")}${row("stickers", "ステッカー", "badge")}${row("doodles", "らくがき", "pen")}${row("sharedMaps", "共有の白地図", "map")}${row("bookmarks", "気になる場所", "flag")}${row("flags", "目的地の旗", "flag")}${row("notes", "ノート", "note")}</section><section class="card">${row("layers", "地図の見た目", "layers", "配色・線・写真ピン・相棒を、自由に。")}${row("settings", "設定", "settings")}${row("photoImport", "写真を取り込む", "camera")}${row("backup", "データのバックアップ", "download")}${row("about", "この Web 版について", "info")}</section><p class="center caption-note">PlainWalk Web · 非公式・無料<br>記録はこのブラウザの中に。</p>`;
 }
 function levelName() {
   const levels = [
@@ -1134,21 +1138,27 @@ function spots() {
   );
 }
 let pendingPhoto = null,
+  pendingPhotoMetadata = null,
   pendingVideo = null,
   cameraStream = null;
-function addSpot(p = current) {
+function addSpot(p = current, { explicitLocation = false } = {}) {
+  const queuedPhoto = photoImportQueue;
+  photoImportQueue = null;
+  photoLoadRevision++;
+  pendingPhotoMetadata = null;
   pendingPhoto = null;
   pendingVideo = null;
   if (!p) {
+    photoImportQueue = queuedPhoto;
     sheet(
       "ここいいな",
-      `<div class="empty-state">${icon("camera")}<p>道で見つけた「ここいいな」を、<br>写真とひとことで。</p></div><button class="primary" data-action="spotPick">地図から場所を選ぶ</button><button class="secondary" data-action="spotLocate">現在地に残す</button>`,
+      `<div class="empty-state">${icon("camera")}<p>道で見つけた「ここいいな」を、<br>写真とひとことで。</p></div><button type="button" class="secondary" data-action="spotImportPick">写真から取り込む</button><input type="file" id="spotImportPhoto" accept="image/*" hidden><p id="spotImportStatus" class="caption-note" role="status"></p><button class="primary" data-action="spotPick">地図から場所を選ぶ</button><button class="secondary" data-action="spotLocate">現在地に残す</button>`,
     );
     return;
   }
   sheet(
     "ここいいな",
-    `<form id="spotForm" data-lat="${p.lat}" data-lon="${p.lon}"><div class="segmented capture-tabs"><button type="button" class="chosen" data-spot-mode="photo">写真</button><button type="button" data-spot-mode="video">1〜2 秒の動画</button></div><div id="spotPhotoPanel"><input type="file" id="spotPhoto" accept="image/*" hidden><label for="spotPhoto" class="photo-stage"><span id="photoStageHint">${icon("camera")}<strong>今日の「ここいいな」を撮る</strong><small>カメラ・写真ライブラリから</small></span><img id="spotPreview" alt="選んだ写真" hidden></label></div><div id="spotVideoPanel" hidden><input type="file" id="spotVideo" accept="video/mp4,video/webm,video/quicktime" hidden><label for="spotVideo" class="video-picker">${icon("play")}<span>短い動画を選ぶ</span></label><video id="spotVideoPreview" class="spot-preview" playsinline controls hidden></video><video id="spotLive" class="spot-preview" playsinline muted hidden></video><label class="row"><span class="grow">音も残す</span><input id="spotAudio" class="switch" type="checkbox" aria-label="撮影時の音声"></label><div class="two-buttons"><button type="button" data-action="videoCamera">${icon("camera")}カメラを開く</button><button type="button" id="videoRecordButton" data-action="videoRecord" disabled>${icon("play")}2 秒を残す</button></div></div><label class="form-label">フィルム</label><select id="spotFilm" hidden><option value="none">そのまま</option><option value="sepia(.65) saturate(.7)">あたたかなフィルム</option><option value="grayscale(1)">モノクローム</option><option value="saturate(.65) contrast(.9)">やわらかな色</option>${config.lut ? '<option value="custom">自分の LUT</option>' : ""}</select><div class="film-options">${[["none", "そのまま", "#e7e9de"], ["sepia(.65) saturate(.7)", "あたたか", "#dbc9a5"], ["grayscale(1)", "モノクロ", "#a5aaa5"], ["saturate(.65) contrast(.9)", "やわらか", "#c9d6cf"], ...(config.lut ? [["custom", "自分の LUT", "#bfb4d1"]] : [])].map(([value, label, color]) => `<button type="button" data-spot-filter="${value}" class="${value === "none" ? "chosen" : ""}" aria-label="${label}"><span style="background:${color}"></span><small>${label}</small></button>`).join("")}</div><details class="film-advanced"><summary>自分のフィルムを読み込む</summary><label class="form-label">3D LUT（.cube）</label><input type="file" id="spotLut" accept=".cube,text/plain"><p class="caption-note">サイズ 2〜33 の 3D LUT に対応しています。</p></details><label class="form-label">ひとこと</label><textarea id="spotText" class="spot-caption" maxlength="500" placeholder="路地裏の喫茶店。プリンがかため。"></textarea><label class="form-label">どんな「ここいいな」？</label><select id="spotEmoji" hidden><option>♡</option><option>☕</option><option>🌿</option><option>🐈</option><option>🍰</option><option>📷</option><option>✦</option></select><div class="spot-categories">${[
+    `<form id="spotForm" data-lat="${p.lat}" data-lon="${p.lon}" data-chosen-lat="${p.lat}" data-chosen-lon="${p.lon}" data-explicit-location="${explicitLocation}" data-location-source="selected"><div class="segmented capture-tabs"><button type="button" class="chosen" data-spot-mode="photo">写真</button><button type="button" data-spot-mode="video">1〜2 秒の動画</button></div><div id="spotPhotoPanel"><input type="file" id="spotPhoto" accept="image/*" hidden><label for="spotPhoto" class="photo-stage"><span id="photoStageHint">${icon("camera")}<strong>今日の「ここいいな」を撮る</strong><small>カメラ・写真ライブラリから</small></span><img id="spotPreview" alt="選んだ写真" hidden></label></div><div id="spotVideoPanel" hidden><input type="file" id="spotVideo" accept="video/mp4,video/webm,video/quicktime" hidden><label for="spotVideo" class="video-picker">${icon("play")}<span>短い動画を選ぶ</span></label><video id="spotVideoPreview" class="spot-preview" playsinline controls hidden></video><video id="spotLive" class="spot-preview" playsinline muted hidden></video><label class="row"><span class="grow">音も残す</span><input id="spotAudio" class="switch" type="checkbox" aria-label="撮影時の音声"></label><div class="two-buttons"><button type="button" data-action="videoCamera">${icon("camera")}カメラを開く</button><button type="button" id="videoRecordButton" data-action="videoRecord" disabled>${icon("play")}2 秒を残す</button></div></div><label class="form-label">フィルム</label><select id="spotFilm" hidden><option value="none">そのまま</option><option value="sepia(.65) saturate(.7)">あたたかなフィルム</option><option value="grayscale(1)">モノクローム</option><option value="saturate(.65) contrast(.9)">やわらかな色</option>${config.lut ? '<option value="custom">自分の LUT</option>' : ""}</select><div class="film-options">${[["none", "そのまま", "#e7e9de"], ["sepia(.65) saturate(.7)", "あたたか", "#dbc9a5"], ["grayscale(1)", "モノクロ", "#a5aaa5"], ["saturate(.65) contrast(.9)", "やわらか", "#c9d6cf"], ...(config.lut ? [["custom", "自分の LUT", "#bfb4d1"]] : [])].map(([value, label, color]) => `<button type="button" data-spot-filter="${value}" class="${value === "none" ? "chosen" : ""}" aria-label="${label}"><span style="background:${color}"></span><small>${label}</small></button>`).join("")}</div><details class="film-advanced"><summary>自分のフィルムを読み込む</summary><label class="form-label">3D LUT（.cube）</label><input type="file" id="spotLut" accept=".cube,text/plain"><p class="caption-note">サイズ 2〜33 の 3D LUT に対応しています。</p></details><label class="form-label">ひとこと</label><textarea id="spotText" class="spot-caption" maxlength="500" placeholder="路地裏の喫茶店。プリンがかため。"></textarea><label class="form-label">どんな「ここいいな」？</label><select id="spotEmoji" hidden><option>♡</option><option>☕</option><option>🌿</option><option>🐈</option><option>🍰</option><option>📷</option><option>✦</option></select><div class="spot-categories">${[
       ["♡", "好き"],
       ["☕", "お店"],
       ["🌿", "景色"],
@@ -1163,11 +1173,52 @@ function addSpot(p = current) {
       )
       .join(
         "",
-      )}</div><button type="submit" class="primary">この場所に残す</button><p class="center caption-note">写真と位置は、この端末の中に。</p></form>`,
+      )}</div><p id="spotPhotoLocation" class="caption-note" aria-live="polite"></p><button type="button" class="secondary" data-action="spotUseChosen" id="spotUseChosen" hidden>選択中の場所に置く</button><button type="submit" class="primary">この場所に残す</button><p class="center caption-note">写真と位置は、この端末の中に。</p></form>`,
   );
+  if (queuedPhoto) loadSpotPhoto(queuedPhoto).catch((error) => toast(error.message));
 }
 
-async function resizePhoto(file, filter = "none") {
+function photoLocationNotice(form, text) {
+  const note = form.querySelector("#spotPhotoLocation");
+  if (note) note.textContent = text;
+}
+async function loadSpotPhoto(file) {
+  if (!file || file.size > 30 * 1024 * 1024 || !file.type.startsWith("image/")) throw Error("30 MB 以下の写真を選んでください。");
+  const form = $("#spotForm");
+  if (!form || $("#overlay").hidden) return;
+  const revision = ++photoLoadRevision, submit = form.querySelector("button[type=submit]");
+  form.dataset.photoBusy = "true"; submit.disabled = true;
+  try {
+    const metadata = readPhotoMetadata(await file.arrayBuffer());
+    const placement = locatePhotoOnWalks(metadata, data.walks, { activeWalk: active });
+    const preview = await resizePhoto(file, form.querySelector("#spotFilm").value);
+    if (revision !== photoLoadRevision || !form.isConnected || $("#overlay").hidden) return;
+    pendingPhoto = file; pendingPhotoMetadata = metadata;
+    form.querySelector("#spotPreview").src = preview;
+    form.querySelector("#spotPreview").hidden = false;
+    if (form.querySelector("#photoStageHint")) form.querySelector("#photoStageHint").hidden = true;
+    const timeNote = metadata.capturedAt == null ? " 撮影時刻を確定できないため、追加日時で並びます。" : "";
+    if (placement) {
+      form.dataset.lat = placement.point.lat; form.dataset.lon = placement.point.lon;
+      form.dataset.locationSource = placement.source;
+      form.querySelector("#spotUseChosen").hidden = true;
+      photoLocationNotice(form, (placement.source === "photo-gps" ? "写真の撮影場所に配置します。" : "撮影時刻とさんぽの軌跡から配置します。") + timeNote);
+    } else if (form.dataset.explicitLocation === "true") {
+      form.dataset.lat = form.dataset.chosenLat; form.dataset.lon = form.dataset.chosenLon;
+      form.dataset.locationSource = "manual-location";
+      photoLocationNotice(form, "選んだ場所に写真を配置します。" + timeNote);
+    } else {
+      delete form.dataset.lat; delete form.dataset.lon;
+      form.dataset.locationSource = "unresolved";
+      form.querySelector("#spotUseChosen").hidden = false;
+      photoLocationNotice(form, "写真の場所を判定できません。選択中の場所を使う場合は確認してください。" + timeNote);
+    }
+  } finally {
+    if (revision === photoLoadRevision && form.isConnected) { delete form.dataset.photoBusy; submit.disabled = false; }
+  }
+}
+
+async function resizePhoto(file, filter = "none", lut = config.lut) {
   if (!file || !file.type.startsWith("image/"))
     throw Error("写真ファイルを選んでください。");
   if (file.size > 30 * 1024 * 1024)
@@ -1200,7 +1251,7 @@ async function resizePhoto(file, filter = "none") {
   ctx.drawImage(img, 0, 0, c.width, c.height);
   if (filter !== "none") {
     const image = ctx.getImageData(0, 0, c.width, c.height);
-    ctx.putImageData(applyEffect(image, filter, config.lut), 0, 0);
+    ctx.putImageData(applyEffect(image, filter, lut), 0, 0);
   }
   bitmap?.close();
   return c.toDataURL("image/jpeg", 0.8);
@@ -1917,8 +1968,19 @@ const actions = {
   flagPick: () => pickMode("flag"),
   spotPick: () => pickMode("spot"),
   spot: () => addSpot(),
+  photoImport: () => addSpot(),
+  spotImportPick: () => $("#spotImportPhoto")?.click(),
+  spotUseChosen: () => {
+    const form = $("#spotForm"); if (!form) return;
+    form.dataset.lat = form.dataset.chosenLat; form.dataset.lon = form.dataset.chosenLon;
+    form.dataset.locationSource = "manual-location"; form.dataset.explicitLocation = "true";
+    form.querySelector("#spotUseChosen").hidden = true;
+    photoLocationNotice(form, "選択中の場所に配置します。" + (pendingPhotoMetadata?.capturedAt == null ? " 撮影時刻は不明なため、追加日時で並びます。" : ""));
+  },
   spotLocate: () => {
-    closeSheet();
+    const queued = photoImportQueue;
+    closeSheet(); photoImportQueue = queued;
+    if (current) { addSpot(current, { explicitLocation:true }); return; }
     actions.locate();
     toast("現在地を取得したら、もう一度「ここいいな」を押してください。");
   },
@@ -2047,7 +2109,8 @@ const actions = {
     ),
 };
 function pickMode(type) {
-  closeSheet();
+  const queued = type === "spot" ? photoImportQueue : null;
+  closeSheet(); photoImportQueue = queued;
   switchTab("map");
   mapMode = type;
   $("#mapBanner").textContent =
@@ -2463,15 +2526,21 @@ document.addEventListener("change", async (e) => {
         );
       }
     }
-    if (el.id === "spotPhoto") {
+    if (el.id === "spotImportPhoto" && el.files[0]) {
       const file = el.files[0];
-      if (file) {
-        pendingPhoto = file;
-        $("#spotPreview").src = await resizePhoto(file);
-        $("#spotPreview").hidden = false;
-        if ($("#photoStageHint")) $("#photoStageHint").hidden = true;
+      if (file.size > 30 * 1024 * 1024) throw Error("写真は 30 MB 以下で選んでください。");
+      const revision = ++photoLoadRevision;
+      const metadata = readPhotoMetadata(await file.arrayBuffer());
+      if (revision !== photoLoadRevision || !el.isConnected || $("#overlay").hidden) return;
+      const placement = locatePhotoOnWalks(metadata, data.walks, { activeWalk: active });
+      photoImportQueue = file;
+      if (placement) addSpot(placement.point);
+      else {
+        $("#spotImportStatus").textContent = `写真「${file.name}」を選択しました。地図から場所を選ぶか、現在地を取得してください。`;
+        toast("写真の場所が分かりません。地図から場所を選ぶか、現在地を取得してください。", 6000);
       }
     }
+    if (el.id === "spotPhoto" && el.files[0]) await loadSpotPhoto(el.files[0]);
     if (el.id === "spotFilm" && pendingPhoto) {
       $("#spotPreview").src = await resizePhoto(pendingPhoto, el.value);
       $("#spotPreview").style.filter = "none";
@@ -2500,42 +2569,59 @@ document.addEventListener("submit", async (e) => {
   e.preventDefault();
   const form = e.target,
     button = form.querySelector("button[type=submit]");
+  let disabledControls = [];
   button.disabled = true;
   try {
+    if (form.dataset.photoBusy === "true") throw Error("写真の読み込みが終わるまでお待ちください。");
+    const location = { lat:Number(form.dataset.lat),lon:Number(form.dataset.lon) };
+    if (!form.dataset.lat || !form.dataset.lon || !validPoint(location)) throw Error("写真を置く場所を選択してください。");
     const text = $("#spotText").value.trim();
     if (!text && !pendingPhoto && !pendingVideo) {
       toast("写真かひとことを残してください。");
       button.disabled = false;
       return;
     }
-    const photo = pendingPhoto
-        ? await resizePhoto(pendingPhoto, $("#spotFilm").value)
-        : null,
-      p = {
-        id: id(),
-        lat: Number(form.dataset.lat),
-        lon: Number(form.dataset.lon),
-        t: Date.now(),
-        text,
-        photo: photo || pendingVideo?.poster || null,
-        video: pendingVideo?.data || null,
-        videoDuration: pendingVideo?.duration || null,
-        emoji: $("#spotEmoji").value,
-      };
+    const revision = photoLoadRevision;
+    const snapshot = {
+      file:pendingPhoto, metadata:pendingPhotoMetadata ? structuredClone(pendingPhotoMetadata) : null,
+      video:pendingVideo ? { ...pendingVideo } : null,
+      filter:form.querySelector("#spotFilm").value, lut:config.lut,
+      emoji:form.querySelector("#spotEmoji").value, source:form.dataset.locationSource,
+      lat:location.lat, lon:location.lon, text, addedAt:Date.now(),
+    };
+    disabledControls = [...form.elements].map((element) => [element, element.disabled]);
+    for (const [element] of disabledControls) element.disabled = true;
+    const photo = snapshot.file ? await resizePhoto(snapshot.file, snapshot.filter, snapshot.lut) : null;
+    // Closing or replacing the draft during image decoding cancels this save.
+    if (revision !== photoLoadRevision || !form.isConnected || $("#overlay").hidden || $("#spotForm") !== form) return;
+    const p = {
+      id:id(), lat:snapshot.lat, lon:snapshot.lon,
+      t:snapshot.metadata?.capturedAt ?? snapshot.addedAt, addedAt:snapshot.addedAt,
+      ...(snapshot.metadata ? { photoMetadata:snapshot.metadata, locationSource:snapshot.source } : {}),
+      text:snapshot.text, photo:photo || snapshot.video?.poster || null,
+      video:snapshot.video?.data || null, videoDuration:snapshot.video?.duration || null,
+      emoji:snapshot.emoji,
+    };
     data.spots.push(p);
     try {
       await save();
     } catch (err) {
-      data.spots.pop();
+      const index = data.spots.indexOf(p);
+      if (index >= 0) data.spots.splice(index, 1);
       throw err;
     }
-    pendingPhoto = null;
-    closeSheet();
+    if (revision === photoLoadRevision && $("#spotForm") === form && !$("#overlay").hidden) {
+      pendingPhoto = null; closeSheet();
+    }
     draw();
     toast("「ここいいな」を残しました。");
   } catch (err) {
     toast(err.message || "写真を保存できませんでした。");
-    button.disabled = false;
+  } finally {
+    if (form.isConnected) {
+      for (const [element, wasDisabled] of disabledControls) element.disabled = wasDisabled;
+      button.disabled = form.dataset.photoBusy === "true";
+    }
   }
 });
 document.addEventListener("input", (e) => {
@@ -2654,7 +2740,7 @@ viewport.addEventListener("pointerup", (e) => {
         ? flagAdd(p)
         : type === "bookmark"
           ? collections.bookmarkAdd(p)
-          : addSpot(p);
+          : addSpot(p, { explicitLocation:true });
     } else if (mapMode === "demo") {
       current = { ...p, t: Date.now() };
       demoPoints.push(current);

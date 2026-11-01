@@ -101,6 +101,7 @@ import UniformTypeIdentifiers
                 "mapCamera": try NativeAnswerMapView.cameraSelfTest(),
                 "trackEditor": try NativeTrackEditDraft.selfTest(),
                 "photoEffects": try NativePhotoEffects.selfTest(),
+                "photoMetadata": try NativePhotoMetadata.selfTest(),
                 "boundaryGeometry": try NativeBoundaryGeometry.selfTest()
             ]
             }
@@ -119,6 +120,7 @@ import UniformTypeIdentifiers
                 case "stepGoal": model.present(.stepGoal)
                 case "developer": model.present(.developer)
                 case "lut": model.present(.lut)
+                case "spot": model.openSpotCapture()
                 default: break
                 }
             }

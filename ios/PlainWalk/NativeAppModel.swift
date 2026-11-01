@@ -157,7 +157,7 @@ private struct NativeImportPayload: @unchecked Sendable {
     func openReplay(){present(.replay(nil))}
     func openReplay(walkID:String){present(.replay(walkID))}
     func openCollection(_ item:NativeCollection){afterClosing { [weak self] in self?.openProfileDestination(.collection(item)) }}
-    func openSpotCapture(){guard isRecording,currentPoint != nil else{showError("記録中に位置情報を取得してから、ここいいなを残せます。");return};present(.spot)}
+    func openSpotCapture(){present(.spot)}
     func showWalkOnMap(id:String){focusedWalkID=id;mapFocus=walks.first(where:{$0.id==id})?.points.first;mapFocusRevision+=1;tab = .map;closeSheet()}
     func navigateToFlag(_ flag:NativeFlag){mapFocus=flag.point;focusedWalkID=nil;mapFocusRevision+=1;tab = .map;closeSheet()}
     func locate(){do{try recorder.start(id:nil,start:nil,recording:false)}catch{showError(error.localizedDescription)}}

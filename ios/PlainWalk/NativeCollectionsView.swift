@@ -365,7 +365,8 @@ private func ncDistance(_ a: NativePoint, _ b: NativePoint) -> Double {
     return 12_742_000 * atan2(sqrt(max(0, q)), sqrt(max(0, 1 - q)))
 }
 
-@MainActor private struct NCDoodleEditor: View {
+@MainActor struct NCDoodleEditor: View {
+    var initialCenter: NativePoint? = nil
     @State private var failure: String?
     @ObservedObject var model: NativeAppModel
     @Environment(\.dismiss) private var dismiss
@@ -376,7 +377,7 @@ private func ncDistance(_ a: NativePoint, _ b: NativePoint) -> Double {
         NavigationStack {
             VStack(spacing: 0) {
                 Picker("地図の操作", selection: $drawing) { Text("指で描く").tag(true); Text("地図を動かす").tag(false) }.pickerStyle(.segmented).padding(12)
-                NCDrawingMap(strokes: $strokes, drawing: drawing, center: model.currentPoint ?? model.walks.last?.points.first)
+                NCDrawingMap(strokes: $strokes, drawing: drawing, center: initialCenter ?? model.currentPoint ?? model.walks.last?.points.first)
                 HStack { TextField("らくがきの名前", text: $name); Button { if !strokes.isEmpty { strokes.removeLast() } } label: { Image(systemName: "arrow.uturn.backward") }.disabled(strokes.isEmpty).accessibilityLabel("ひとつ戻す") }.padding(16)
                 Text("描いた線は、実際に歩いたところから消えていきます。位置情報がなくても地図を動かして描けます。").font(.footnote).foregroundStyle(.secondary).padding(.horizontal, 16).padding(.bottom, 12)
             }.navigationTitle("らくがきを描く").navigationBarTitleDisplayMode(.inline).toolbar {
