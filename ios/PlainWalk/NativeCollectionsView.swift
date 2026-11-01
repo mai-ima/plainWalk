@@ -305,7 +305,7 @@ private struct NCNoteExport: Identifiable { let id=UUID(); let url:URL }
                 }.padding(20)
             }.task {
                 #if DEBUG
-                guard ProcessInfo.processInfo.arguments.contains("-PlainWalkCapture=noteControls") else { return }
+                guard NativeScreenshotFixtures.isEnabled, (ProcessInfo.processInfo.arguments.contains("-PlainWalkCaptureScroll=noteControls") || ProcessInfo.processInfo.arguments.contains("-PlainWalkCapture=noteControls")) else { return }
                 do {
                     try await Task.sleep(nanoseconds: 400_000_000)
                     guard !layout.isEmpty, selectedID != nil else { return }
@@ -323,7 +323,7 @@ private struct NCNoteExport: Identifiable { let id=UUID(); let url:URL }
                 guard !loaded else { return }
                 text = note["text"] as? String ?? ""; paper = note["paper"] as? String ?? "plain"; font = note["font"] as? String ?? "serif"; layout = note["layout"] as? [[String: Any]] ?? []; stickers = note["stickers"] as? String ?? ""; initialDraft=draft; loaded = true
                 #if DEBUG
-                if ProcessInfo.processInfo.arguments.contains("-PlainWalkCapture=noteControls") { selectedID = layout.first?["id"] as? String }
+                if NativeScreenshotFixtures.isEnabled && (ProcessInfo.processInfo.arguments.contains("-PlainWalkCaptureScroll=noteControls") || ProcessInfo.processInfo.arguments.contains("-PlainWalkCapture=noteControls")) { selectedID = layout.first?["id"] as? String }
                 #endif
             }
         }.interactiveDismissDisabled(hasChanges)

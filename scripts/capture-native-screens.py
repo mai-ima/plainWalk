@@ -77,7 +77,15 @@ for scene in scenes:
     entry = {**scene, "sourceRoute": key, "part": 1, "path": "ios-" + key + ".png", "status": "missing"}
     try:
         print("Capturing " + key, flush=True)
-        command(*launch)
+        try:
+            command(*launch)
+        except subprocess.TimeoutExpired:
+            # simctl can hold its response pipe after the app has launched.
+            # A fresh app-written signal is independent evidence; actual view
+            # readiness and OCR are still required below.
+            if not startup_ready():
+                raise
+            entry["launchCommandWarning"] = "simctl response timed out after the app signaled readiness"
         # Separate OS process startup from the screen's own presentation budget.
         wait_until(startup_ready, 60, "The application did not reach screenshot routing")
         if scene.get("dialog"):

@@ -63,7 +63,7 @@ import UIKit
             .id("native-capture-records-bottom")
         }.task {
             #if DEBUG
-            guard ProcessInfo.processInfo.arguments.contains("-PlainWalkCapture=recordsBottom") else { return }
+            guard NativeScreenshotFixtures.isEnabled, (ProcessInfo.processInfo.arguments.contains("-PlainWalkCaptureScroll=recordsBottom") || ProcessInfo.processInfo.arguments.contains("-PlainWalkCapture=recordsBottom")) else { return }
             do {
                 try await Task.sleep(nanoseconds: 400_000_000)
                 captureProxy.scrollTo("native-capture-records-bottom", anchor: .bottom)
@@ -366,7 +366,7 @@ struct NativeTrailThumbnail: View {
                         }.padding(16).frame(maxWidth: 720).frame(maxWidth: .infinity)
                     }.task {
                         #if DEBUG
-                        guard ProcessInfo.processInfo.arguments.contains("-PlainWalkCapture=walkPhotos") else { return }
+                        guard NativeScreenshotFixtures.isEnabled, (ProcessInfo.processInfo.arguments.contains("-PlainWalkCaptureScroll=walkPhotos") || ProcessInfo.processInfo.arguments.contains("-PlainWalkCapture=walkPhotos")) else { return }
                         do {
                             try await Task.sleep(nanoseconds: 400_000_000)
                             guard !photos.isEmpty else { return }

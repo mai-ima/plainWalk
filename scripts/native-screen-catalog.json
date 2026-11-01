@@ -69,7 +69,7 @@
       "category": "記録・プロフィール",
       "group": "records",
       "state": "合成データ",
-      "expectedText": "さんぽ",
+      "expectedText": "検証用|記録",
       "screen": "records",
       "marker": "records",
       "scroll": "recordsBottom"
