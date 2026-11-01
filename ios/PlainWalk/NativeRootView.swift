@@ -277,8 +277,8 @@ struct NativeShareView:UIViewControllerRepresentable {
             }
             var controller:UIViewController?=self
             while let current=controller {
-                guard !current.isBeingDismissed,!current.isMovingFromParent,!current.isMovingToParent else {
-                    return blocked("controller moving: \(type(of:current))")
+                guard !current.isBeingDismissed else {
+                    return blocked("controller dismissing: \(type(of:current))")
                 }
                 // SwiftUI's visual hosting tree need not match UIKit's navigation
                 // controller child tree. Check the drawn UIView ancestry instead.
