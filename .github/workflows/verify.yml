@@ -29,8 +29,8 @@ jobs:
         run: |
           python3 -m http.server 4173 --directory dist > "$RUNNER_TEMP/plainwalk-preview.log" 2>&1 &
           npm run test:browser
-  ios:
-    runs-on: macos-latest
+  ios-build:
+    runs-on: macos-26
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
@@ -38,16 +38,40 @@ jobs:
         with:
           node-version: '22'
       - run: npm run build
-      - name: Warm iPhone Simulator while compiling
-        run: |
-          PW_SIM_DEVICE=$(xcrun simctl list devices available --json | python3 -c 'import json,sys; data=json.load(sys.stdin); print(next(d["udid"] for group in data["devices"].values() for d in group if "iPhone" in d["name"] and d.get("isAvailable")))')
-          xcrun simctl boot "$PW_SIM_DEVICE" || true
       - name: Compile iOS app and Live Activity extension
         run: >-
           xcodebuild -project ios/PlainWalk.xcodeproj -scheme PlainWalk
           -configuration Debug -sdk iphonesimulator
           -destination 'generic/platform=iOS Simulator' -derivedDataPath .build/ios
-          ARCHS="$(uname -m)" ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=NO build
+          ARCHS=arm64 ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=NO build
+      - name: Package compiled Simulator app
+        run: >-
+          tar -czf .build/plainwalk-ios-simulator.tar.gz
+          -C .build/ios/Build/Products/Debug-iphonesimulator PlainWalk.app
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-simulator-app
+          path: .build/plainwalk-ios-simulator.tar.gz
+          retention-days: 7
+          overwrite: true
+  ios:
+    needs: ios-build
+    runs-on: macos-26
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Warm iPhone Simulator
+        run: |
+          PW_SIM_DEVICE=$(xcrun simctl list devices available --json | python3 -c 'import json,sys; data=json.load(sys.stdin); print(next(d["udid"] for group in data["devices"].values() for d in group if "iPhone" in d["name"] and d.get("isAvailable")))')
+          xcrun simctl boot "$PW_SIM_DEVICE" || true
+      - uses: actions/download-artifact@v4
+        with:
+          name: ios-simulator-app
+          path: .build
+      - name: Restore compiled app
+        run: |
+          mkdir -p .build/ios/Build/Products/Debug-iphonesimulator
+          tar -xzf .build/plainwalk-ios-simulator.tar.gz -C .build/ios/Build/Products/Debug-iphonesimulator
       - name: Launch bundled app on iPhone Simulator
         run: bash scripts/ios-simulator-smoke.sh
       - name: Verify diagnostic screen capture
@@ -58,8 +82,16 @@ jobs:
           name: ios-simulator-screenshot
           path: .build/screenshots
           if-no-files-found: ignore
+          overwrite: true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-replay-export-sample
+          path: .build/exports
+          if-no-files-found: ignore
+          overwrite: true
   playgrounds:
-    runs-on: macos-latest
+    runs-on: macos-26
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4

@@ -20,6 +20,7 @@ PlainWalk の公開情報・提供された画面・APK の静的な構造を参
 - [追加の画像・一次資料の分析](docs/research-deep-dive.md)
 - [追加画像の目視・実装との比較](docs/research-parity-followup.md)
 - [写真の撮影日時・場所と取り込み](docs/photo-import-parity.md)
+- [iOS のノート操作と軌跡動画](docs/native-creation.md)
 - [APK の静的解析と Android 画像](docs/apk-static-analysis.md)
 - [APK の記録・保存・動作分類の仕組みと差分](docs/apk-mechanism-notes.md)
 - [実装範囲と残差](docs/reproduction-audit.md)
@@ -65,8 +66,8 @@ Playgrounds 版も SwiftUI / Canvas / MapKit を使います。HealthKit、Live 
 | 共有の白地図 | 選んだ線のファイル交換 | 同じ形式のファイル交換 |
 | 写真フィルム・3D LUT | 実装 | CoreImage、.cube 取り込み・比較プレビュー |
 | 手動軌跡修正 | 実装 | MapKit の点移動・削除・区切り・Undo |
-| 動画書き出し | 実装 | 未実装 |
-| ノート | 写真・道の自由配置、切り抜き、PNG 出力 | 文章・紙・書体、スライダーでの配置調整、PNG 出力 |
+| 動画書き出し | 実装 | AVFoundation の MP4 / 標準共有 |
+| ノート | 写真・道の自由配置、切り抜き、PNG 出力 | 直接の移動・拡縮・回転、透明度・Undo、PNG 出力 |
 
 共有白地図には選んだ線だけを入れ、日時・写真・メモを除きます。招待リンクによる共同編集・自動同期はありません。立体バッジや猫の見た目・演出は独自実装です。Watch、通常のウィジェット、自動開始、iCloud 自動同期、日本以外の境界、道路へのスナップ、公式と同じ近接交換は未実装です。
 
@@ -83,7 +84,7 @@ npm run test:browser
 
 2026-11-01 のローカル検証では、単体テスト 34 件、Chromium の 8 スイート、構文チェック、Web ビルドが通過しました。新しい保存整合性テストは、GPX / TCX、保存失敗、再読み込み、取り込みの再試行、ネイティブ拡張データの保持を確認します。ネイティブ接続のブラウザ試験はモックです。Linux WebKit の以前の操作試験も、iPhone 実機検証とは区別します。
 
-[GitHub Actions 41271677842](https://github.com/mai-ima/plainWalk/actions/runs/41271677842) で Web、Xcode 本体・Live Activity 拡張、Swift Playgrounds パッケージが成功しました。iPhone Simulator で従来の保存・復旧・軌跡のテストに加え、ImageIO の撮影日時・GPS 読み取り、JPEG 往復、小数秒、CoreImage 加工後の撮影情報、曖昧な軌跡の拒否が通過しました。写真取り込みを含む 13 画面を表示完了後に撮影し、診断画像のタイトル検出も通過しています。初回は最後の診断画面が白画面で時間超過となり、同じコードの iOS ジョブだけを再試行して成功しました。初回失敗の原因は確定していません。
+前回の [GitHub Actions 41271677842](https://github.com/mai-ima/plainWalk/actions/runs/41271677842) で Web、Xcode 本体・Live Activity 拡張、Swift Playgrounds パッケージが成功しました。iPhone Simulator で従来の保存・復旧・軌跡のテストに加え、ImageIO の撮影日時・GPS 読み取り、JPEG 往復、小数秒、CoreImage 加工後の撮影情報、曖昧な軌跡の拒否が通過しました。写真取り込みを含む 13 画面を表示完了後に撮影し、診断画像のタイトル検出も通過しています。初回は最後の診断画面が白画面で時間超過となり、同じコードの iOS ジョブだけを再試行して成功しました。初回失敗の原因は確定していません。
 
 実機の起動・カメラ・背景 GPS・HealthKit・電池消費・配布署名は未検証で、署名済み IPA はありません。Web は JPEG の撮影情報を対象とし、取得できない情報を推測して配置しません。OS の標準タブ・細かな寸法、未実装機能を含め、本家の完全一致ではありません。
 

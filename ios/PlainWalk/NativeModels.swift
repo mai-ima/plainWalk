@@ -90,6 +90,6 @@ enum NativeCollection: String, Identifiable, CaseIterable, Hashable {
 }
 enum NativeProfileDestination: Hashable { case settings; case collection(NativeCollection) }
 enum NativeSheet: Identifiable {
-    case settings, stepGoal, lut, developer, layers, menu, spot, answer, stats, replay(String?), walk(String), collection(NativeCollection), share(URL), health
-    var id: String { switch self {case .settings:return "settings";case .stepGoal:return "stepGoal";case .lut:return "lut";case .developer:return "developer";case .layers:return "layers";case .menu:return "menu";case .spot:return "spot";case .answer:return "answer";case .stats:return "stats";case .replay(let id):return "replay:"+(id ?? "all");case .walk(let id):return "walk:"+id;case .collection(let item):return "collection:"+item.rawValue;case .share(let url):return "share:"+url.absoluteString;case .health:return "health"} }
+    case settings, stepGoal, lut, noteEditor(String), developer, layers, menu, spot, answer, stats, replay(String?), walk(String), collection(NativeCollection), share(URL), health
+    var id: String { switch self {case .settings:return "settings";case .stepGoal:return "stepGoal";case .lut:return "lut";case .noteEditor(let day):return "noteEditor:"+day;case .developer:return "developer";case .layers:return "layers";case .menu:return "menu";case .spot:return "spot";case .answer:return "answer";case .stats:return "stats";case .replay(let id):return "replay:"+(id ?? "all");case .walk(let id):return "walk:"+id;case .collection(let item):return "collection:"+item.rawValue;case .share(let url):return "share:"+url.absoluteString;case .health:return "health"} }
 }

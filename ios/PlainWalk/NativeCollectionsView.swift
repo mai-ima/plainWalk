@@ -252,6 +252,14 @@ private func ncStickers(_ library: [String: Any]) -> [NCSticker] {
     var body: some View { ScrollView { VStack(spacing: 22) { if let item { let walks = item.value["walks"] as? [[String: Any]] ?? []; NCLineThumbnail(points: walks.flatMap { row in (row["points"] as? [[String: Any]] ?? []).enumerated().compactMap { i, raw in var p = raw; if i == 0 { p["break"] = true }; return NativePoint(json: p) } }).frame(height: 290); Text("\(walks.count) 本の道").foregroundStyle(.secondary); Button { do { let cleanWalks = (item.value["walks"] as? [[String: Any]] ?? []).map { walk -> [String: Any] in ["id": walk["id"] as? String ?? UUID().uuidString, "points": (walk["points"] as? [[String: Any]] ?? []).compactMap { raw -> [String: Any]? in guard let point = NativePoint(json: raw) else { return nil }; var clean: [String: Any] = ["lat": point.lat, "lon": point.lon]; if point.isBreak { clean["break"] = true }; return clean }] }; let export: [String: Any] = ["id": item.id, "name": item.value["name"] as? String ?? "みんなのさんぽ", "walks": cleanWalks, "type": "plainwalk-white-map", "version": 1]; let data = try JSONSerialization.data(withJSONObject: export, options: [.sortedKeys]); model.shareData(data, name: "plainwalk-white-map.json") } catch { model.showError(error.localizedDescription) } } label: { Label("白地図ファイルを渡す", systemImage: "square.and.arrow.up").frame(maxWidth: .infinity).padding(12) }.buttonStyle(.borderedProminent).tint(.primary); Text("招待リンクでの共同編集や自動同期には対応していません。").font(.footnote).foregroundStyle(.secondary); Button("この紙を削除", role: .destructive) { deleting = true } } }.padding(20) }.navigationTitle(item?.value["name"] as? String ?? "共有の白地図").navigationBarTitleDisplayMode(.inline).confirmationDialog("この紙を削除しますか？", isPresented: $deleting, titleVisibility: .visible) { Button("削除", role: .destructive) { do { try model.updateLibrary { library in library["sharedMaps"] = (library["sharedMaps"] as? [[String: Any]] ?? []).filter { $0["id"] as? String != itemID } }; dismiss() } catch { model.showError(error.localizedDescription) } } } }
 }
 
+@MainActor struct NativeNotebookEditor: View {
+    @ObservedObject var model:NativeAppModel
+    let day:String
+    var body:some View {NCNoteEditor(model:model,day:day)}
+}
+
+private struct NCNoteExport: Identifiable { let id=UUID(); let url:URL }
+
 @MainActor private struct NCNoteEditor: View {
     @State private var failure: String?
     @ObservedObject var model: NativeAppModel
@@ -264,6 +272,13 @@ private func ncStickers(_ library: [String: Any]) -> [NCSticker] {
     @State private var layout: [[String: Any]] = []
     @State private var stickers = ""
     @State private var selectedID: String?
+    @State private var initialDraft: [String:Any] = [:]
+    @State private var undoLayouts: [[[String:Any]]] = []
+    @State private var confirmingClose = false
+    @State private var export: NCNoteExport?
+    @State private var exportFolder: URL?
+    private var draft: [String:Any] { ["text":text,"paper":paper,"font":font,"layout":layout,"stickers":stickers] }
+    private var hasChanges: Bool { loaded && !(draft as NSDictionary).isEqual(to:initialDraft) }
     private var note: [String: Any] { (model.library["notes"] as? [String: [String: Any]])?[day] ?? [:] }
     private var preview: some View { NCNotebookPreview(day: day, text: text, paper: paper, font: font, layout: layout, stickers: stickers) }
     var body: some View {
@@ -274,20 +289,37 @@ private func ncStickers(_ library: [String: Any]) -> [NCSticker] {
                     TextEditor(text: $text).onChange(of: text) { _, value in if value.utf16.count > 5000 { text = ncText(value, utf16Limit: 5000) } }.frame(minHeight: 150).padding(10).background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 15))
                     Picker("紙", selection: $paper) { Text("白い紙").tag("plain"); Text("方眼").tag("grid"); Text("罫線").tag("lined"); Text("クラフト").tag("kraft") }
                     Picker("書体", selection: $font) { Text("セリフ").tag("serif"); Text("シンプル").tag("sans"); Text("等幅").tag("mono") }
-                    preview.aspectRatio(0.75, contentMode: .fit).clipShape(RoundedRectangle(cornerRadius: 6))
+                    NativeNoteCanvas(layout:$layout,selectedID:$selectedID,onBegin:rememberLayout) { preview }
+                        .aspectRatio(0.75,contentMode:.fit).clipShape(RoundedRectangle(cornerRadius:6))
+                    Text("貼りものをタップして選び、指で移動・拡大縮小・回転できます。紙の中心やほかの貼りものに近づくと揃います。")
+                        .font(.footnote).foregroundStyle(.secondary)
+                    HStack {
+                        Button { undoLayout() } label: { Label("元に戻す",systemImage:"arrow.uturn.backward") }.disabled(undoLayouts.isEmpty)
+                        Spacer()
+                        Button("選択を解除") { selectedID=nil }.disabled(selectedID==nil)
+                    }.font(.subheadline)
                     insertMenu
                     itemControls
                     Button { share() } label: { Label("画像にして共有", systemImage: "square.and.arrow.up").frame(maxWidth: .infinity).padding(12) }.buttonStyle(.bordered)
                 }.padding(20)
             }.navigationTitle("ノート").navigationBarTitleDisplayMode(.inline).toolbar {
-                ToolbarItem(placement: .topBarLeading) { Button("閉じる") { dismiss() } }
+                ToolbarItem(placement: .topBarLeading) { Button("閉じる") { if hasChanges {confirmingClose=true} else {dismiss()} } }
                 ToolbarItem(placement: .topBarTrailing) { Button("保存") { save() } }
             }.onAppear {
                 guard !loaded else { return }
-                text = note["text"] as? String ?? ""; paper = note["paper"] as? String ?? "plain"; font = note["font"] as? String ?? "serif"; layout = note["layout"] as? [[String: Any]] ?? []; stickers = note["stickers"] as? String ?? ""; loaded = true
+                text = note["text"] as? String ?? ""; paper = note["paper"] as? String ?? "plain"; font = note["font"] as? String ?? "serif"; layout = note["layout"] as? [[String: Any]] ?? []; stickers = note["stickers"] as? String ?? ""; initialDraft=draft; loaded = true
             }
-        }.modifier(NCEditorError(model: model, failure: $failure))
+        }.interactiveDismissDisabled(hasChanges)
+            .confirmationDialog("変更を保存せずに閉じますか？",isPresented:$confirmingClose,titleVisibility:.visible) {
+                Button("変更を破棄",role:.destructive) { dismiss() }
+                Button("編集を続ける",role:.cancel) {}
+            }
+            .sheet(item:$export,onDismiss:cleanExport) { item in NativeShareView(url:item.url) }
+            .modifier(NCEditorError(model: model, failure: $failure))
     }
+    private func rememberLayout() { undoLayouts.append(layout);if undoLayouts.count>40 {undoLayouts.removeFirst()} }
+    private func undoLayout() { guard let previous=undoLayouts.popLast() else{return};layout=previous;if !layout.contains(where:{$0["id"] as? String==selectedID}) {selectedID=nil} }
+    private func cleanExport() {if let exportFolder {try? FileManager.default.removeItem(at:exportFolder)};exportFolder=nil;export=nil}
     private var insertMenu: some View {
         Menu {
             Menu("ここいいなの写真") {
@@ -306,19 +338,25 @@ private func ncStickers(_ library: [String: Any]) -> [NCSticker] {
                 VStack(spacing: 12) {
                     slider("横の位置", key: "x", range: 0...720)
                     slider("縦の位置", key: "y", range: 0...960)
-                    slider("大きさ", key: "width", range: 30...600)
+                    slider("大きさ", key: "width", range: 10...1000)
                     slider("傾き", key: "rotation", range: -180...180)
-                    Button("貼りものを外す", role: .destructive) { layout.removeAll { $0["id"] as? String == selectedID }; self.selectedID = nil }
+                    slider("透明度", key: "opacity", range: 0...1)
+                    Button("いちばん手前へ") {
+                        guard let index=layout.firstIndex(where:{$0["id"] as? String==selectedID}),index != layout.count-1 else{return}
+                        rememberLayout();let item=layout.remove(at:index);layout.append(item)
+                    }
+                    Button("貼りものを外す", role: .destructive) { rememberLayout();layout.removeAll { $0["id"] as? String == selectedID }; self.selectedID = nil }
                 }.padding(14).background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 16))
             }
         }
     }
     private func itemName(_ value: [String: Any]) -> String { switch value["type"] as? String { case "photo": return "写真"; case "route": return "道"; case "sticker": return "ステッカー"; default: return "絵文字" } }
     private func slider(_ title: String, key: String, range: ClosedRange<Double>) -> some View {
-        HStack { Text(title).font(.caption).frame(width: 65, alignment: .leading); Slider(value: Binding(get: { layout.first(where: { $0["id"] as? String == selectedID })?[key] as? Double ?? range.lowerBound }, set: { value in if let index = layout.firstIndex(where: { $0["id"] as? String == selectedID }) { layout[index][key] = value } }), in: range) }
+        HStack { Text(title).font(.caption).frame(width: 65, alignment: .leading); Slider(value: Binding(get: { min(range.upperBound,max(range.lowerBound,nativeNumber(layout.first(where: { $0["id"] as? String == selectedID })?[key]) ?? (key=="opacity" ? 1 : range.lowerBound))) }, set: { value in if let index = layout.firstIndex(where: { $0["id"] as? String == selectedID }) { layout[index][key] = value } }), in: range,onEditingChanged:{ editing in if editing {rememberLayout()} }).accessibilityLabel(title) }
     }
     private func append(_ raw: [String: Any]) {
         guard layout.count < 20 else { failure = "1 ページには 20 点まで貼れます。"; return }
+        rememberLayout()
         let id = UUID().uuidString; var item = raw; item["id"] = id; item["x"] = 360.0; item["y"] = 500.0; item["rotation"] = -5.0; item["finish"] = "plain"; layout.append(item); selectedID = id
     }
     private func appendImage(_ bytes: Data, type: String, mime: String) {
@@ -335,24 +373,47 @@ private func ncStickers(_ library: [String: Any]) -> [NCSticker] {
     private func share() {
         let renderer = ImageRenderer(content: preview.frame(width: 720, height: 960)); renderer.scale = 2
         guard let data = renderer.uiImage?.pngData() else { failure = "ノートを画像にできませんでした。"; return }
-        do { try storeDraft(); model.shareData(data, name: "plainwalk-note-\(day).png") } catch { failure = error.localizedDescription }
+        do {
+            try storeDraft()
+            let folder=FileManager.default.temporaryDirectory.appendingPathComponent("plainwalk-note-"+UUID().uuidString,isDirectory:true)
+            try FileManager.default.createDirectory(at:folder,withIntermediateDirectories:true)
+            do {
+                let url=folder.appendingPathComponent("plainwalk-note-\(day).png")
+                try data.write(to:url,options:.atomic);cleanExport();exportFolder=folder;export=NCNoteExport(url:url)
+            } catch {try? FileManager.default.removeItem(at:folder);throw error}
+        } catch { failure = error.localizedDescription }
     }
     private func storeDraft() throws {
         try model.updateLibrary { library in var notes = library["notes"] as? [String: [String: Any]] ?? [:]; var value = notes[day] ?? [:]; value["day"] = day; value["text"] = ncText(text, utf16Limit: 5000); value["paper"] = paper; value["font"] = font; value["layout"] = layout; value["stickers"] = stickers; notes[day] = value; library["notes"] = notes }
+        initialDraft=draft
     }
     private func save() { do { try storeDraft(); dismiss() } catch { failure = error.localizedDescription } }
 }
-private struct NCNotebookPreview: View {
+/// Gesture frames reuse decoded images. PNG export uses this same static renderer,
+/// with no UIKit selection/guide overlay.
+@MainActor private final class NCNotebookImages {
+    private struct Entry {let source:String;let image:UIImage?}
+    private var entries:[String:Entry]=[:]
+    func retain(_ ids:Set<String>) {entries=entries.filter {ids.contains($0.key)}}
+    func image(id:String,source:String)->UIImage? {
+        if let previous=entries[id],previous.source==source {return previous.image}
+        let image=ncData(source).flatMap {UIImage(data:$0)}
+        entries[id]=Entry(source:source,image:image);return image
+    }
+}
+@MainActor private struct NCNotebookPreview: View {
+    @State private var images=NCNotebookImages()
     let day: String; let text: String; let paper: String; let font: String; let layout: [[String: Any]]; let stickers: String
     var body: some View { GeometryReader { geometry in let scale = geometry.size.width / 720
+        let _ = images.retain(Set(layout.enumerated().map {$0.element["id"] as? String ?? "index-\($0.offset)"}))
         ZStack(alignment: .topLeading) {
             (paper == "kraft" ? Color(red: 0.91, green: 0.84, blue: 0.72) : Color(red: 0.985, green: 0.98, blue: 0.96))
             Canvas { context, size in if paper == "grid" || paper == "lined" { var path = Path(); for y in stride(from: CGFloat(90), to: CGFloat(960), by: 32) { path.move(to: CGPoint(x: 0, y: y * scale)); path.addLine(to: CGPoint(x: size.width, y: y * scale)) }; if paper == "grid" { for x in stride(from: CGFloat(8), to: CGFloat(720), by: 32) { path.move(to: CGPoint(x: x * scale, y: 0)); path.addLine(to: CGPoint(x: x * scale, y: size.height)) } }; context.stroke(path, with: .color(.gray.opacity(0.2)), lineWidth: 0.5) } }
             Text("PLAINWALK   " + day).font(.system(size: 16 * scale)).foregroundStyle(.secondary).position(x: 190 * scale, y: 45 * scale)
             Text(text).font(.system(size: 24 * scale, design: font == "serif" ? .serif : font == "mono" ? .monospaced : .default)).foregroundStyle(Color(red: 0.16, green: 0.19, blue: 0.15)).frame(width: 640 * scale, alignment: .topLeading).padding(.leading, 40 * scale).padding(.top, 85 * scale)
-            ForEach(Array(layout.enumerated()), id: \.offset) { _, item in
-                let width = min(600, max(30, item["width"] as? Double ?? 150)), ratio = max(0.01, item["ratio"] as? Double ?? 1), x = item["x"] as? Double ?? 0, y = item["y"] as? Double ?? 0
-                Group { if item["type"] as? String == "emoji" { Text(item["text"] as? String ?? "✦").font(.system(size: width * scale)) } else if let bytes = ncData(item["src"]), let image = UIImage(data: bytes) { Image(uiImage: image).resizable().scaledToFit() } }.frame(width: width * scale, height: width / ratio * scale).rotationEffect(.degrees(item["rotation"] as? Double ?? 0)).position(x: x * scale, y: y * scale)
+            ForEach(Array(layout.enumerated()), id: \.offset) { index, item in
+                let width = min(1000, max(10, nativeNumber(item["width"]) ?? 150)), ratio = max(0.01, item["ratio"] as? Double ?? 1), x = item["x"] as? Double ?? 0, y = item["y"] as? Double ?? 0
+                Group { if item["type"] as? String == "emoji" { Text(item["text"] as? String ?? "✦").font(.system(size: width * scale)) } else if let source=item["src"] as? String,let image=images.image(id:item["id"] as? String ?? "index-\(index)",source:source) { Image(uiImage: image).resizable().scaledToFit() } }.frame(width: width * scale, height: width / ratio * scale).opacity(min(1,max(0,nativeNumber(item["opacity"]) ?? 1))).rotationEffect(.degrees(item["rotation"] as? Double ?? 0)).position(x: x * scale, y: y * scale)
             }
             if !stickers.isEmpty { Text(stickers).font(.system(size: 40 * scale)).padding(.leading, 40 * scale).padding(.top, min(910, 150 + Double(text.count / 20) * 36) * scale) }
         }

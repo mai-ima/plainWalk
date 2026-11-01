@@ -78,10 +78,15 @@ import Combine
 
 @MainActor struct NativeReplayView: View {
     @ObservedObject var model: NativeAppModel
+    @Environment(\.colorScheme) private var replayScheme
     let walkID: String?
     @State private var progress = 1.0
     @State private var playing = false
     @State private var points: [NativePoint] = []
+    @State private var exporting = false
+    @State private var exportProgress = 0.0
+    @State private var exportTask: Task<Void,Never>?
+    @State private var exportFailure: String?
     private let timer = Timer.publish(every: 0.05, on: .main, in: .common).autoconnect()
     var body: some View {
         NavigationStack {
@@ -93,7 +98,7 @@ import Combine
                         .padding(32).frame(maxHeight: .infinity).background(model.paper)
                         .accessibilityElement(children: .ignore).accessibilityLabel("さんぽの軌跡")
                         .accessibilityValue("\(Int(progress * 100))パーセント")
-                    Slider(value: $progress, in: 0...1) { editing in if editing { playing = false } }
+                    Slider(value: $progress, in: 0...1) { editing in if editing { playing = false } }.disabled(exporting)
                         .accessibilityLabel("再生位置")
                     Button {
                         if progress >= 1 { progress = 0 }
@@ -101,7 +106,16 @@ import Combine
                     } label: {
                         Label(playing ? "一時停止" : "再生", systemImage: playing ? "pause.fill" : "play.fill")
                             .font(.headline).padding(16).frame(maxWidth: .infinity)
-                    }.buttonStyle(.borderedProminent).tint(.primary)
+                    }.buttonStyle(.borderedProminent).tint(.primary).disabled(exporting)
+                    if exporting {
+                        VStack(spacing:10) {
+                            ProgressView(value:exportProgress) { Text("動画を書き出しています…") }
+                            Button("書き出しをキャンセル") { exportTask?.cancel() }
+                        }.padding(.bottom,8)
+                    } else {
+                        Button { exportMovie() } label: { Label("動画にする",systemImage:"square.and.arrow.up").frame(maxWidth:.infinity).padding(.vertical,8) }
+                            .buttonStyle(.bordered)
+                    }
                 }
             }
             .padding().navigationTitle("軌跡を再生").navigationBarTitleDisplayMode(.inline)
@@ -113,7 +127,36 @@ import Combine
             }
             .onAppear(perform: preparePoints)
             .onChange(of: model.libraryRevision) { _, _ in preparePoints() }
-            .onDisappear { playing = false }
+            .onDisappear { playing = false; exportTask?.cancel() }
+            .alert("動画の書き出し",isPresented:Binding(get:{exportFailure != nil},set:{if !$0{exportFailure=nil}})) { Button("閉じる",role:.cancel) {exportFailure=nil} } message: {Text(exportFailure ?? "")}
+        }
+    }
+    private func exportMovie() {
+        guard !exporting, !points.isEmpty else { return }
+        playing=false; exportFailure=nil; exportProgress=0; exporting=true
+        let selected=walkID.map { id in model.walks.filter {$0.id==id} } ?? model.walks
+        let traits=UITraitCollection(userInterfaceStyle:replayScheme == .dark ? .dark : .light)
+        var moviePoints=[NativeReplayMovie.Point]()
+        moviePoints.reserveCapacity(selected.reduce(0){$0+$1.points.count})
+        for walk in selected.sorted(by:{$0.start<$1.start}) {
+            for (index,raw) in walk.points.enumerated() {
+                var point=raw; if index==0 {point.isBreak=true}
+                moviePoints.append(NativeReplayMovie.Point(point))
+            }
+        }
+        let input=NativeReplayMovie.Input(points:moviePoints,
+            paper:NativeReplayMovie.RGBA(UIColor(model.paper).resolvedColor(with:traits)),
+            ink:NativeReplayMovie.RGBA(UIColor(model.ink).resolvedColor(with:traits)),
+            distanceMeters:selected.reduce(0){$0+$1.distance},distanceUnit:model.distanceUnit,
+            title:selected.count==1 ? (selected.first?.name ?? "さんぽ") : "あなたの白地図",dashed:model.config["line"] as? String == "dashed")
+        exportTask=Task {
+            do {
+                let url=try await NativeReplayMovie.export(input) { value in exportProgress=value }
+                guard !Task.isCancelled else {NativeReplayMovie.discard(url);throw CancellationError()}
+                // Ownership moves to NativeShareView before this sheet disappears.
+                exporting=false; exportTask=nil; model.present(.share(url))
+            } catch is CancellationError { exporting=false; exportTask=nil }
+            catch { exporting=false; exportTask=nil; exportFailure=error.localizedDescription }
         }
     }
     private func preparePoints() {

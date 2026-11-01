@@ -34,7 +34,7 @@ import UniformTypeIdentifiers
         }
         .tint(.primary).preferredColorScheme(model.colorScheme)
         .sheet(item:$model.sheet,onDismiss:model.sheetDismissed) {item in
-            sheetContent(item).preferredColorScheme(model.colorScheme).background { smokeProbe(item.id) }
+            sheetContent(item).preferredColorScheme(model.colorScheme).background { smokeProbe(item.id.hasPrefix("noteEditor:") ? "noteEditor" : item.id) }
                 .alert("お知らせ",isPresented:Binding(get:{model.errorMessage != nil && model.sheet != nil},set:{if !$0{model.errorMessage=nil}})){Button("閉じる",role:.cancel){model.errorMessage=nil}}message:{Text(model.errorMessage ?? "")}
         }
         .fullScreenCover(isPresented:$model.showingAnswer,onDismiss:model.sheetDismissed) {
@@ -45,13 +45,14 @@ import UniformTypeIdentifiers
         .fileImporter(isPresented:$model.importing,allowedContentTypes:[.json,.xml,UTType(filenameExtension:"gpx") ?? .data,UTType(filenameExtension:"tcx") ?? .data],allowsMultipleSelection:false,onCompletion:model.handleImport)
         .alert("お知らせ",isPresented:Binding(get:{model.errorMessage != nil && model.sheet==nil && !model.showingAnswer},set:{if !$0{model.errorMessage=nil}})){Button("閉じる",role:.cancel){model.errorMessage=nil}}message:{Text(model.errorMessage ?? "")}
         .onChange(of:scenePhase){_,phase in if phase == .active && !isSmoke {model.refreshSteps()} }
-        .task{if !isSmoke {model.refreshSteps()};runSmoke()}
+        .task{if !isSmoke {model.refreshSteps()};await runSmoke()}
     }
     @ViewBuilder private func sheetContent(_ item:NativeSheet)->some View {
         switch item {
         case .settings: NativeSettingsView(config:model.config,onChange:{next in model.saveConfig(next)},onAction:model.settingsAction,onClose:model.closeSheet)
         case .stepGoal: NativeStepGoalView(model:model)
         case .lut: NativeLUTView(model:model)
+        case .noteEditor(let day): NativeNotebookEditor(model:model,day:day)
         case .developer: NativeDeveloperView(recorder:model.recorder)
         case .layers: NativeLayerView(model:model)
         case .menu: NativeMenuView(model:model)
@@ -79,7 +80,7 @@ import UniformTypeIdentifiers
         try? Data("ready".utf8).write(to: folder.appendingPathComponent("screen-" + name + ".ready"), options: .atomic)
         #endif
     }
-    private func runSmoke() {
+    private func runSmoke() async {
         #if DEBUG
         guard !smokeStarted, isSmoke else { return }
         smokeStarted = true
@@ -90,7 +91,11 @@ import UniformTypeIdentifiers
             try Data("self-tests-started".utf8).write(to:folder.appendingPathComponent("native-smoke-stage.txt"),options:.atomic)
             var checks: [String: Any] = ["ready":true,"nativeUI":true,"screenOnly":true]
             if !args.contains("-PlainWalkScreenOnly") {
+            try Data("replay-movie-self-test".utf8).write(to:folder.appendingPathComponent("native-smoke-stage.txt"),options:.atomic)
+            let movie = try await NativeReplayMovie.selfTest(previewURL:folder.appendingPathComponent("native-export-smoke.mp4"))
             checks = [
+                "replayMovie": movie,
+                "noteTransform": try NativeNoteTransform.selfTest(),
                 "ready": true, "nativeUI": true,
                 "recordingPersistence": try LocationRecorder.persistenceSelfTest(),
                 "storage": try NativeStore.selfTest(),
@@ -121,6 +126,9 @@ import UniformTypeIdentifiers
                 case "developer": model.present(.developer)
                 case "lut": model.present(.lut)
                 case "spot": model.openSpotCapture()
+                case "noteEditor":
+                    let formatter=DateFormatter();formatter.locale=Locale(identifier:"en_US_POSIX");formatter.calendar=Calendar(identifier:.gregorian);formatter.dateFormat="yyyy-MM-dd"
+                    model.present(.noteEditor(formatter.string(from:Date())))
                 default: break
                 }
             }
