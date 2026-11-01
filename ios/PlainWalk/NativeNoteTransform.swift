@@ -29,6 +29,22 @@ enum NativeNoteTransform {
         var guideY: Double?
         var level: Bool
     }
+    /// Recognizer deltas are cumulative only until a recognizer ends. A pan can
+    /// outlive a pinch, so restarting that pinch must use the applied pose.
+    struct GestureSession {
+        private(set) var start: State
+        var translation = (x:0.0,y:0.0)
+        var magnification = 1.0
+        var rotation = 0.0
+        init(_ start:State) {self.start=NativeNoteTransform.normalized(start)}
+        func result(others:[State]=[],tolerance:Double=8,snap:Bool=true)->Result {
+            NativeNoteTransform.transformed(start,translation:translation,scale:magnification,rotation:rotation,others:others,tolerance:tolerance,snap:snap)
+        }
+        mutating func rebase(to applied:State) {
+            start=NativeNoteTransform.normalized(applied)
+            translation=(0,0);magnification=1;rotation=0
+        }
+    }
     static func normalized(_ input: State) -> State {
         func bounded(_ value: Double, _ range: ClosedRange<Double>, _ fallback: Double) -> Double {
             value.isFinite ? min(range.upperBound,max(range.lowerBound,value)) : fallback
@@ -97,6 +113,22 @@ enum NativeNoteTransform {
         // Gesture samples are cumulative from their begin snapshot, not compounded each frame.
         let final=transformed(start,translation:(60,80),scale:2,rotation:34,snap:false).state
         try check(final.x==160 && final.width==400 && final.rotation==34,"cumulative gesture baseline")
+        // One finger can keep panning while a second finger lifts, returns,
+        // and begins another pinch/rotation. Each recognizer restart is local.
+        var session=GestureSession(start)
+        session.translation=(20,10);session.magnification=2;session.rotation=15
+        let firstPinch=session.result(snap:false).state
+        session.rebase(to:firstPinch)
+        try check(session.result(snap:false).state==firstPinch,"pinch end cannot reset applied pose")
+        session.translation=(10,0)
+        let continuedPan=session.result(snap:false).state
+        session.rebase(to:continuedPan)
+        session.magnification=1.5;session.rotation=10
+        let secondPinch=session.result(snap:false).state
+        try check(secondPinch.width==600 && secondPinch.x==130 && secondPinch.y==210 && secondPinch.rotation==25,"second pinch and rotation build on continuing pan")
+        session.rebase(to:secondPinch)
+        session.rotation = -5
+        try check(session.result(snap:false).state.rotation==20 && session.result(snap:false).state.width==600,"restarted rotation retains earlier scale")
         let saved=applying(final,to:raw)
         try check(saved["opacity"] as? Double==0.4 && (saved["future"] as? [String:Bool])?["keep"]==true,"unknown fields retained")
         let center=transformed(State(x:355,y:475,width:100,rotation:2),translation:(0,0),scale:1,rotation:0)

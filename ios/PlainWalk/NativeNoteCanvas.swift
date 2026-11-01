@@ -47,8 +47,7 @@ private struct NativeNoteGestureSurface:UIViewRepresentable {
         weak var view:Surface?
         private var active=Set<ObjectIdentifier>()
         private var editingID:String?
-        private var start:NativeNoteTransform.State?
-        private var dx=0.0,dy=0.0,magnification=1.0,angle=0.0
+        private var session:NativeNoteTransform.GestureSession?
         private var guideX:Double?,guideY:Double?
         private var snapped=false
         private var remembered=false
@@ -80,44 +79,57 @@ private struct NativeNoteGestureSurface:UIViewRepresentable {
             parent.selectedID=hit(recognizer.location(in:view));view.setNeedsDisplay()
         }
         private func begin(_ recognizer:UIGestureRecognizer)->Bool {
-            if start==nil {
+            if session==nil {
                 guard let view,let id=hit(recognizer.location(in:view)),let raw=parent.layout.first(where:{$0["id"] as? String==id}) else{return false}
-                editingID=id;parent.selectedID=id;start = .init(raw)
-                dx=0;dy=0;magnification=1;angle=0;snapped=false;remembered=false
+                editingID=id;parent.selectedID=id;session = .init(.init(raw))
+                snapped=false;remembered=false
             }
             active.insert(ObjectIdentifier(recognizer));return true
         }
         private func apply() {
-            guard let start,let id=editingID,let index=parent.layout.firstIndex(where:{$0["id"] as? String==id}) else{return}
+            guard let session,let id=editingID,let index=parent.layout.firstIndex(where:{$0["id"] as? String==id}) else{return}
             let others=parent.layout.filter{$0["id"] as? String != id}.map(NativeNoteTransform.State.init)
-            let result=NativeNoteTransform.transformed(start,translation:(dx,dy),scale:magnification,rotation:angle,others:others,tolerance:6/scale)
+            let result=session.result(others:others,tolerance:6/scale)
             guideX=result.guideX;guideY=result.guideY
             let nowSnapped=guideX != nil || guideY != nil
             if nowSnapped && !snapped {UISelectionFeedbackGenerator().selectionChanged()};snapped=nowSnapped
-            if !remembered && result.state != NativeNoteTransform.normalized(start) {parent.onBegin();remembered=true}
+            if !remembered && result.state != session.start {parent.onBegin();remembered=true}
             parent.layout[index]=NativeNoteTransform.applying(result.state,to:parent.layout[index])
             view?.setNeedsDisplay()
         }
         private func end(_ recognizer:UIGestureRecognizer) {
             active.remove(ObjectIdentifier(recognizer))
-            if active.isEmpty {start=nil;editingID=nil;guideX=nil;guideY=nil;view?.setNeedsDisplay()}
+            if active.isEmpty {
+                session=nil;editingID=nil;guideX=nil;guideY=nil;view?.setNeedsDisplay()
+            } else if let id=editingID,let raw=parent.layout.first(where:{$0["id"] as? String==id}) {
+                // Keep one Undo snapshot for the continuous interaction, but
+                // rebase all remaining recognizers onto the actual snapped pose.
+                session?.rebase(to:.init(raw))
+                for gesture in view?.gestureRecognizers ?? [] {
+                    if let pan=gesture as? UIPanGestureRecognizer {pan.setTranslation(.zero,in:view)}
+                    if let pinch=gesture as? UIPinchGestureRecognizer {pinch.scale=1}
+                    if let rotation=gesture as? UIRotationGestureRecognizer {rotation.rotation=0}
+                }
+            } else {
+                active.removeAll();session=nil;editingID=nil;guideX=nil;guideY=nil;view?.setNeedsDisplay()
+            }
         }
         @objc func pan(_ recognizer:UIPanGestureRecognizer) {
             if recognizer.state == .began && !begin(recognizer) {return}
-            guard start != nil else{return}
-            let value=recognizer.translation(in:view);dx=Double(value.x)/scale;dy=Double(value.y)/scale;apply()
+            guard session != nil else{return}
+            let value=recognizer.translation(in:view);session?.translation=(Double(value.x)/scale,Double(value.y)/scale);apply()
             if [.ended,.cancelled,.failed].contains(recognizer.state){end(recognizer)}
         }
         @objc func pinch(_ recognizer:UIPinchGestureRecognizer) {
             if recognizer.state == .began && !begin(recognizer) {return}
-            guard start != nil else{return}
-            magnification=Double(recognizer.scale);apply()
+            guard session != nil else{return}
+            session?.magnification=Double(recognizer.scale);apply()
             if [.ended,.cancelled,.failed].contains(recognizer.state){end(recognizer)}
         }
         @objc func rotate(_ recognizer:UIRotationGestureRecognizer) {
             if recognizer.state == .began && !begin(recognizer) {return}
-            guard start != nil else{return}
-            angle=Double(recognizer.rotation)*180 / .pi;apply()
+            guard session != nil else{return}
+            session?.rotation=Double(recognizer.rotation)*180 / .pi;apply()
             if [.ended,.cancelled,.failed].contains(recognizer.state){end(recognizer)}
         }
         func draw() {
