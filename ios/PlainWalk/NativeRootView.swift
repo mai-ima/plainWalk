@@ -34,10 +34,11 @@ import UniformTypeIdentifiers
         appContent
         #endif
     }
+    private var usesFixedTabBar: Bool { UIDevice.current.userInterfaceIdiom == .phone }
     private var appContent:some View {
         TabView(selection:$model.tab) {
-            NavigationStack {NativeMyMapView(model:model).toolbar(.hidden,for:.navigationBar).background {smokeProbe("map")}}.tabItem{Label("マイマップ",systemImage:"sparkles")}.tag(NativeTab.map)
-            NavigationStack {NativeRecordsView(model:model).background { smokeProbe("records") }}.tabItem{Label("記録",systemImage:"chart.bar.fill")}.tag(NativeTab.records)
+            NavigationStack {NativeMyMapView(model:model).toolbar(.hidden,for:.navigationBar).background {smokeProbe("map")}}.toolbar(usesFixedTabBar ? .hidden : .automatic, for: .tabBar).tabItem{Label("マイマップ",systemImage:"sparkles")}.tag(NativeTab.map)
+            NavigationStack {NativeRecordsView(model:model).background { smokeProbe("records") }}.toolbar(usesFixedTabBar ? .hidden : .automatic, for: .tabBar).tabItem{Label("記録",systemImage:"chart.bar.fill")}.tag(NativeTab.records)
             NavigationStack(path: $model.profilePath) {
                 NativeProfileView(model:model).background { smokeProbe("profile") }.onAppear(perform:model.profileDidAppear)
                     .navigationDestination(for: NativeProfileDestination.self) { destination in
@@ -51,7 +52,16 @@ import UniformTypeIdentifiers
                                 .background { smokeProbe("settings") }
                         }
                     }
-            }.tabItem{Label("プロフィール",systemImage:"person")}.tag(NativeTab.profile)
+            }.toolbar(usesFixedTabBar ? .hidden : .automatic, for: .tabBar).tabItem{Label("プロフィール",systemImage:"person")}.tag(NativeTab.profile)
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if usesFixedTabBar {
+                NativeFixedTabBar(selected: model.tab) { tab in
+                    guard model.tab != tab else { return }
+                    model.tab = tab
+                    model.haptic()
+                }
+            }
         }
         .tint(.primary).preferredColorScheme(model.colorScheme)
         .sheet(item:$model.sheet,onDismiss:model.sheetDismissed) {item in

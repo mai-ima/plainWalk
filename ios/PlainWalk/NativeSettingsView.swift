@@ -96,7 +96,15 @@ import SwiftUI
                 }.padding(.horizontal, 16).padding(.top, 10).padding(.bottom, 30)
             }.task { await captureInitialScroll(captureProxy) }
             }
-            if !embedded { HStack { tab("マイマップ", icon: "sparkles", action: "tab:map"); tab("記録", icon: "chart.bar.fill", action: "tab:records"); tab("プロフィール", icon: "person", action: "tab:profile") }.padding(.top, 10).background(Color(uiColor: .systemBackground)).overlay(alignment: .top) { Divider() } }
+            if !embedded {
+                NativeFixedTabBar(selected: .profile) { tab in
+                    switch tab {
+                    case .map: onAction("tab:map")
+                    case .records: onAction("tab:records")
+                    case .profile: onAction("tab:profile")
+                    }
+                }
+            }
         }.background(page).onAppear {
             #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("-PlainWalkNativeSettingsSmokeTest") {
@@ -142,7 +150,4 @@ import SwiftUI
         try? Data(value.utf8).write(to:folder.appendingPathComponent(name),options:.atomic)
     }
     #endif
-    private func tab(_ title: String, icon: String, action: String) -> some View {
-        Button { onAction(action) } label: { VStack(spacing: 4) { Image(systemName: icon).font(.system(size: 21)); Text(title).font(.system(size: 10)) }.frame(maxWidth: .infinity).foregroundStyle(action == "tab:profile" ? Color.primary : Color.secondary) }.buttonStyle(.plain).accessibilityLabel(title)
-    }
 }
