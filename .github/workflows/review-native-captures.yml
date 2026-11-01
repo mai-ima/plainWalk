@@ -1,0 +1,44 @@
+name: Review native screen captures
+on:
+  workflow_run:
+    workflows: [Verify web and iOS]
+    types: [completed]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  review:
+    if: >-
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      github.event.workflow_run.conclusion != 'cancelled'
+    runs-on: macos-26
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: ios-all-screens-*
+          path: .build/review
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+      - name: Validate captured image inventory and current text labels
+        run: >-
+          python3 scripts/prepare-native-ocr-review.py .build/review
+          --capture-commit '${{ github.event.workflow_run.head_sha }}'
+      - name: Compile image text verifier once
+        run: swiftc scripts/check-native-captures.swift -o .build/check-native-captures
+      - name: Verify all captured screen text
+        run: |
+          for PW_MANIFEST in .build/review/ios-all-screens-*/manifest.json; do
+            .build/check-native-captures "$PW_MANIFEST"
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-reviewed-screens-${{ github.event.workflow_run.id }}
+          path: .build/review
+          if-no-files-found: ignore
+          overwrite: true

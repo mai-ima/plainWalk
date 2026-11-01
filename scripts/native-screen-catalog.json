@@ -58,7 +58,7 @@
       "category": "記録・プロフィール",
       "group": "records",
       "state": "合成データ",
-      "expectedText": "設定",
+      "expectedText": "バックアップを書き出す",
       "screen": "profile",
       "marker": "profile",
       "scroll": "profileBottom"
