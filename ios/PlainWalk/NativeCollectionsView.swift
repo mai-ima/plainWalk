@@ -301,7 +301,7 @@ private struct NCNoteExport: Identifiable { let id=UUID(); let url:URL }
                     }.font(.subheadline)
                     insertMenu
                     itemControls.id("native-capture-note-controls")
-                    Button { share() } label: { Label("画像にして共有", systemImage: "square.and.arrow.up").frame(maxWidth: .infinity).padding(12) }.buttonStyle(.bordered)
+                    Button { share() } label: { Label("画像にして共有", systemImage: "square.and.arrow.up").frame(maxWidth: .infinity).padding(12) }.buttonStyle(.bordered).id("native-capture-note-bottom")
                 }.padding(20)
             }.task {
                 #if DEBUG
@@ -309,7 +309,7 @@ private struct NCNoteExport: Identifiable { let id=UUID(); let url:URL }
                 do {
                     try await Task.sleep(nanoseconds: 400_000_000)
                     guard !layout.isEmpty, selectedID != nil else { return }
-                    captureProxy.scrollTo("native-capture-note-controls", anchor: .bottom)
+                    captureProxy.scrollTo("native-capture-note-bottom", anchor: .bottom)
                     try await Task.sleep(nanoseconds: 500_000_000)
                     try Task.checkCancellation()
                     ncCaptureSignal("capture-scroll.ready", value: "noteControls")

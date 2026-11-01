@@ -32,9 +32,11 @@ jobs:
         run: swiftc scripts/check-native-captures.swift -o .build/check-native-captures
       - name: Verify all captured screen text
         run: |
+          PW_OCR_FAILED=0
           for PW_MANIFEST in .build/review/ios-all-screens-*/manifest.json; do
-            .build/check-native-captures "$PW_MANIFEST"
+            if ! .build/check-native-captures "$PW_MANIFEST"; then PW_OCR_FAILED=1; fi
           done
+          exit "$PW_OCR_FAILED"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
