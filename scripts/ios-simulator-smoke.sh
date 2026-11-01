@@ -29,12 +29,12 @@ for PW_ATTEMPT in $(seq 1 60); do
         xcrun simctl io "$PW_SIM_DEVICE" screenshot .build/screenshots/ios-native-settings.png
         for PW_SCREEN in records profile layers answer spots doodles menu stepGoal lut spot noteEditor developer; do
           xcrun simctl terminate "$PW_SIM_DEVICE" org.example.plainwalkweb
-          rm -f "$PW_READY_FILE"
-          xcrun simctl launch "$PW_SIM_DEVICE" org.example.plainwalkweb -PlainWalkSmokeTest -PlainWalkScreenOnly "-PlainWalkScreen=$PW_SCREEN"
           PW_SCREEN_FILE="$PW_APP_CONTAINER/Library/Application Support/PlainWalk/screen-$PW_SCREEN.ready"
           if [[ "$PW_SCREEN" == "spots" || "$PW_SCREEN" == "doodles" ]]; then
             PW_SCREEN_FILE="$PW_APP_CONTAINER/Library/Application Support/PlainWalk/screen-collection:$PW_SCREEN.ready"
           fi
+          rm -f "$PW_READY_FILE" "$PW_SCREEN_FILE"
+          xcrun simctl launch "$PW_SIM_DEVICE" org.example.plainwalkweb -PlainWalkSmokeTest -PlainWalkScreenOnly "-PlainWalkScreen=$PW_SCREEN"
           for PW_SCREEN_ATTEMPT in $(seq 1 20); do
             if [[ -f "$PW_SCREEN_FILE" ]]; then break; fi
             sleep 1

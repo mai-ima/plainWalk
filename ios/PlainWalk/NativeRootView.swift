@@ -151,23 +151,117 @@ struct NativeShareView:UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController:UIActivityViewController,context:Context){}
 }
 
-/// The DEBUG smoke route waits for UIKit presentation completion, rather than
-/// SwiftUI onAppear, which can run before the sheet is visible on a slow Simulator.
-private struct NativeSmokeAppearanceProbe: UIViewControllerRepresentable {
+/// Observe an attached, drawn UIKit view after presentation settles. SwiftUI can
+/// insert a background representable after its host already received didAppear.
+@MainActor private struct NativeSmokeAppearanceProbe: UIViewControllerRepresentable {
     let onReady: () -> Void
     func makeUIViewController(context: Context) -> Controller { Controller(onReady: onReady) }
-    func updateUIViewController(_ controller: Controller, context: Context) { controller.onReady = onReady }
+    func updateUIViewController(_ controller: Controller, context: Context) {
+        controller.onReady=onReady
+        controller.observeVisibility()
+    }
     final class Controller: UIViewController {
         var onReady: () -> Void
-        init(onReady: @escaping () -> Void) { self.onReady = onReady; super.init(nibName: nil, bundle: nil) }
+        private var sent=false
+        private var pending: Task<Void,Never>?
+        private var expected: Visibility?
+        private var waitingTransitions: [AnyObject] = []
+        private var completedTransitions: [AnyObject] = []
+        private struct Visibility: Equatable {
+            let window: ObjectIdentifier
+            let rect: CGRect
+            let bounds: CGRect
+            let ancestors: [ObjectIdentifier]
+        }
+        init(onReady: @escaping () -> Void) { self.onReady=onReady;super.init(nibName:nil,bundle:nil) }
         required init?(coder: NSCoder) { fatalError("init(coder:) is unavailable") }
-        override func loadView() { let content = UIView(); content.backgroundColor = .clear; view = content }
-        override func viewDidAppear(_ animated: Bool) {
-            super.viewDidAppear(animated)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-                guard let self, self.viewIfLoaded?.window != nil, !self.isBeingDismissed else { return }
+        override func loadView() {
+            let surface=Surface();surface.owner=self;surface.backgroundColor = .clear;surface.isOpaque=false
+            view=surface
+        }
+        override func viewDidAppear(_ animated: Bool) { super.viewDidAppear(animated);observeVisibility() }
+        override func viewDidLayoutSubviews() { super.viewDidLayoutSubviews();observeVisibility() }
+        override func viewWillDisappear(_ animated: Bool) { super.viewWillDisappear(animated);invalidate() }
+        private func invalidate() { pending?.cancel();pending=nil;expected=nil }
+        func observeVisibility() {
+            guard !sent else {return}
+            guard let visible=visibility() else {invalidate();return}
+            if expected==visible,pending != nil {return}
+            invalidate();expected=visible
+            // One bounded settle/recheck, triggered only by UIKit lifecycle/draw events.
+            pending=Task { @MainActor [weak self] in
+                do {try await Task.sleep(nanoseconds:500_000_000)} catch {return}
+                guard !Task.isCancelled,let self else {return}
+                self.pending=nil
+                guard self.expected==visible,self.visibility()==visible else {self.invalidate();return}
+                self.sent=true;self.expected=nil;self.waitingTransitions=[];self.completedTransitions=[]
                 self.onReady()
             }
+        }
+        private func contains(_ ancestor:UIViewController,_ child:UIViewController)->Bool {
+            var node:UIViewController?=child
+            while let current=node {if current===ancestor {return true};node=current.parent}
+            return false
+        }
+        private func waitForTransition(_ coordinator:any UIViewControllerTransitionCoordinator) -> Bool {
+            let object=coordinator as AnyObject
+            if completedTransitions.contains(where:{$0===object}) {return false}
+            if !waitingTransitions.contains(where:{$0===object}) {
+                waitingTransitions.append(object)
+                let registered=coordinator.animate(alongsideTransition:{ _ in }) { [weak self] _ in
+                    Task { @MainActor [weak self] in
+                        guard let self else {return}
+                        self.waitingTransitions.removeAll {$0===object}
+                        self.completedTransitions.append(object)
+                        self.observeVisibility()
+                    }
+                }
+                if !registered {
+                    // Registration failure proves nothing about completion.
+                    // Release this observation and wait for a new lifecycle/draw
+                    // event; never promote an unobserved transition to ready.
+                    waitingTransitions.removeAll {$0===object}
+                    return true
+                }
+            }
+            return true
+        }
+        private func visibility() -> Visibility? {
+            guard let surface=viewIfLoaded as? Surface,surface.hasDrawn,let window=surface.window,
+                  !window.isHidden,window.alpha>0.01,!isBeingDismissed,
+                  surface.bounds.width>0,surface.bounds.height>0 else {return nil}
+            let rect=surface.convert(surface.bounds,to:window)
+            guard rect.origin.x.isFinite,rect.origin.y.isFinite,rect.width.isFinite,rect.height.isFinite,
+                  window.bounds.contains(rect) else {return nil}
+            var views:[ObjectIdentifier]=[],ancestor:UIView?=surface
+            while let current=ancestor {
+                guard !current.isHidden,current.alpha>0.01 else {return nil}
+                if current.clipsToBounds,!current.convert(current.bounds,to:window).contains(rect) {return nil}
+                views.append(ObjectIdentifier(current));ancestor=current.superview
+            }
+            var controller:UIViewController?=self
+            while let current=controller {
+                guard !current.isBeingDismissed,!current.isMovingFromParent,!current.isMovingToParent else {return nil}
+                if let nav=current as? UINavigationController,let visible=nav.visibleViewController,!contains(visible,self) {return nil}
+                if let tabs=current as? UITabBarController,let selected=tabs.selectedViewController,!contains(selected,self) {return nil}
+                if let cover=current.presentedViewController,cover.viewIfLoaded?.window != nil,
+                   !cover.isBeingDismissed,!contains(cover,self) {return nil}
+                if let transition=current.transitionCoordinator,waitForTransition(transition) {return nil}
+                if current.isBeingPresented {return nil}
+                controller=current.parent
+            }
+            return Visibility(window:ObjectIdentifier(window),rect:rect,bounds:surface.bounds,ancestors:views)
+        }
+        final class Surface:UIView {
+            weak var owner:Controller?
+            private(set) var hasDrawn=false
+            override func didMoveToWindow() {
+                super.didMoveToWindow();hasDrawn=false
+                owner?.observeVisibility()
+                if window != nil {setNeedsDisplay()}
+            }
+            override func layoutSubviews() {super.layoutSubviews();setNeedsDisplay();owner?.observeVisibility()}
+            override func draw(_ rect:CGRect) {super.draw(rect);hasDrawn=true;owner?.observeVisibility()}
         }
     }
 }
