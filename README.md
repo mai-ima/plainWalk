@@ -23,6 +23,7 @@ PlainWalk の公開情報・提供された画面・APK の静的な構造を参
 - [iOS のノート操作と軌跡動画](docs/native-creation.md)
 - [APK の静的解析と Android 画像](docs/apk-static-analysis.md)
 - [APK の記録・保存・動作分類の仕組みと差分](docs/apk-mechanism-notes.md)
+- [公式 Web コード・APK と実装の対応](docs/reference-mechanisms.md)
 - [実装範囲と残差](docs/reproduction-audit.md)
 - [実機検証と開発者機能](docs/device-testing.md)
 - [Xcode の起動・署名](ios/README.md)
@@ -84,7 +85,9 @@ npm run test:browser
 
 2026-11-01 のローカル検証では、単体テスト 34 件、Chromium の 8 スイート、構文チェック、Web ビルドが通過しました。新しい保存整合性テストは、GPX / TCX、保存失敗、再読み込み、取り込みの再試行、ネイティブ拡張データの保持を確認します。ネイティブ接続のブラウザ試験はモックです。Linux WebKit の以前の操作試験も、iPhone 実機検証とは区別します。
 
-前回の [GitHub Actions 41271677842](https://github.com/mai-ima/plainWalk/actions/runs/41271677842) で Web、Xcode 本体・Live Activity 拡張、Swift Playgrounds パッケージが成功しました。iPhone Simulator で従来の保存・復旧・軌跡のテストに加え、ImageIO の撮影日時・GPS 読み取り、JPEG 往復、小数秒、CoreImage 加工後の撮影情報、曖昧な軌跡の拒否が通過しました。写真取り込みを含む 13 画面を表示完了後に撮影し、診断画像のタイトル検出も通過しています。初回は最後の診断画面が白画面で時間超過となり、同じコードの iOS ジョブだけを再試行して成功しました。初回失敗の原因は確定していません。
+[GitHub Actions 41297028999](https://github.com/mai-ima/plainWalk/actions/runs/41297028999) で Web、Xcode 本体・Live Activity 拡張、Simulator、Swift Playgrounds の全 4 ジョブが成功しました。Web は単体 34 件と Chromium 8 スイートが通過。Simulator では保存・復旧・軌跡・写真の従来テストに加え、ノートの配置計算とジェスチャー再開時の基準更新、実 MP4 の生成・復号・キャンセルが通過しました。ノート編集を含む 14 画面を撮影し、診断画像のタイトル検出も通過しています。MP4 の試験出力は合成データの 360 × 640、8 fps、1 秒で、実際の複数指操作や既定の長時間出力の実機検証とは区別します。
+
+前段の CI 41293979673 は写真追加画面の完了待ちで初回失敗し、同じバイナリの再試行で成功しました。期限後の画像では画面が表示されていましたが、期限内の描画までは確定できません。中間の CI 41295495000 では記録、41296423376 では設定の完了待ちが失敗しました。後者のログは、追加した UIKit の移動フラグの条件で停止したことを示しました。その条件を取り除きました。SwiftUI の表示構造と UIKit の管理上の親子関係が一致すると仮定する条件を改め、選択中の画面・実描画・配置・遷移の照合と待機理由の記録、各起動前の古い完了ファイルの削除を含めて検証しています。
 
 実機の起動・カメラ・背景 GPS・HealthKit・電池消費・配布署名は未検証で、署名済み IPA はありません。Web は JPEG の撮影情報を対象とし、取得できない情報を推測して配置しません。OS の標準タブ・細かな寸法、未実装機能を含め、本家の完全一致ではありません。
 

@@ -17,6 +17,8 @@ ios/
     NativeRecordsView / NativeProfileView / NativeCollectionsView
     NativeAppModel / NativeModels / NativeStore
     NativeTrackMath / NativeTrackIO / NativeDoodleProgress
+    NativeTrackEditor / NativePhotoEffects / NativePhotoMetadata
+    NativeNoteCanvas / NativeNoteTransform / NativeReplayMovie
     NativeSettingsView / NativeDeveloperView
   Shared/              Live Activity の共有データ型
   PlainWalkLive/       Live Activity / Dynamic Island 拡張
@@ -49,7 +51,7 @@ docs/                  要件、画像分析、調査根拠、実装と残差
 
 生成物を正本と重複して編集・保存しません。`dist/` の `Web/data/japan-municipalities.geojson` 相当のリソースは、SwiftUI の実境界バッジでも必要です。Xcode のビルド前にも `npm run build` を実行してください。
 
-Playgrounds の生成では HealthKit / Live Activity を利用可能に見せず、背景 GPS を無効化します。通常の Xcode 版には背景 GPS と Live Activity のコードを残します。SwiftUI 版に未実装の LUT・手動軌跡修正・軌跡の動画出力は、ブラウザ版を同梱しただけでネイティブに実装済みとはしません。ノートの配置調整・PNG 出力も Swift 側のコードで行います。
+Playgrounds の生成では HealthKit / Live Activity を利用可能に見せず、背景 GPS を無効化します。通常の Xcode 版には背景 GPS と Live Activity のコードを残します。LUT・手動軌跡修正・MP4 出力・ノートの直接操作と PNG 出力は Swift 側のコードで実装します。同梱するブラウザ版とは別の UI です。機能ごとの残差と実機検証の範囲は [対応表](reproduction-audit.md)を参照してください。
 
 ## 保存の互換性
 
@@ -73,4 +75,4 @@ npm run test:browser
 
 `PW_ENGINE=webkit` は対応するテストで WebKit を選びます。必要に応じて `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` / `PLAYWRIGHT_WEBKIT_EXECUTABLE_PATH` を指定できます。ブラウザテストは `dist/` を操作するので、編集後に再ビルドします。
 
-Web の計算・構文・操作、iOS 本体と拡張のビルド・起動、Playgrounds のコンパイルを CI で分けて検証します。今回の SwiftUI 化の最新の macOS 結果は [README](../README.md)を参照してください。以前の CI 成功を現在の変更の検証結果として扱いません。Vercel は接続せず、ユーザーが GitHub から手動で Import する設定を維持します。
+Web の計算・構文・操作、iOS 本体と拡張のビルド、ビルド済みアプリの Simulator 起動、Playgrounds のコンパイルを CI で分けて検証します。Simulator だけの再試行ではアプリの再コンパイルを省けます。今回の SwiftUI 化の最新の macOS 結果は [README](../README.md)を参照してください。以前の CI 成功を現在の変更の検証結果として扱いません。Vercel は接続せず、ユーザーが GitHub から手動で Import する設定を維持します。
