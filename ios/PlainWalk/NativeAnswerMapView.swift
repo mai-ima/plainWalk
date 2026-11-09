@@ -248,6 +248,7 @@ import MapKit
             controller.view.subviews.forEach { $0.removeFromSuperview() }
             let map = MKMapView(frame: controller.view.bounds)
             map.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            map.register(MKMarkerAnnotationView.self, forAnnotationViewWithReuseIdentifier: "destination")
             controller.view.addSubview(map)
             let surface = NativeAnswerMapSurface(walks: walks, activePoints: [], libraryRevision: 0,
                 flags: [], current: current, satellite: false, pitched: pitched,

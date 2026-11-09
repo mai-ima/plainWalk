@@ -102,6 +102,19 @@ for scene in scenes:
         entry["error"] = str(error)
         entry["trace"] = value(trace)
         entry["stage"] = value(signals / "native-smoke-stage.txt")
+        # Capture presentation/crash evidence before a slow screenshot command
+        # can move the failing launch outside the system log's time window.
+        log_name = "failed-" + key + ".log"
+        try:
+            result = subprocess.run(
+                ["xcrun", "simctl", "spawn", udid, "log", "show", "--last", "2m", "--style", "compact", "--predicate", 'process == "PlainWalk"'],
+                capture_output=True, text=True, timeout=30,
+            )
+            (out / log_name).write_text(result.stdout + "\n" + result.stderr)
+            entry["appLogPath"] = log_name
+            entry["appLogReturnCode"] = result.returncode
+        except (OSError, subprocess.SubprocessError) as log_error:
+            entry["appLogError"] = str(log_error)
         command("xcrun", "simctl", "io", udid, "screenshot", str(out / ("failed-" + key + ".png")), required=False)
         print(json.dumps({"key": key, "error": entry["error"], "trace": entry["trace"]}, ensure_ascii=False), flush=True)
         failed.append(key)
