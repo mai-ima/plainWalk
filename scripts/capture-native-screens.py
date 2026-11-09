@@ -92,7 +92,9 @@ for scene in scenes:
         if scene.get("dialog"):
             wait_until(lambda: value(signals / "capture-dialog.ready") == scene["dialog"], 30, "Dialog did not appear")
         else:
-            wait_until(marker.is_file, 30, "Screen did not finish appearing")
+            # A cold Simulator Metal pipeline took 49s in an observed failure.
+            # Keep requiring the actual drawn surface; allow that first draw.
+            wait_until(marker.is_file, 60, "Screen did not finish appearing")
         if scene.get("scroll"):
             wait_until(lambda: value(signals / "capture-scroll.ready") == scene["scroll"], 30, "Scroll did not complete")
         time.sleep(1.0)

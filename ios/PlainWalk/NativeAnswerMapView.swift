@@ -287,7 +287,7 @@ import MapKit
             throw NativeError.message("答え合わせマップのカメラ確定を確認できません: \(name), center=\(camera.centerCoordinate.latitude),\(camera.centerCoordinate.longitude), distance=\(camera.centerCoordinateDistance), pitch=\(camera.pitch)")
         }
         func near(_ map: MKMapView, _ coordinate: CLLocationCoordinate2D, meters: Double = 250) -> Bool {
-            MKMapPoint(map.camera.centerCoordinate).distance(to: MKMapPoint(coordinate)) < meters
+            nativeAnswerMapDistance(map.camera.centerCoordinate, coordinate) < meters
         }
         func distanceRatio(_ map: MKMapView, _ distance: Double) -> Double { map.camera.centerCoordinateDistance / distance }
         func contains(_ map: MKMapView, _ point: NativePoint) -> Bool {
@@ -413,17 +413,32 @@ import MapKit
         let crossingMap = configuredMap(walks: [try walk(crossing)])
         try await settle(crossingMap, "日付変更線の軌跡")
         try require(abs(crossingMap.map.camera.centerCoordinate.longitude) > 179, "日付変更線の近くに中心を保持")
-        try require(crossingMap.map.region.span.longitudeDelta < 1 && crossing.allSatisfy { contains(crossingMap.map, $0) }, "日付変更線を跨ぐ軌跡を局所的に表示")
+        let crossingRect = crossingMap.map.visibleMapRect
+        let pixels = crossing.map { crossingMap.map.convert(CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon), toPointTo: crossingMap.map) }
+        let projected = crossing.map { point -> String in
+            let mapPoint = MKMapPoint(CLLocationCoordinate2D(latitude: point.lat, longitude: point.lon))
+            let x = NativeMapProjection.nearest(mapPoint.x, to: crossingRect.midX, period: MKMapRect.world.width)
+            return "\(x),\(mapPoint.y):\(crossingRect.contains(MKMapPoint(x: x, y: mapPoint.y)))"
+        }.joined(separator: ";")
+        let diagnostic = "span=\(crossingMap.map.region.span.latitudeDelta),\(crossingMap.map.region.span.longitudeDelta), rect=\(crossingRect.origin.x),\(crossingRect.origin.y),\(crossingRect.width),\(crossingRect.height), points=\(projected), pixels=\(pixels), bounds=\(crossingMap.map.bounds)"
+        try require(crossingMap.map.region.span.longitudeDelta < 1 && crossing.allSatisfy { contains(crossingMap.map, $0) }, "日付変更線を跨ぐ軌跡を局所的に表示: " + diagnostic)
+        try require((20...30).contains(nativeAnswerMapDistance(CLLocationCoordinate2D(latitude: crossing[0].lat, longitude: crossing[0].lon), CLLocationCoordinate2D(latitude: crossing[1].lat, longitude: crossing[1].lon))), "日付変更線の隣接点を約25mとして比較")
         let lines = crossingMap.map.overlays.compactMap { $0 as? MKPolyline }
         try require(lines.count == 1, "日付変更線を跨ぐ連続区間を保持")
         let expectedWidth = MKMapRect.world.width * 0.0002 / 360
         try require(abs(lines[0].boundingMapRect.width - expectedWidth) < 1, "22mの軌跡overlayを世界幅にしない")
-        let pixels = crossing.map { crossingMap.map.convert(CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon), toPointTo: crossingMap.map) }
-        try require(pixels.allSatisfy { $0.x.isFinite && $0.x >= 0 && $0.x <= crossingMap.map.bounds.width }
-            && abs(pixels[0].x - pixels[1].x) < crossingMap.map.bounds.width, "日付変更線の軌跡overlayと画面座標を同じworldコピーに表示")
+        try require(pixels.allSatisfy { $0.x.isFinite && $0.y.isFinite && $0.x >= 0 && $0.x <= crossingMap.map.bounds.width && $0.y >= 0 && $0.y <= crossingMap.map.bounds.height }
+            && abs(pixels[0].x - pixels[1].x) < crossingMap.map.bounds.width, "日付変更線の軌跡overlayと画面座標を同じworldコピーに表示: " + diagnostic)
         return true
     }
 #endif
+}
+
+private func nativeAnswerMapDistance(_ a: CLLocationCoordinate2D, _ b: CLLocationCoordinate2D) -> CLLocationDistance {
+    let first = MKMapPoint(a)
+    var second = MKMapPoint(b)
+    second.x = NativeMapProjection.nearest(second.x, to: first.x, period: MKMapRect.world.width)
+    return first.distance(to: second)
 }
 
 private struct NativeAnswerPlace: Equatable { var name: String; var lat: Double; var lon: Double; var coordinate: CLLocationCoordinate2D { .init(latitude: lat, longitude: lon) } }
@@ -510,9 +525,23 @@ private struct NativeAnswerResult: Identifiable { var id: String; var place: Nat
                 if let current = next.current { locate(current, map: map, animated: false) }
                 else if !savedLines.isEmpty, let rect = Self.fitRect(next.walks) {
                     let center = MKMapPoint(x: rect.midX, y: rect.midY).coordinate
-                    prepareViewport(center: .init(latitude: center.latitude, longitude: NativeMapProjection.delta(center.longitude, period: 360)),
-                        radius: max(1000, hypot(rect.width, rect.height) * MKMetersPerMapPointAtLatitude(center.latitude) * 2))
-                    map.setVisibleMapRect(rect, edgePadding: .init(top: 60, left: 35, bottom: 70, right: 70), animated: false)
+                    let normalizedCenter = CLLocationCoordinate2D(latitude: center.latitude, longitude: NativeMapProjection.delta(center.longitude, period: 360))
+                    if rect.minX < 0 || rect.maxX > MKMapRect.world.width {
+                        // A short minimum arc can cross MapKit's world boundary.
+                        // Fit geographic deltas instead of an out-of-world rect.
+                        let north = MKMapPoint(x: rect.midX, y: rect.minY).coordinate.latitude
+                        let south = MKMapPoint(x: rect.midX, y: rect.maxY).coordinate.latitude
+                        let widthPadding = max(1, Double(map.bounds.width) / max(1, Double(map.bounds.width) - 105))
+                        let heightPadding = max(1, Double(map.bounds.height) / max(1, Double(map.bounds.height) - 130))
+                        setRegion(.init(center: normalizedCenter,
+                            span: .init(latitudeDelta: max(0.002, abs(north - south) * heightPadding),
+                                        longitudeDelta: max(0.002, rect.width / MKMapRect.world.width * 360 * widthPadding))),
+                            map: map, animated: false)
+                    } else {
+                        prepareViewport(center: normalizedCenter,
+                            radius: max(1000, hypot(rect.width, rect.height) * MKMetersPerMapPointAtLatitude(center.latitude) * 2))
+                        map.setVisibleMapRect(rect, edgePadding: .init(top: 60, left: 35, bottom: 70, right: 70), animated: false)
+                    }
                 }
                 else {
                     // Apply the empty-library viewport after MapKit's map
@@ -589,7 +618,7 @@ private struct NativeAnswerResult: Identifiable { var id: String; var place: Nat
                 guard CLLocationCoordinate2DIsValid(camera.centerCoordinate),
                       camera.centerCoordinateDistance.isFinite, camera.centerCoordinateDistance > 0 else { return }
                 if let center = self.viewportCenter {
-                    guard MKMapPoint(camera.centerCoordinate).distance(to: MKMapPoint(center)) <= self.viewportRadius else { return }
+                    guard nativeAnswerMapDistance(camera.centerCoordinate, center) <= self.viewportRadius else { return }
                 }
                 let pitch: CGFloat = self.pendingPitch ? (self.parent.pitched ? 55 : 0) : camera.pitch
                 let needsChange = (self.pendingPitch && abs(camera.pitch - pitch) > 0.1) || self.pendingZoom != 1

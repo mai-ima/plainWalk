@@ -23,9 +23,9 @@ import UniformTypeIdentifiers
         #if DEBUG
         appContent.sheet(item:$captureRoute) { route in
             captureScreen(route.id).preferredColorScheme(model.colorScheme)
-                .background {
-                    if captureContentReady {
-                        NativeSmokeAppearanceProbe(onReady:{markScreen("capture:"+route.id)},onWaiting:{markScreenTrace("capture:"+route.id,reason:$0)})
+                .overlay {
+                    if isSmoke && captureContentReady {
+                        NativeSmokeAppearanceProbe(routeID:"capture:"+route.id,onReady:{markScreen("capture:"+route.id)},onWaiting:{markScreenTrace("capture:"+route.id,reason:$0)})
                             .frame(width:1,height:1).allowsHitTesting(false)
                     }
                 }
@@ -38,19 +38,19 @@ import UniformTypeIdentifiers
     private var appContent:some View {
         VStack(spacing: 0) {
             TabView(selection:$model.tab) {
-                NavigationStack {NativeMyMapView(model:model).toolbar(.hidden,for:.navigationBar).background {smokeProbe("map")}}.toolbar(usesFixedTabBar ? .hidden : .automatic, for: .tabBar).tabItem{Label("マイマップ",systemImage:"sparkles")}.tag(NativeTab.map)
-                NavigationStack {NativeRecordsView(model:model).background { smokeProbe("records") }}.toolbar(usesFixedTabBar ? .hidden : .automatic, for: .tabBar).tabItem{Label("記録",systemImage:"chart.bar.fill")}.tag(NativeTab.records)
+                NavigationStack {NativeMyMapView(model:model).toolbar(.hidden,for:.navigationBar).overlay {smokeProbe("map")}}.toolbar(usesFixedTabBar ? .hidden : .automatic, for: .tabBar).tabItem{Label("マイマップ",systemImage:"sparkles")}.tag(NativeTab.map)
+                NavigationStack {NativeRecordsView(model:model).overlay { smokeProbe("records") }}.toolbar(usesFixedTabBar ? .hidden : .automatic, for: .tabBar).tabItem{Label("記録",systemImage:"chart.bar.fill")}.tag(NativeTab.records)
                 NavigationStack(path: $model.profilePath) {
-                    NativeProfileView(model:model).background { smokeProbe("profile") }.onAppear(perform:model.profileDidAppear)
+                    NativeProfileView(model:model).overlay { smokeProbe("profile") }.onAppear(perform:model.profileDidAppear)
                         .navigationDestination(for: NativeProfileDestination.self) { destination in
                             switch destination {
                             case .collection(let item):
                                 NativeCollectionsView(model:model,collection:item)
-                                    .background { smokeProbe("collection:"+item.rawValue) }
+                                    .overlay { smokeProbe("collection:"+item.rawValue) }
                             case .settings:
                                 NativeSettingsView(config:model.config,onChange:model.saveConfig,onAction:model.settingsAction,onClose:model.closeSettings,embedded:true)
                                     .toolbar(.hidden,for:.navigationBar)
-                                    .background { smokeProbe("settings") }
+                                    .overlay { smokeProbe("settings") }
                             }
                         }
                 }.toolbar(usesFixedTabBar ? .hidden : .automatic, for: .tabBar).tabItem{Label("プロフィール",systemImage:"person")}.tag(NativeTab.profile)
@@ -65,12 +65,12 @@ import UniformTypeIdentifiers
         }
         .tint(.primary).preferredColorScheme(model.colorScheme)
         .sheet(item:$model.sheet,onDismiss:model.sheetDismissed) {item in
-            sheetContent(item).preferredColorScheme(model.colorScheme).background { smokeProbe(item.id.hasPrefix("noteEditor:") ? "noteEditor" : item.id) }
+            sheetContent(item).preferredColorScheme(model.colorScheme).overlay { smokeProbe(item.id.hasPrefix("noteEditor:") ? "noteEditor" : item.id) }
                 .alert("お知らせ",isPresented:Binding(get:{model.errorMessage != nil && model.sheet != nil},set:{if !$0{model.errorMessage=nil}})){Button("閉じる",role:.cancel){model.errorMessage=nil}}message:{Text(model.errorMessage ?? "")}
         }
         .fullScreenCover(isPresented:$model.showingAnswer,onDismiss:model.sheetDismissed) {
             NativeAnswerMapView(model:model).preferredColorScheme(model.colorScheme)
-                .background { smokeProbe("answer") }
+                .overlay { smokeProbe("answer") }
                 .alert("お知らせ",isPresented:Binding(get:{model.errorMessage != nil && model.showingAnswer},set:{if !$0{model.errorMessage=nil}})){Button("閉じる",role:.cancel){model.errorMessage=nil}}message:{Text(model.errorMessage ?? "")}
         }
         .fileImporter(isPresented:$model.importing,allowedContentTypes:[.json,.xml,UTType(filenameExtension:"gpx") ?? .data,UTType(filenameExtension:"tcx") ?? .data],allowsMultipleSelection:false,onCompletion:model.handleImport)
@@ -111,10 +111,12 @@ import UniformTypeIdentifiers
         }
     }
     @ViewBuilder private func smokeProbe(_ name: String) -> some View {
+        #if DEBUG
         if isSmoke && smokeScreenIsCurrent(name) {
-            NativeSmokeAppearanceProbe(onReady: { markScreen(name) }, onWaiting: { markScreenTrace(name, reason:$0) })
+            NativeSmokeAppearanceProbe(routeID:name,onReady: { markScreen(name) }, onWaiting: { markScreenTrace(name, reason:$0) })
                 .frame(width: 1, height: 1).allowsHitTesting(false)
         }
+        #endif
     }
     private func smokeScreenIsCurrent(_ name:String)->Bool {
         if model.showingAnswer {return name == "answer"}
@@ -232,22 +234,28 @@ struct NativeShareView:UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController:UIActivityViewController,context:Context){}
 }
 
-/// Observe an attached, drawn UIKit view after presentation settles. SwiftUI can
-/// insert a background representable after its host already received didAppear.
-@MainActor private struct NativeSmokeAppearanceProbe: UIViewControllerRepresentable {
+#if DEBUG
+/// Attach the probe's actual drawn UIView to the visible route overlay. It does
+/// not introduce a child controller that SwiftUI can retain outside the window.
+@MainActor private struct NativeSmokeAppearanceProbe: UIViewRepresentable {
+    let routeID: String
     let onReady: () -> Void
     let onWaiting: (String) -> Void
-    func makeUIViewController(context: Context) -> Controller { Controller(onReady:onReady,onWaiting:onWaiting) }
-    func updateUIViewController(_ controller: Controller, context: Context) {
-        controller.onReady=onReady
-        controller.onWaiting=onWaiting
-        controller.observeVisibility()
+    func makeUIView(context: Context) -> Surface {
+        Surface(routeID:routeID,onReady:onReady,onWaiting:onWaiting)
     }
-    final class Controller: UIViewController {
-        var onReady: () -> Void
-        var onWaiting: (String) -> Void
+    func updateUIView(_ surface: Surface, context: Context) {
+        surface.update(routeID:routeID,onReady:onReady,onWaiting:onWaiting)
+    }
+    static func dismantleUIView(_ surface: Surface, coordinator: ()) { surface.invalidate() }
+    final class Surface: UIView {
+        private var routeID: String
+        private let probeID = UUID().uuidString
+        private var onReady: () -> Void
+        private var onWaiting: (String) -> Void
         private var lastReason=""
         private var sent=false
+        private var hasDrawn=false
         private var pending: Task<Void,Never>?
         private var expected: Visibility?
         private var waitingTransitions: [AnyObject] = []
@@ -257,38 +265,65 @@ struct NativeShareView:UIViewControllerRepresentable {
             let rect: CGRect
             let bounds: CGRect
             let ancestors: [ObjectIdentifier]
+            let controllers: [ObjectIdentifier]
         }
-        init(onReady: @escaping () -> Void,onWaiting: @escaping (String)->Void) { self.onReady=onReady;self.onWaiting=onWaiting;super.init(nibName:nil,bundle:nil) }
+        init(routeID: String,onReady: @escaping () -> Void,onWaiting: @escaping (String)->Void) {
+            self.routeID=routeID;self.onReady=onReady;self.onWaiting=onWaiting
+            super.init(frame:.zero)
+            backgroundColor = .clear;isOpaque=false;isUserInteractionEnabled=false
+        }
         required init?(coder: NSCoder) { fatalError("init(coder:) is unavailable") }
-        override func loadView() {
-            let surface=Surface();surface.owner=self;surface.backgroundColor = .clear;surface.isOpaque=false
-            view=surface
+        func update(routeID: String,onReady: @escaping () -> Void,onWaiting: @escaping (String)->Void) {
+            if self.routeID != routeID {
+                invalidate();sent=false;hasDrawn=false;lastReason=""
+                waitingTransitions=[];completedTransitions=[]
+                self.routeID=routeID;setNeedsDisplay()
+            }
+            self.onReady=onReady;self.onWaiting=onWaiting
+            observeVisibility()
         }
-        override func viewDidAppear(_ animated: Bool) { super.viewDidAppear(animated);observeVisibility() }
-        override func viewDidLayoutSubviews() { super.viewDidLayoutSubviews();observeVisibility() }
-        override func viewWillDisappear(_ animated: Bool) { super.viewWillDisappear(animated);invalidate() }
-        private func invalidate() { pending?.cancel();pending=nil;expected=nil }
-        func observeVisibility() {
+        override func didMoveToSuperview() {
+            super.didMoveToSuperview();invalidate();hasDrawn=false
+            observeVisibility();if window != nil {setNeedsDisplay()}
+        }
+        override func didMoveToWindow() {
+            super.didMoveToWindow();invalidate();hasDrawn=false
+            observeVisibility();if window != nil {setNeedsDisplay()}
+        }
+        override func layoutSubviews() {super.layoutSubviews();setNeedsDisplay();observeVisibility()}
+        override func draw(_ rect:CGRect) {super.draw(rect);hasDrawn=true;observeVisibility()}
+        func invalidate() {pending?.cancel();pending=nil;expected=nil}
+        private func observeVisibility() {
             guard !sent else {return}
             guard let visible=visibility() else {invalidate();return}
             if expected==visible,pending != nil {return}
             invalidate();expected=visible
             record("visible; waiting for stable draw")
-            // One bounded settle/recheck, triggered only by UIKit lifecycle/draw events.
+            // This settle check can only start from an attached, drawn surface.
+            // Recheck the exact window, geometry, ancestry and host after 0.5s.
             pending=Task { @MainActor [weak self] in
                 do {try await Task.sleep(nanoseconds:500_000_000)} catch {return}
                 guard !Task.isCancelled,let self else {return}
                 self.pending=nil
                 guard self.expected==visible,self.visibility()==visible else {self.invalidate();return}
                 self.sent=true;self.expected=nil;self.waitingTransitions=[];self.completedTransitions=[]
-                self.record("ready")
-                self.onReady()
+                self.record("ready");self.onReady()
             }
         }
-        private func contains(_ ancestor:UIViewController,_ child:UIViewController)->Bool {
-            var node:UIViewController?=child
-            while let current=node {if current===ancestor {return true};node=current.parent}
-            return false
+        private func hostingControllers() -> [UIViewController] {
+            var controllers:[UIViewController]=[],seen=Set<ObjectIdentifier>()
+            var responder:UIResponder?=self
+            while let current=responder {
+                if let controller=current as? UIViewController {
+                    var host:UIViewController?=controller
+                    while let candidate=host {
+                        if seen.insert(ObjectIdentifier(candidate)).inserted {controllers.append(candidate)}
+                        host=candidate.parent
+                    }
+                }
+                responder=current.next
+            }
+            return controllers
         }
         private func waitForTransition(_ coordinator:any UIViewControllerTransitionCoordinator) -> Bool {
             let object=coordinator as AnyObject
@@ -304,9 +339,8 @@ struct NativeShareView:UIViewControllerRepresentable {
                     }
                 }
                 if !registered {
-                    // Registration failure proves nothing about completion.
-                    // Release this observation and wait for a new lifecycle/draw
-                    // event; never promote an unobserved transition to ready.
+                    // Failed registration establishes no completion. A subsequent
+                    // real lifecycle/draw event must observe this state again.
                     waitingTransitions.removeAll {$0===object}
                     return true
                 }
@@ -314,20 +348,21 @@ struct NativeShareView:UIViewControllerRepresentable {
             return true
         }
         private func record(_ reason:String) {
-            guard lastReason != reason else {return}
-            lastReason=reason;onWaiting(reason)
+            let hosts=hostingControllers().map {String(describing:type(of:$0))}.joined(separator:">")
+            let detail="route=\(routeID); probe=\(probeID); window=\(window.map {String(describing:ObjectIdentifier($0))} ?? "none"); bounds=\(bounds); rect=\(window.map {convert(bounds,to:$0)} ?? .zero); drawn=\(hasDrawn); hosts=\(hosts); \(reason)"
+            guard lastReason != detail else {return}
+            lastReason=detail;onWaiting(detail)
         }
         private func blocked(_ reason:String)->Visibility? {record(reason);return nil}
         private func visibility() -> Visibility? {
-            guard let surface=viewIfLoaded as? Surface else {return blocked("surface not loaded")}
-            guard let window=surface.window else {return blocked("surface outside window")}
-            guard surface.hasDrawn else {return blocked("surface has not drawn")}
-            guard !window.isHidden,window.alpha>0.01,!isBeingDismissed,
-                  surface.bounds.width>0,surface.bounds.height>0 else {return blocked("window hidden or zero surface bounds")}
-            let rect=surface.convert(surface.bounds,to:window)
+            guard let window else {return blocked("surface outside window")}
+            guard hasDrawn else {return blocked("surface has not drawn")}
+            guard !window.isHidden,window.alpha>0.01,
+                  bounds.width>0,bounds.height>0 else {return blocked("window hidden or zero surface bounds")}
+            let rect=convert(bounds,to:window)
             guard rect.origin.x.isFinite,rect.origin.y.isFinite,rect.width.isFinite,rect.height.isFinite,
                   window.bounds.contains(rect) else {return blocked("surface outside window bounds: \(rect)")}
-            var views:[ObjectIdentifier]=[],ancestor:UIView?=surface
+            var views:[ObjectIdentifier]=[],ancestor:UIView?=self
             while let current=ancestor {
                 guard !current.isHidden,current.alpha>0.01 else {return blocked("hidden ancestor: \(type(of:current))")}
                 if current.clipsToBounds,!current.convert(current.bounds,to:window).contains(rect) {
@@ -335,34 +370,22 @@ struct NativeShareView:UIViewControllerRepresentable {
                 }
                 views.append(ObjectIdentifier(current));ancestor=current.superview
             }
-            var controller:UIViewController?=self
-            while let current=controller {
-                guard !current.isBeingDismissed else {
-                    return blocked("controller dismissing: \(type(of:current))")
-                }
-                // SwiftUI's visual hosting tree need not match UIKit's navigation
-                // controller child tree. Check the drawn UIView ancestry instead.
-                if let cover=current.presentedViewController,cover.viewIfLoaded?.window != nil,
-                   !cover.isBeingDismissed,!contains(cover,self) {return blocked("covered by modal")}
-                if let transition=current.transitionCoordinator,waitForTransition(transition) {return blocked("waiting for transition")}
-                if current.isBeingPresented {return blocked("controller presenting")}
-                controller=current.parent
+            let controllers=hostingControllers()
+            guard !controllers.isEmpty else {return blocked("no hosting controller in responder chain")}
+            for current in controllers {
+                guard !current.isBeingDismissed else {return blocked("controller dismissing: \(type(of:current))")}
+                // Gate on the actual visible hosting chain and UIView ancestry,
+                // without assuming any probe controller belongs to that chain.
+                if let cover=current.presentedViewController,let coverView=cover.viewIfLoaded,coverView.window != nil,
+                   !cover.isBeingDismissed,!isDescendant(of:coverView) {return blocked("covered by modal: \(type(of:cover))")}
+                if let transition=current.transitionCoordinator,waitForTransition(transition) {return blocked("waiting for transition: \(type(of:current))")}
+                if current.isBeingPresented {return blocked("controller presenting: \(type(of:current))")}
             }
-            return Visibility(window:ObjectIdentifier(window),rect:rect,bounds:surface.bounds,ancestors:views)
-        }
-        final class Surface:UIView {
-            weak var owner:Controller?
-            private(set) var hasDrawn=false
-            override func didMoveToWindow() {
-                super.didMoveToWindow();hasDrawn=false
-                owner?.observeVisibility()
-                if window != nil {setNeedsDisplay()}
-            }
-            override func layoutSubviews() {super.layoutSubviews();setNeedsDisplay();owner?.observeVisibility()}
-            override func draw(_ rect:CGRect) {super.draw(rect);hasDrawn=true;owner?.observeVisibility()}
+            return Visibility(window:ObjectIdentifier(window),rect:rect,bounds:bounds,ancestors:views,controllers:controllers.map {ObjectIdentifier($0)})
         }
     }
 }
+#endif
 
 #if DEBUG
 private struct NativeCaptureDestination:Identifiable {let id:String}

@@ -18,7 +18,7 @@ for PW_ATTEMPT in $(seq 1 60); do
     xcrun simctl io "$PW_SIM_DEVICE" screenshot .build/screenshots/ios-native-map.png
     rm -f "$PW_READY_FILE"
     xcrun simctl launch --terminate-running-process "$PW_SIM_DEVICE" org.example.plainwalkweb -AppleLanguages '(ja)' -AppleLocale ja_JP -PlainWalkSmokeTest -PlainWalkScreenOnly -PlainWalkNativeSettingsSmokeTest
-    for PW_SETTINGS_ATTEMPT in $(seq 1 20); do
+    for PW_SETTINGS_ATTEMPT in $(seq 1 60); do
       if [[ -f "$PW_APP_CONTAINER/Library/Application Support/PlainWalk/native-settings-ready.json" && -f "$PW_APP_CONTAINER/Library/Application Support/PlainWalk/screen-settings.ready" ]]; then
         xcrun simctl io "$PW_SIM_DEVICE" screenshot .build/screenshots/ios-native-settings.png
         for PW_SCREEN in records profile layers answer spots doodles menu stepGoal lut spot noteEditor developer; do
@@ -29,7 +29,7 @@ for PW_ATTEMPT in $(seq 1 60); do
           PW_SCREEN_TRACE_FILE="${PW_SCREEN_FILE%.ready}.trace"
           rm -f "$PW_READY_FILE" "$PW_SCREEN_FILE" "$PW_SCREEN_TRACE_FILE"
           xcrun simctl launch --terminate-running-process "$PW_SIM_DEVICE" org.example.plainwalkweb -AppleLanguages '(ja)' -AppleLocale ja_JP -PlainWalkSmokeTest -PlainWalkScreenOnly "-PlainWalkScreen=$PW_SCREEN"
-          for PW_SCREEN_ATTEMPT in $(seq 1 20); do
+          for PW_SCREEN_ATTEMPT in $(seq 1 60); do
             if [[ -f "$PW_SCREEN_FILE" ]]; then break; fi
             sleep 1
           done
