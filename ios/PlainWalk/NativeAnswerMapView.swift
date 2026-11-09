@@ -293,7 +293,9 @@ import MapKit
         func contains(_ map: MKMapView, _ point: NativePoint) -> Bool {
             let rect = map.visibleMapRect, projected = MKMapPoint(CLLocationCoordinate2D(latitude: point.lat, longitude: point.lon))
             let x = NativeMapProjection.nearest(projected.x, to: rect.midX, period: MKMapRect.world.width)
-            return rect.contains(MKMapPoint(x: x, y: projected.y))
+            // MKMapRect.contains rejects x outside the canonical world even
+            // when that world copy lies numerically inside the visible rect.
+            return x >= rect.minX && x <= rect.maxX && projected.y >= rect.minY && projected.y <= rect.maxY
         }
         func directMapKitPitch(center: CLLocationCoordinate2D, distance: CLLocationDistance) async throws -> CGFloat {
             // MapKit documents an altitude-dependent pitch maximum. Determine
@@ -418,7 +420,7 @@ import MapKit
         let projected = crossing.map { point -> String in
             let mapPoint = MKMapPoint(CLLocationCoordinate2D(latitude: point.lat, longitude: point.lon))
             let x = NativeMapProjection.nearest(mapPoint.x, to: crossingRect.midX, period: MKMapRect.world.width)
-            return "\(x),\(mapPoint.y):\(crossingRect.contains(MKMapPoint(x: x, y: mapPoint.y)))"
+            return "\(x),\(mapPoint.y):\(contains(crossingMap.map, point))"
         }.joined(separator: ";")
         let diagnostic = "span=\(crossingMap.map.region.span.latitudeDelta),\(crossingMap.map.region.span.longitudeDelta), rect=\(crossingRect.origin.x),\(crossingRect.origin.y),\(crossingRect.width),\(crossingRect.height), points=\(projected), pixels=\(pixels), bounds=\(crossingMap.map.bounds)"
         try require(crossingMap.map.region.span.longitudeDelta < 1 && crossing.allSatisfy { contains(crossingMap.map, $0) }, "日付変更線を跨ぐ軌跡を局所的に表示: " + diagnostic)
