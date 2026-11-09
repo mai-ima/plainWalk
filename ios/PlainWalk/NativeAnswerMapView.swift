@@ -261,13 +261,25 @@ import MapKit
             map.layoutIfNeeded()
             return (map, coordinator, surface)
         }
-        func settle(_ harness: Harness, _ name: String) async throws {
+        func samePose(_ actual: MKMapCamera, _ previous: MKMapCamera) -> Bool {
+            abs(actual.pitch - previous.pitch) < 0.01
+                && abs(actual.centerCoordinateDistance - previous.centerCoordinateDistance) < max(0.1, previous.centerCoordinateDistance * 0.0001)
+                && abs(actual.centerCoordinate.latitude - previous.centerCoordinate.latitude) < 0.0000001
+                && abs(NativeMapProjection.delta(actual.centerCoordinate.longitude - previous.centerCoordinate.longitude, period: 360)) < 0.0000001
+                && abs(NativeMapProjection.delta(actual.heading - previous.heading, period: 360)) < 0.01
+        }
+        func settle(_ harness: Harness, _ name: String, expectedPitch: CGFloat = 0) async throws {
             let deadline = ProcessInfo.processInfo.systemUptime + 5
+            var previous: MKMapCamera?
+            var stableSamples = 0
             while ProcessInfo.processInfo.systemUptime < deadline {
                 harness.map.layoutIfNeeded()
-                let actualPitch = harness.map.camera.pitch
-                let pitchCommitted = harness.surface.pitched ? (15...55.5).contains(actualPitch) : abs(actualPitch) < 1
-                if harness.coordinator.cameraChangesSettled && pitchCommitted { return }
+                let actual = harness.map.camera.copy() as! MKMapCamera
+                if harness.coordinator.cameraChangesSettled && abs(actual.pitch - expectedPitch) < 1 {
+                    stableSamples = previous.map { samePose(actual, $0) } == true ? stableSamples + 1 : 1
+                    if stableSamples >= 3 { return }
+                } else { stableSamples = 0 }
+                previous = actual
                 try await Task.sleep(nanoseconds: 20_000_000)
             }
             let camera = harness.map.camera
@@ -289,13 +301,26 @@ import MapKit
             control.preferredConfiguration = MKStandardMapConfiguration(elevationStyle: .realistic)
             control.isPitchEnabled = true; control.showsBuildings = true
             controller.view.addSubview(control)
-            defer { control.removeFromSuperview() }
+            let probe = NativeAnswerCameraProbe()
+            control.delegate = probe
+            defer { control.delegate = nil; control.removeFromSuperview() }
             control.setCamera(MKMapCamera(lookingAtCenter: center, fromDistance: distance, pitch: 55, heading: 0), animated: false)
             let deadline = ProcessInfo.processInfo.systemUptime + 5
+            var previous: MKMapCamera?
+            var observedChanges = 0
+            var stableSamples = 0
             while ProcessInfo.processInfo.systemUptime < deadline {
                 control.layoutIfNeeded()
-                if (15...55.5).contains(control.camera.pitch), near(control, center),
-                   (0.9...1.1).contains(distanceRatio(control, distance)) { return control.camera.pitch }
+                let actual = control.camera.copy() as! MKMapCamera
+                if probe.regionChanges != observedChanges {
+                    observedChanges = probe.regionChanges; previous = nil; stableSamples = 0
+                }
+                if observedChanges > 0, (15...55.5).contains(actual.pitch), near(control, center),
+                   (0.9...1.1).contains(distanceRatio(control, distance)) {
+                    stableSamples = previous.map { samePose(actual, $0) } == true ? stableSamples + 1 : 1
+                    if stableSamples >= 3 { return actual.pitch }
+                } else { stableSamples = 0 }
+                previous = actual
                 try await Task.sleep(nanoseconds: 20_000_000)
             }
             throw NativeError.message("MapKit直接指定で意味のある3Dを確認できません: pitch=\(control.camera.pitch), distance=\(control.camera.centerCoordinateDistance)")
@@ -329,22 +354,22 @@ import MapKit
             try require(abs(located.map.camera.pitch) < 0.1, "同じ現在地の再指定で平面を保持")
         }
         located.surface.pitched = true; located.coordinator.update(located.surface, map: located.map)
-        try await settle(located, "平面から3D")
+        try await settle(located, "平面から3D", expectedPitch: allowedPitch)
         try require(near(located.map, coordinate) && (0.9...1.1).contains(distanceRatio(located.map, flatDistance)), "3D切り替えで中心と倍率を保持（距離比 \(distanceRatio(located.map, flatDistance))、中心 \(located.map.camera.centerCoordinate.latitude),\(located.map.camera.centerCoordinate.longitude)）")
         try require(abs(located.map.camera.pitch - allowedPitch) < 1, "MapKitが許容する3D角度を適用（角度 \(located.map.camera.pitch)、対照 \(allowedPitch)、距離 \(located.map.camera.centerCoordinateDistance)）")
         let appliedPitch = located.map.camera.pitch
         let beforeZoom = located.map.camera.centerCoordinateDistance
         located.surface.zoomRevision += 1; located.coordinator.update(located.surface, map: located.map)
-        try await settle(located, "3Dで拡大")
+        try await settle(located, "3Dで拡大", expectedPitch: appliedPitch)
         try require(near(located.map, coordinate) && (0.4...0.6).contains(distanceRatio(located.map, beforeZoom)), "3Dで拡大しても中心と角度を保持")
         try require(abs(located.map.camera.pitch - appliedPitch) < 1, "拡大後も実際の3D角度を保持（角度 \(located.map.camera.pitch)、拡大前 \(appliedPitch)）")
         located.surface.zoomIn = false; located.surface.zoomRevision += 1; located.coordinator.update(located.surface, map: located.map)
-        try await settle(located, "3Dで縮小して倍率を戻す")
+        try await settle(located, "3Dで縮小して倍率を戻す", expectedPitch: appliedPitch)
         try require(near(located.map, coordinate) && (0.9...1.1).contains(distanceRatio(located.map, beforeZoom)), "3Dで拡大・縮小して元の中心と倍率を保持")
         try require(abs(located.map.camera.pitch - appliedPitch) < 1, "縮小後も実際の3D角度を保持（角度 \(located.map.camera.pitch)、拡大前 \(appliedPitch)）")
 
         let initial3D = configuredMap(current: point, pitched: true)
-        try await settle(initial3D, "初回からGPS・3D")
+        try await settle(initial3D, "初回からGPS・3D", expectedPitch: allowedPitch)
         try require(near(initial3D.map, coordinate) && (0.9...1.1).contains(distanceRatio(initial3D.map, flatDistance)), "初回3DでGPS中心と倍率を保持")
         try require(abs(initial3D.map.camera.pitch - allowedPitch) < 1, "初回3DもMapKit直接指定と同じ角度を適用（角度 \(initial3D.map.camera.pitch)、対照 \(allowedPitch)）")
 
@@ -362,8 +387,10 @@ import MapKit
         try require(abs(routed.map.region.center.latitude - 34.685) < 0.05 && abs(routed.map.region.center.longitude - 135.51) < 0.05, "軌跡の中心を保持")
         try require(routed.map.region.span.latitudeDelta < 0.2, "軌跡の表示倍率を保持")
         let trailDistance = routed.map.camera.centerCoordinateDistance
+        let trailPitch = try await directMapKitPitch(center: routed.map.camera.centerCoordinate, distance: trailDistance)
         let routed3D = configuredMap(walks: [trail], pitched: true)
-        try await settle(routed3D, "初回から軌跡・3D")
+        try await settle(routed3D, "初回から軌跡・3D", expectedPitch: trailPitch)
+        try require(abs(routed3D.map.camera.pitch - trailPitch) < 1, "軌跡の3DもMapKit直接指定と同じ角度を適用")
         try require(near(routed3D.map, routed.map.camera.centerCoordinate, meters: 100) && (0.9...1.1).contains(distanceRatio(routed3D.map, trailDistance)), "初回3Dで軌跡中心と倍率を保持")
         try require(points.allSatisfy { contains(routed3D.map, $0) }, "初回3Dで軌跡が表示範囲に残る")
 
@@ -371,10 +398,11 @@ import MapKit
         let focused = configuredMap(current: point, focus: focus)
         try await settle(focused, "初期フォーカス")
         let focusDistance = focused.map.camera.centerCoordinateDistance
+        let focusPitch = try await directMapKitPitch(center: focus.coordinate, distance: focusDistance * 0.5)
         var focused3D = configuredMap(current: point, pitched: true, focus: focus, zoom: true)
-        try await settle(focused3D, "初回3D・フォーカス・拡大の同時更新")
+        try await settle(focused3D, "初回3D・フォーカス・拡大の同時更新", expectedPitch: focusPitch)
         try require(near(focused3D.map, focus.coordinate) && (0.4...0.6).contains(distanceRatio(focused3D.map, focusDistance)), "初回3Dのフォーカスと倍率を保持")
-        try require((15...55.5).contains(focused3D.map.camera.pitch), "フォーカス後も意味のある3Dを保持（角度 \(focused3D.map.camera.pitch)）")
+        try require(abs(focused3D.map.camera.pitch - focusPitch) < 1, "フォーカス後もMapKit直接指定と同じ3D角度を保持（角度 \(focused3D.map.camera.pitch)、対照 \(focusPitch)）")
         let beforeFlat = focused3D.map.camera.centerCoordinateDistance
         focused3D.surface.pitched = false; focused3D.coordinator.update(focused3D.surface, map: focused3D.map)
         try await settle(focused3D, "フォーカス後に平面")
@@ -664,6 +692,11 @@ private final class NativeAnswerFlagAnnotation: NSObject, MKAnnotation {
 
 
 #if DEBUG
+@MainActor private final class NativeAnswerCameraProbe: NSObject, MKMapViewDelegate {
+    var regionChanges = 0
+    func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) { regionChanges += 1 }
+}
+
 @MainActor fileprivate extension NativeAnswerMapView {
     init(captureKey:String,model:NativeAppModel) {
         self._model=ObservedObject(wrappedValue:model)
