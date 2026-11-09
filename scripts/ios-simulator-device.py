@@ -27,10 +27,17 @@ def select_device():
     cached_name = os.environ.get("PW_SIM_DEVICE_NAME")
     if cached_udid is not None or cached_name is not None:
         return validated_device(cached_udid, cached_name)
-    result = subprocess.run(
-        ["xcrun", "simctl", "list", "devices", "available", "--json"],
-        capture_output=True, text=True, timeout=90, check=True,
-    )
+    for attempt in range(2):
+        try:
+            result = subprocess.run(
+                ["xcrun", "simctl", "list", "devices", "available", "--json"],
+                capture_output=True, text=True, timeout=90, check=True,
+            )
+            break
+        except subprocess.TimeoutExpired:
+            if attempt:
+                raise
+            print("Simulator device listing timed out after 90s; retrying once.", file=sys.stderr)
     devices = json.loads(result.stdout)
     for group in devices["devices"].values():
         for device in group:

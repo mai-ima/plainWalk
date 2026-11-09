@@ -140,14 +140,19 @@ import UniformTypeIdentifiers
         // Only signal readiness after the complete placement section is visibly
         // inside the measured scroll viewport for several consecutive samples.
         var visibleSamples = 0
-        for _ in 0..<60 {
+        for sample in 0..<60 {
             do { try await Task.sleep(nanoseconds: 100_000_000) } catch { return }
             guard !Task.isCancelled else { return }
             let laidOut = captureViewportFrame.width > 0 && captureViewportFrame.height > 0 && capturePlacementFrame.width > 0 && capturePlacementFrame.height > 0
+            captureScrollTrace(folder, status: laidOut ? "checking-visibility" : "awaiting-layout", sample: sample)
             guard laidOut, importedPhoto, !busy else { visibleSamples = 0; continue }
-            if captureViewportFrame.insetBy(dx: 0, dy: 4).contains(capturePlacementFrame) {
+            // scrollTo(.bottom) can align the section exactly with the viewport
+            // edge. Requiring an extra inset would reject that fully visible state
+            // forever even though no part of the section is clipped.
+            if captureViewportFrame.contains(capturePlacementFrame) {
                 visibleSamples += 1
                 if visibleSamples >= 3 {
+                    captureScrollTrace(folder, status: "ready", sample: sample)
                     try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
                     try? Data("photoLocation".utf8).write(to: marker, options: .atomic)
                     return
@@ -159,6 +164,23 @@ import UniformTypeIdentifiers
             }
         }
         // Leave the marker absent on timeout so the runner rejects this capture.
+        captureScrollTrace(folder, status: "visibility-timeout", sample: 60)
+        #endif
+    }
+    private func captureScrollTrace(_ folder: URL, status: String, sample: Int) {
+        #if DEBUG
+        func bounds(_ frame: CGRect) -> [String: Double] {
+            ["x": Double(frame.minX), "y": Double(frame.minY), "width": Double(frame.width), "height": Double(frame.height)]
+        }
+        let trace: [String: Any] = ["capture": "photoLocation", "status": status, "sample": sample,
+                                    "viewport": bounds(captureViewportFrame), "placement": bounds(capturePlacementFrame),
+                                    "fullyVisible": captureViewportFrame.contains(capturePlacementFrame),
+                                    "busy": busy, "importedPhoto": importedPhoto]
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        if let data = try? JSONSerialization.data(withJSONObject: trace, options: [.sortedKeys]) {
+            // The runner already includes this per-screen trace in failed entries.
+            try? data.write(to: folder.appendingPathComponent("screen-spot.trace"), options: .atomic)
+        }
         #endif
     }
     private func openCamera() async {

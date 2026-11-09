@@ -19,11 +19,15 @@ def command(*items, timeout=90, required=True):
         raise RuntimeError(result.stderr[-2000:])
     return result.stdout.strip()
 
-device = json.loads(command(sys.executable, str(ROOT / "scripts/ios-simulator-device.py"), "--json"))
+device = json.loads(command(sys.executable, str(ROOT / "scripts/ios-simulator-device.py"), "--json", timeout=195))
 udid = device["udid"]
 command("xcrun", "simctl", "bootstatus", udid, "-b", timeout=360)
 app = ROOT / ".build/ios/Build/Products/Debug-iphonesimulator/PlainWalk.app"
-command("xcrun", "simctl", "install", udid, str(app))
+try:
+    command("xcrun", "simctl", "install", udid, str(app))
+except subprocess.TimeoutExpired:
+    print("Simulator app installation timed out after 90s; retrying once.", file=sys.stderr)
+    command("xcrun", "simctl", "install", udid, str(app))
 container = Path(command("xcrun", "simctl", "get_app_container", udid, "org.example.plainwalkweb", "data"))
 signals = container / "Library/Application Support/PlainWalk"
 signals.mkdir(parents=True, exist_ok=True)
