@@ -294,6 +294,16 @@ import MapKit
         try require(near(located.map, coordinate), "初回の平面設定でGPS中心を保持")
         try require(located.map.region.span.latitudeDelta < 0.1, "GPSの表示倍率を保持")
         let flatDistance = located.map.camera.centerCoordinateDistance
+        do {
+            // An identical locate request need not produce a MapKit delegate
+            // callback. Verify acknowledgement from the committed viewport.
+            located.map.delegate = nil
+            defer { located.map.delegate = located.coordinator }
+            located.surface.locateRevision += 1; located.coordinator.update(located.surface, map: located.map)
+            try await settle(located, "同じ現在地を再指定・callbackなし")
+            try require(near(located.map, coordinate) && (0.99...1.01).contains(distanceRatio(located.map, flatDistance)), "同じ現在地の再指定で中心と倍率を保持")
+            try require(abs(located.map.camera.pitch) < 0.1, "同じ現在地の再指定で平面を保持")
+        }
         located.surface.pitched = true; located.coordinator.update(located.surface, map: located.map)
         try await settle(located, "平面から3D")
         try require(near(located.map, coordinate) && (0.9...1.1).contains(distanceRatio(located.map, flatDistance)), "3D切り替えで中心と倍率を保持")
@@ -478,9 +488,30 @@ private struct NativeAnswerResult: Identifiable { var id: String; var place: Nat
             awaitingViewport = true; pendingPitch = true; viewportCenter = center; viewportRadius = radius
         }
         private func setRegion(_ region: MKCoordinateRegion, map: MKMapView, animated: Bool) {
+            let fitted = map.regionThatFits(region)
+            let alreadyCommitted = !awaitingViewport && Self.regionIsCommitted(fitted, map: map)
             let corner = CLLocationCoordinate2D(latitude: min(85, max(-85, region.center.latitude + region.span.latitudeDelta / 2)), longitude: region.center.longitude)
             prepareViewport(center: region.center, radius: max(1000, MKMapPoint(region.center).distance(to: MKMapPoint(corner)) * 4))
+            // MapKit can omit regionDidChange when the fitted region is already
+            // visible. Acknowledge only a matching committed region and camera;
+            // an outstanding fit or a stale camera must still await its callback.
+            if alreadyCommitted { awaitingViewport = false; return }
             map.setRegion(region, animated: animated)
+        }
+        private static func regionIsCommitted(_ fitted: MKCoordinateRegion, map: MKMapView) -> Bool {
+            func sameCenter(_ coordinate: CLLocationCoordinate2D) -> Bool {
+                CLLocationCoordinate2DIsValid(coordinate)
+                    && abs(coordinate.latitude - fitted.center.latitude) < 0.0000001
+                    && abs(NativeMapProjection.delta(coordinate.longitude - fitted.center.longitude, period: 360)) < 0.0000001
+            }
+            func sameSpan(_ actual: Double, _ expected: Double) -> Bool {
+                actual > 0 && expected > 0 && abs(actual - expected) <= max(0.000000001, expected * 0.000001)
+            }
+            let camera = map.camera, visible = map.region
+            return sameCenter(visible.center) && sameCenter(camera.centerCoordinate)
+                && camera.centerCoordinateDistance.isFinite && camera.centerCoordinateDistance > 0
+                && sameSpan(visible.span.latitudeDelta, fitted.span.latitudeDelta)
+                && sameSpan(visible.span.longitudeDelta, fitted.span.longitudeDelta)
         }
         private func locate(_ point: NativePoint, map: MKMapView, animated: Bool) { setRegion(.init(center: .init(latitude: point.lat, longitude: point.lon), latitudinalMeters: 1000, longitudinalMeters: 1000), map: map, animated: animated) }
         private func scheduleCameraChanges(_ map: MKMapView) {
