@@ -1,6 +1,6 @@
 """Capture isolated, synthetic native screens on a booted iPhone Simulator."""
 from pathlib import Path
-import argparse, datetime, json, os, subprocess, time
+import argparse, datetime, json, os, subprocess, sys, time
 
 ROOT = Path(__file__).resolve().parent.parent
 parser = argparse.ArgumentParser()
@@ -19,11 +19,8 @@ def command(*items, timeout=90, required=True):
         raise RuntimeError(result.stderr[-2000:])
     return result.stdout.strip()
 
-devices = json.loads(command("xcrun", "simctl", "list", "devices", "available", "--json"))
-device = next(d for group in devices["devices"].values() for d in group
-              if "iPhone" in d["name"] and d.get("isAvailable"))
+device = json.loads(command(sys.executable, str(ROOT / "scripts/ios-simulator-device.py"), "--json"))
 udid = device["udid"]
-command("xcrun", "simctl", "boot", udid, required=False, timeout=180)
 command("xcrun", "simctl", "bootstatus", udid, "-b", timeout=360)
 app = ROOT / ".build/ios/Build/Products/Debug-iphonesimulator/PlainWalk.app"
 command("xcrun", "simctl", "install", udid, str(app))

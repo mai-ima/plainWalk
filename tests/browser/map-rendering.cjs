@@ -58,6 +58,35 @@ const { playwright, chromiumExecutable, webkitExecutable, fixture, artifact } = 
     await page.locator(`[data-walk="${id}"]`).click();
     await page.locator(`#sheetBody [data-map-walk="${id}"]`).waitFor();
   }
+  async function openSpotForm(page) {
+    await button(page, "プロフィール").click();
+    await button(page, "写真を取り込む").click();
+    await button(page, "地図から場所を選ぶ").click();
+    await page.locator("#mapViewport").tap({ position: { x: 130, y: 240 } });
+    await page.locator('[data-spot-mode="photo"]').waitFor();
+  }
+  async function verifyVideoPlayback(video) {
+    await video.evaluate(async (node) => {
+      if (node.readyState < 2) await new Promise((resolve, reject) => {
+        const finish = (error) => {
+          clearTimeout(timer); node.removeEventListener("loadeddata", ready); node.removeEventListener("error", failed);
+          error ? reject(error) : resolve();
+        };
+        const ready = () => finish(), failed = () => finish(Error(node.error?.message));
+        const timer = setTimeout(() => finish(Error("Imported video has no decoded frame")), 8000);
+        node.addEventListener("loadeddata", ready, { once: true });
+        node.addEventListener("error", failed, { once: true });
+      });
+    });
+    const decoded = await video.evaluate((node) => ({ duration: node.duration, width: node.videoWidth, height: node.videoHeight }));
+    assert.deepEqual(decoded, { duration: 2, width: 320, height: 240 }, "The real two-second fixture must decode at its original dimensions");
+    await video.evaluate((node) => { node.muted = true; return node.play(); });
+    await video.page().waitForFunction(() => {
+      const node = document.querySelector("#spotVideoPreview") || document.querySelector("#sheetBody video");
+      return node?.currentTime > 0.05 && node.readyState >= 2;
+    });
+    await video.evaluate((node) => node.pause());
+  }
   async function scenario(name, run, options = {}) {
     if(process.env.PW_SCENARIO && !name.includes(process.env.PW_SCENARIO))return;
     const context = await browser.newContext({
@@ -200,23 +229,67 @@ const { playwright, chromiumExecutable, webkitExecutable, fixture, artifact } = 
       assert.match(await page.locator("#replayLabel").textContent(), /^4\s*\/\s*4$/);
     });
     await scenario("photo-only films and LUT are unavailable in video mode", async (page) => {
-      await button(page, "プロフィール").click();
-      await button(page, "写真を取り込む").click();
-      await button(page, "地図から場所を選ぶ").click();
-      await page.locator("#mapViewport").tap({ position: { x: 130, y: 240 } });
-      await page.locator('[data-spot-mode="photo"]').waitFor();
+      await openSpotForm(page);
       assert.equal(await page.locator(".film-options").isVisible(), true);
       await page.locator('[data-spot-mode="video"]').click();
       await page.getByText("フィルム・LUTは写真専用です。動画の色は加工せず保存します。", { exact: true }).waitFor();
       assert.equal(await page.locator(".film-options").isVisible(), false);
       assert.equal(await page.locator(".film-advanced").isVisible(), false);
-      await page.locator("#spotVideo").setInputFiles(fixture("clip.mp4"));
-      await page.locator("#spotVideoPreview").waitFor({ state: "visible" });
+      // VP8 is the portable success fixture; MP4 decoder availability is checked
+      // independently below. Both files contain real frames, without media mocks.
+      await page.locator("#spotVideo").setInputFiles(fixture("clip.webm"));
+      // readVideo bounds metadata and seek separately at8s, so this budget covers
+      // both product deadlines and fails with their Japanese error if either stalls.
+      await page.locator("#spotVideoPreview").waitFor({ state: "visible", timeout: 20000 });
+      await verifyVideoPlayback(page.locator("#spotVideoPreview"));
       assert.equal(await page.locator(".film-options").isVisible(), false, "Selecting an imported video must not restore photo filters");
       await page.locator('[data-spot-mode="photo"]').click();
       assert.equal(await page.locator(".film-options").isVisible(), true);
       assert.equal(await page.locator(".film-advanced").isVisible(), true);
       assert.equal(await page.getByText("フィルム・LUTは写真専用です。動画の色は加工せず保存します。", { exact: true }).isVisible(), false);
+      await page.locator('[data-spot-mode="video"]').click();
+      await page.locator("#spotText").fill("加工しない動画の保存");
+      await button(page, "この場所に残す").click();
+      await page.locator("#overlay").waitFor({ state: "hidden" });
+      await button(page, "プロフィール").click();
+      await button(page, "ここいいな").click();
+      await button(page, /加工しない動画の保存/).click();
+      const saved = page.locator("#sheetBody video");
+      assert.match(await saved.getAttribute("src"), /^data:video\/webm;base64,/);
+      await verifyVideoPlayback(saved);
+    });
+    await scenario("MP4 imports decode or report an actual unsupported decoder", async (page) => {
+      await openSpotForm(page);
+      await page.evaluate(() => {
+        window.videoImportDiagnostics = { canPlayType: document.createElement("video").canPlayType('video/mp4; codecs="avc1.64000d"'), events: [] };
+        const create = document.createElement.bind(document);
+        document.createElement = (...args) => {
+          const node = create(...args);
+          if (String(args[0]).toLowerCase() === "video") {
+            for (const type of ["loadedmetadata", "loadeddata", "seeking", "seeked", "error"]) {
+              node.addEventListener(type, () => window.videoImportDiagnostics.events.push({ type, readyState: node.readyState, duration: Number.isFinite(node.duration) ? node.duration : null, width: node.videoWidth, height: node.videoHeight, error: node.error ? { code: node.error.code, message: node.error.message } : null }));
+            }
+          }
+          return node;
+        };
+      });
+      await page.locator("#spotVideo").setInputFiles(fixture("clip.mp4"));
+      try {
+        await page.waitForFunction(() => !document.querySelector("#spotVideoPreview").hidden || document.querySelector("#toast").textContent.trim(), null, { timeout: 20000 });
+        const diagnostics = await page.evaluate(() => ({ ...window.videoImportDiagnostics, toast: document.querySelector("#toast").textContent.trim() }));
+        console.log("MP4 import diagnostics:", JSON.stringify(diagnostics));
+        if (await page.locator("#spotVideoPreview").isVisible()) {
+          await verifyVideoPlayback(page.locator("#spotVideoPreview"));
+        } else {
+          const actualDecoderError = diagnostics.events.some((event) => event.type === "error" && [3, 4].includes(event.error?.code));
+          assert.ok(actualDecoderError, `Only an actual unsupported/failed decoder may reject MP4; a stalled import must fail: ${JSON.stringify(diagnostics)}`);
+          assert.match(diagnostics.toast, /^(この動画形式を読み取れません。MP4 または WebM をお試しください。|動画の画像を読み取れません。)$/);
+          assert.equal(await page.locator("#spotVideoPreview").isVisible(), false);
+        }
+      } catch (error) {
+        const diagnostics = await page.evaluate(() => ({ ...window.videoImportDiagnostics, toast: document.querySelector("#toast").textContent.trim() }));
+        throw Error(`${error.message} / MP4 import diagnostics: ${JSON.stringify(diagnostics)}`);
+      }
     });
     await scenario("boundary loading errors have a Japanese retry route", async page=>{
       const pattern="**/data/japan-municipalities.geojson";

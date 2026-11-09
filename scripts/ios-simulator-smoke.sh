@@ -1,11 +1,6 @@
 #!/bin/bash
 set -euo pipefail
-PW_SIM_DEVICE=$(xcrun simctl list devices available --json | python3 -c 'import json,sys; data=json.load(sys.stdin); devices=[d for values in data["devices"].values() for d in values if "iPhone" in d["name"] and d.get("isAvailable")]; print(devices[0]["udid"] if devices else "")')
-if [[ -z "$PW_SIM_DEVICE" ]]; then
-  echo "No available iPhone simulator runtime."
-  exit 1
-fi
-xcrun simctl boot "$PW_SIM_DEVICE" || true
+PW_SIM_DEVICE=$(python3 scripts/ios-simulator-device.py)
 xcrun simctl bootstatus "$PW_SIM_DEVICE" -b
 PW_APP_PATH="$PWD/.build/ios/Build/Products/Debug-iphonesimulator/PlainWalk.app"
 xcrun simctl install "$PW_SIM_DEVICE" "$PW_APP_PATH"
@@ -16,7 +11,7 @@ rm -f "$PW_READY_FILE" "$PW_APP_CONTAINER/Library/Application Support/PlainWalk/
 xcrun simctl launch "$PW_SIM_DEVICE" org.example.plainwalkweb -AppleLanguages '(ja)' -AppleLocale ja_JP -PlainWalkSmokeTest
 for PW_ATTEMPT in $(seq 1 60); do
   if [[ -f "$PW_READY_FILE" ]]; then
-    python3 -c 'import json,sys; data=json.load(open(sys.argv[1])); assert data.get("ready") is True and data.get("recordingPersistence") is True and data.get("nativeUI") is True and data.get("storage") is True and data.get("trackMath") is True and data.get("trackIO") is True and data.get("importCompatibility") is True and data.get("modelState") is True and data.get("mapCamera") is True and data.get("trackEditor") is True and data.get("photoEffects") is True and data.get("photoMetadata") is True and data.get("boundaryGeometry") is True and data.get("noteTransform") is True and data.get("replayMovie") is True; print("Native SwiftUI application, storage, track import and recorder recovery checks passed on iOS Simulator.")' "$PW_READY_FILE"
+    python3 -c 'import json,sys; data=json.load(open(sys.argv[1])); assert data.get("ready") is True and data.get("recordingPersistence") is True and data.get("nativeUI") is True and data.get("storage") is True and data.get("trackMath") is True and data.get("trackIO") is True and data.get("importCompatibility") is True and data.get("modelState") is True and data.get("mapCamera") is True and data.get("mapProjection") is True and data.get("trackEditor") is True and data.get("photoEffects") is True and data.get("photoMetadata") is True and data.get("boundaryGeometry") is True and data.get("noteTransform") is True and data.get("replayMovie") is True; print("Native SwiftUI application, storage, track import and recorder recovery checks passed on iOS Simulator.")' "$PW_READY_FILE"
     mkdir -p .build/screenshots .build/exports
     cp "$PW_APP_CONTAINER/Library/Application Support/PlainWalk/native-export-smoke.mp4" .build/exports/native-export-smoke.mp4
     sleep 2

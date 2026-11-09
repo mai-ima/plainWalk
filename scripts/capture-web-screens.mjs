@@ -58,6 +58,26 @@ async function dispatch(page,dataset){
 }
 const action=(p,name)=>dispatch(p,{action:name});
 const tab=(p,name)=>dispatch(p,{tab:name});
+async function decodeAndPauseVideo(page,selector){
+  await page.locator(selector).evaluate(node=>new Promise((resolve,reject)=>{
+    const start=node.currentTime;let settled=false;
+    const finish=error=>{
+      if(settled)return;settled=true;clearTimeout(timer);
+      node.removeEventListener("timeupdate",advanced);node.removeEventListener("error",failed);node.pause();
+      error?reject(error):resolve();
+    };
+    const failed=()=>finish(Error(`Video decoder failed: ${node.error?.code??"unknown"} ${node.error?.message??"playback rejected"}`));
+    const advanced=()=>{
+      if(node.readyState<2||node.currentTime<=start+0.05)return;
+      if(node.duration!==2||node.videoWidth!==320||node.videoHeight!==240){finish(Error(`Unexpected video fixture: ${node.duration}s ${node.videoWidth}x${node.videoHeight}`));return;}
+      finish();
+    };
+    const timer=setTimeout(()=>finish(Error(`Video decode/playback timed out: readyState=${node.readyState}, currentTime=${node.currentTime}`)),8000);
+    node.addEventListener("timeupdate",advanced);node.addEventListener("error",failed);node.muted=true;
+    if(node.error){failed();return;}
+    try{node.play().then(advanced,failed);}catch{failed();}
+  }));
+}
 async function shot(page,key,title,category,state,{scroll=false}={}){
   await page.locator("#toast").evaluate(e=>e.hidden=true).catch(()=>{});
   await page.evaluate(()=>document.fonts.ready);
@@ -123,7 +143,7 @@ for(const [key,title,act] of [["spots","ここいいな","spots"],["stickers","�
 }
 add("badge-detail","エリアバッジ詳細","コレクション",async p=>{await action(p,"badges");await p.locator("[data-area]").first().waitFor();await p.locator("[data-area]").first().click();},{scroll:true});
 add("photo-detail","写真ピン詳細","コレクション",p=>dispatch(p,{spot:"capture-photo"}),{scroll:true});
-add("video-detail","短い動画ピン詳細","コレクション",p=>dispatch(p,{spot:"capture-video"}),{scroll:true});
+add("video-detail","短い動画ピン詳細","コレクション",async p=>{await dispatch(p,{spot:"capture-video"});await decodeAndPauseVideo(p,"#sheetBody video");},{scroll:true,state:"decoded-paused synthetic two-second MP4 fixture; real playback advanced"});
 add("photo-delete","写真ピン削除・確認","コレクション",p=>dispatch(p,{spotDelete:"capture-photo"}),{state:"confirmation"});
 add("sticker-detail","ステッカー詳細","コレクション",p=>dispatch(p,{stickerItem:"capture-sticker"}),{scroll:true});
 A("sticker-exchange","ステッカーをあげる・対応範囲","stickerExchange",{category:"コレクション",state:"availability explanation"});
@@ -164,7 +184,7 @@ add("backup-import","バックアップ取り込み確認","取り込み",async 
 add("note-route","ノート・道を貼る","ノート",async p=>{await action(p,"notes");await action(p,"noteRoute");},{scroll:true,state:"synthetic route added to draft"});
 add("photo-selected","写真を残す・画像選択済み","写真",async p=>{await action(p,"photoImport");await action(p,"spotPick");await p.locator("#mapViewport").tap({position:{x:180,y:280}});await p.locator("#spotPhoto").setInputFiles(path.join(root,"web/public/icon.png"));await p.locator("#spotPreview").waitFor({state:"visible"});},{scroll:true,state:"synthetic app icon; no EXIF"});
 add("photo-lut-import","写真・カスタムLUTの読み込み","写真",async p=>{await action(p,"photoImport");await action(p,"spotPick");await p.locator("#mapViewport").tap({position:{x:180,y:280}});await p.locator(".film-advanced summary").click();},{scroll:true,state:"expanded import controls; no file chooser"});
-add("video-selected","短い動画を残す・選択済み","写真",async p=>{await action(p,"photoImport");await action(p,"spotPick");await p.locator("#mapViewport").tap({position:{x:180,y:280}});await p.locator("#spotVideo").setInputFiles(path.join(root,"tests/fixtures/clip.mp4"));await p.locator("#spotVideoPreview").waitFor({state:"visible"});},{scroll:true,state:"synthetic two-second video fixture"});
+add("video-selected","短い動画を残す・選択済み","写真",async p=>{await action(p,"photoImport");await action(p,"spotPick");await p.locator("#mapViewport").tap({position:{x:180,y:280}});await p.locator("#spotVideo").setInputFiles(path.join(root,"tests/fixtures/clip.mp4"));await p.locator("#spotVideoPreview").waitFor({state:"visible",timeout:20000});await decodeAndPauseVideo(p,"#spotVideoPreview");},{scroll:true,state:"decoded-paused synthetic two-second MP4 fixture; real playback advanced"});
 add("record-too-short","道がない記録の保存案内","記録",p=>action(p,"finish"),{active:{...active,points:[]},state:"empty synthetic checkpoint"});
 add("badges-load-error","エリアバッジ・読み込みエラー","コレクション",async p=>{await p.route("**/data/japan-municipalities.geojson",route=>route.abort());await action(p,"badges");await p.waitForFunction(()=>!document.querySelector("#areaProgress"));},{state:"intentional boundary request failure"});
 try{

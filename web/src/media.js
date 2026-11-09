@@ -1,3 +1,22 @@
+// Install listeners before loading/seeking, and release them even when a
+// browser decoder stops reporting progress for an imported local file.
+function videoEvent(video, type, begin, failure) {
+  return new Promise((resolve, reject) => {
+    const finish = (error) => {
+      clearTimeout(timer);
+      video.removeEventListener(type, ready);
+      video.removeEventListener("error", failed);
+      error ? reject(error) : resolve();
+    };
+    const ready = () => finish();
+    const failed = () => finish(Error(failure));
+    const timer = setTimeout(() => finish(Error("動画の読み込みが進みません。別の短い動画をお試しください。")), 8000);
+    video.addEventListener(type, ready, { once: true });
+    video.addEventListener("error", failed, { once: true });
+    try { begin(); } catch (error) { finish(error); }
+  });
+}
+
 export async function readVideo(blob, knownDuration = null) {
   if (blob.size > 15 * 1024 * 1024)
     throw Error("動画は 15 MB 以下で選んでください。");
@@ -8,22 +27,17 @@ export async function readVideo(blob, knownDuration = null) {
   video.muted = true;
   video.playsInline = true;
   try {
-    video.src = url;
-    await new Promise((resolve, reject) => {
-      video.onloadedmetadata = resolve;
-      video.onerror = () =>
-        reject(Error("この動画形式を読み取れません。MP4 をお試しください。"));
-    });
+    await videoEvent(video, "loadedmetadata", () => { video.src = url; },
+      "この動画形式を読み取れません。MP4 または WebM をお試しください。");
     const duration = Number.isFinite(video.duration)
       ? video.duration
       : knownDuration;
     if (!Number.isFinite(duration) || duration > 2.6 || duration <= 0)
       throw Error("1〜2 秒の短い動画を選んでください。");
-    video.currentTime = Math.min(0.1, video.duration / 2);
-    await new Promise((resolve, reject) => {
-      video.onseeked = resolve;
-      video.onerror = () => reject(Error("動画の画像を読み取れません。"));
-    });
+    await videoEvent(video, "seeked", () => { video.currentTime = Math.min(0.1, video.duration / 2); },
+      "動画の画像を読み取れません。");
+    if (video.readyState < 2 || video.videoWidth <= 0 || video.videoHeight <= 0)
+      throw Error("動画の画像を読み取れません。");
     const scale = Math.min(
         1,
         720 / Math.max(video.videoWidth, video.videoHeight),
