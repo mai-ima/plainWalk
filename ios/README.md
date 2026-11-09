@@ -2,7 +2,7 @@
 
 通常の起動先は `NativeRootView` です。SwiftUI のタブ・ナビゲーション・シート、Canvas の白地図、MapKit の答え合わせ地図を使います。Web ページをそのまま表示する起動構成から変更しました。PlainWalk の公開画面と機能を基にした独立実装で、元アプリのソースや署名済みアプリではありません。
 
-**[CI 41302732947](https://github.com/mai-ima/plainWalk/actions/runs/41302732947) で、本体・Live Activity 拡張と Playgrounds のコンパイル、Simulator の保存・復旧・取り込み・写真・ノート・MP4 の自己テスト、基本 14 枚と追加 72 区間の撮影、診断画像のタイトル検出が通過しました。実機・配布署名は未検証で、署名済み IPA はありません。最新の結果は [ルート README](../README.md#検証と限界)を参照してください。**
+2026-11-09 の再開後、CI で本体・Playgrounds のビルドが通過しましたが、Simulator の MapKit 3D pitch 検証は未通過です。地図の表示範囲と写真一覧の撮影に関する追加修正も、最新 CI での実行確認を待っています。[CI 41302732947](https://github.com/mai-ima/plainWalk/actions/runs/41302732947) の自己テスト・86 枚撮影の成功は旧版の履歴です。実機・配布署名は未検証で、署名済み IPA はありません。最新の結果は [ルート README](../README.md#検証と限界)を参照してください。
 
 ## iPhone で使う方針
 

@@ -324,7 +324,7 @@
       "category": "制作・写真",
       "group": "creation",
       "state": "合成データ",
-      "expectedText": "配置|位置|撮影",
+      "expectedText": "現在地に置く",
       "screen": "spot",
       "marker": "spot",
       "scroll": "photoLocation",

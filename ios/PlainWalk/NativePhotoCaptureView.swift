@@ -36,6 +36,8 @@ import UniformTypeIdentifiers
     @State private var placementSource = "current"
     @State private var awaitingCurrentPlacement = false
     @State private var failure: String?
+    @State private var captureViewportFrame = CGRect.zero
+    @State private var capturePlacementFrame = CGRect.zero
     init(model: NativeAppModel) {
         _model = ObservedObject(wrappedValue: model)
         #if DEBUG
@@ -97,9 +99,16 @@ import UniformTypeIdentifiers
                     TextField("どんなところでしたか？", text: $caption, axis: .vertical).lineLimit(3...6).padding(16).background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 17))
                     HStack { Text("しるし"); Spacer(); Picker("しるし", selection: $emoji) { ForEach(["♡", "☕", "🌿", "🌸", "✨", "📷"], id: \.self) { Text($0).tag($0) } }.pickerStyle(.menu) }
                     placementControls.id("photoLocation")
+                        .modifier(NCPhotoCaptureBounds(name: "placement"))
                     if let failure { Text(failure).font(.footnote).foregroundStyle(.red).frame(maxWidth: .infinity, alignment: .leading) }
                 }.padding(20)
-            }.task { await captureScroll(proxy) }
+            }
+            .modifier(NCPhotoCaptureBounds(name: "viewport"))
+            .onPreferenceChange(NCPhotoCaptureBoundsKey.self) { frames in
+                captureViewportFrame = frames["viewport"] ?? .zero
+                capturePlacementFrame = frames["placement"] ?? .zero
+            }
+            .task { await captureScroll(proxy) }
             }
             .navigationTitle("ここいいな").navigationBarTitleDisplayMode(.inline).toolbar {
                 ToolbarItem(placement: .topBarLeading) { Button("キャンセル") { dismiss() } }
@@ -124,15 +133,32 @@ import UniformTypeIdentifiers
         #if DEBUG
         guard NativeScreenshotFixtures.isEnabled,
               ProcessInfo.processInfo.arguments.contains("-PlainWalkCaptureScroll=photoLocation") else { return }
-        await Task.yield()
-        guard !Task.isCancelled else { return }
-        var transaction = Transaction(); transaction.disablesAnimations = true
-        withTransaction(transaction) { proxy.scrollTo("photoLocation", anchor: .bottom) }
-        do { try await Task.sleep(nanoseconds: 200_000_000) } catch { return }
-        guard !Task.isCancelled else { return }
         let folder = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("PlainWalk", isDirectory: true)
-        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-        try? Data("photoLocation".utf8).write(to: folder.appendingPathComponent("capture-scroll.ready"), options: .atomic)
+        let marker = folder.appendingPathComponent("capture-scroll.ready")
+        try? FileManager.default.removeItem(at: marker)
+        // Image rendering and sheet presentation can relayout after the first task.
+        // Only signal readiness after the complete placement section is visibly
+        // inside the measured scroll viewport for several consecutive samples.
+        var visibleSamples = 0
+        for _ in 0..<60 {
+            do { try await Task.sleep(nanoseconds: 100_000_000) } catch { return }
+            guard !Task.isCancelled else { return }
+            let laidOut = captureViewportFrame.width > 0 && captureViewportFrame.height > 0 && capturePlacementFrame.width > 0 && capturePlacementFrame.height > 0
+            guard laidOut, importedPhoto, !busy else { visibleSamples = 0; continue }
+            if captureViewportFrame.insetBy(dx: 0, dy: 4).contains(capturePlacementFrame) {
+                visibleSamples += 1
+                if visibleSamples >= 3 {
+                    try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+                    try? Data("photoLocation".utf8).write(to: marker, options: .atomic)
+                    return
+                }
+            } else {
+                visibleSamples = 0
+                var transaction = Transaction(); transaction.disablesAnimations = true
+                withTransaction(transaction) { proxy.scrollTo("photoLocation", anchor: .bottom) }
+            }
+        }
+        // Leave the marker absent on timeout so the runner rejects this capture.
         #endif
     }
     private func openCamera() async {
@@ -233,6 +259,26 @@ import UniformTypeIdentifiers
         if let imageData { spot["photo"] = "data:image/jpeg;base64," + imageData.base64EncodedString(); spot["film"] = film; spot["filmIntensity"] = intensity }
         if let videoData { spot["video"] = "data:video/quicktime;base64," + videoData.base64EncodedString(); spot["videoType"] = "video/quicktime" }
         do { try model.updateLibrary { library in var spots = library["spots"] as? [[String: Any]] ?? []; spots.append(spot); library["spots"] = spots }; UIImpactFeedbackGenerator(style: .light).impactOccurred(); dismiss() } catch { failure = error.localizedDescription }
+    }
+}
+private struct NCPhotoCaptureBoundsKey: PreferenceKey {
+    static var defaultValue: [String: CGRect] { [:] }
+    static func reduce(value: inout [String: CGRect], nextValue: () -> [String: CGRect]) {
+        value.merge(nextValue(), uniquingKeysWith: { _, latest in latest })
+    }
+}
+private struct NCPhotoCaptureBounds: ViewModifier {
+    let name: String
+    @ViewBuilder func body(content: Content) -> some View {
+        #if DEBUG
+        content.background {
+            GeometryReader { geometry in
+                Color.clear.preference(key: NCPhotoCaptureBoundsKey.self, value: [name: geometry.frame(in: .global)])
+            }
+        }
+        #else
+        content
+        #endif
     }
 }
 private enum NCCaptureError: LocalizedError { case message(String); var errorDescription: String? { switch self { case .message(let message): return message } } }
