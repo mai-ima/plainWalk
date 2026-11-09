@@ -1,0 +1,3366 @@
+{
+  "version": 1,
+  "reviewedAt": "2026-11-09T10:26:12.845991+00:00",
+  "scope": "Individual visual review of every current implementation capture after the November 1 fixes, with file hashes and source provenance. Synthetic data; no certification of original-app pixel parity, physical-device GPS, OS permissions, or unimplemented features.",
+  "totalImages": 199,
+  "native": {
+    "runtimeValidationCommit": "e9f77e354bc528488ec318b8b32f115c0c391893",
+    "sourceCommits": [
+      "63b4d832d656cdaa8ca8166cd1c28f8091a58ef9",
+      "9f9a05ea0052e943c3368f7baf1f8490491e619a",
+      "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+      "b6ab64dfecba44bc9b0d9534cd6d19c08519739f",
+      "e9f77e354bc528488ec318b8b32f115c0c391893"
+    ],
+    "sourceManifestSha256": "2647871bc02433e2f9f3f7f347e0efbdfcf141979080d69f7093789fc5ec26f3",
+    "imageCount": 86,
+    "individuallyReviewed": true,
+    "reuseProvenance": {
+      "retainedSourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+      "runtimeValidationCommit": "e9f77e354bc528488ec318b8b32f115c0c391893",
+      "retainedImageCount": 41,
+      "retainedGroups": [
+        "collections",
+        "layers-developer",
+        "settings-a",
+        "settings-b"
+      ],
+      "recapturedImageCount": 45,
+      "recapturedGroups": [
+        "baseline",
+        "records",
+        "maps",
+        "creation"
+      ],
+      "captureSourceByGroup": {
+        "baseline": "e9f77e354bc528488ec318b8b32f115c0c391893",
+        "records": "9f9a05ea0052e943c3368f7baf1f8490491e619a",
+        "maps": "63b4d832d656cdaa8ca8166cd1c28f8091a58ef9",
+        "creation": "b6ab64dfecba44bc9b0d9534cd6d19c08519739f",
+        "collections": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "layers-developer": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "settings-a": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "settings-b": "b29eddf2d39fe2bb4693704f5f3624a02328f269"
+      },
+      "changedFiles": [
+        {
+          "path": ".github/workflows/verify.yml",
+          "previous": "f47d11fdc83948f500a1c54dcb017ab9e98e8c23",
+          "current": "a7554826588547feffe57138e618d4420bc2d1db"
+        },
+        {
+          "path": "docs/work-checkpoint.md",
+          "previous": "712bb35e17a8f8bb21f5e6d1fcfeaec2e767cadc",
+          "current": "1c33fb546a5fe976968c9572032cfb1677426d9c"
+        },
+        {
+          "path": "ios/PlainWalk/NativeAnswerMapView.swift",
+          "previous": "799c411bdce4fb3b60f4ea787c09471abc9bcdfe",
+          "current": "f5ac722961e2b6ae7c1dcf8385d76d33bc83512e"
+        },
+        {
+          "path": "ios/PlainWalk/NativePhotoCaptureView.swift",
+          "previous": "c3fc52e320aa059ff6e4a399cec94573b480ca06",
+          "current": "20dd2d8462dff44dac4ed028a8f3b59097ee8e2c"
+        },
+        {
+          "path": "ios/PlainWalk/NativeRootView.swift",
+          "previous": "043ea5e2861523f2018442de43da42d1b836ffb1",
+          "current": "8d8732b01ef59b32f73d8e9809ce1af7995ea8cd"
+        },
+        {
+          "path": "scripts/capture-native-screens.py",
+          "previous": "67626aacc5d8dc75bcbd75f67e246786f3f79f83",
+          "current": "07b1999adcf9b3bce407abc21fdb725f85a30665"
+        },
+        {
+          "path": "scripts/ios-simulator-smoke.sh",
+          "previous": "83544e7af3d6a29eb1232e92f830f8a896cf1e81",
+          "current": "fb65b0f7e4e5051065df8fd628bd2f9b5988e553"
+        }
+      ],
+      "unchangedCanonicalSwiftFiles": [
+        {
+          "path": "ios/PlainWalk/CutoutService.swift",
+          "gitBlobSha": "ab04585bc628fe6dab3871a435899b807be59928"
+        },
+        {
+          "path": "ios/PlainWalk/DiagnosticService.swift",
+          "gitBlobSha": "a6c4c4b563fe139302d7ea68411d8538a5a299d5"
+        },
+        {
+          "path": "ios/PlainWalk/HealthService.swift",
+          "gitBlobSha": "4ebe1b91bfcbffac4bc56c51a7214711ac183286"
+        },
+        {
+          "path": "ios/PlainWalk/LiveActivityService.swift",
+          "gitBlobSha": "be6a501438a18074c203d3e9cb69c72fbb152e43"
+        },
+        {
+          "path": "ios/PlainWalk/LocationRecorder.swift",
+          "gitBlobSha": "227acb2c3d35266a6875494dd8fae6e1ad1def2a"
+        },
+        {
+          "path": "ios/PlainWalk/MotionService.swift",
+          "gitBlobSha": "bc4b13495772b48003fe554673f91990c9b75fdf"
+        },
+        {
+          "path": "ios/PlainWalk/NativeAppModel.swift",
+          "gitBlobSha": "28965cc13e4665b724b5003a633b3d7cd0e81256"
+        },
+        {
+          "path": "ios/PlainWalk/NativeBoundaryGeometry.swift",
+          "gitBlobSha": "60b0e55b98b569030fd244e3d2077b253adda83a"
+        },
+        {
+          "path": "ios/PlainWalk/NativeBridge.swift",
+          "gitBlobSha": "0cc21d15a2507c02829e6ef0aefe04f2e4a9057a"
+        },
+        {
+          "path": "ios/PlainWalk/NativeCollectionsView.swift",
+          "gitBlobSha": "5f6821210530cf23da6390da1c6231cad5991d2f"
+        },
+        {
+          "path": "ios/PlainWalk/NativeDeveloperView.swift",
+          "gitBlobSha": "b2468f9a46b126b218125dd66d22ed53908a6234"
+        },
+        {
+          "path": "ios/PlainWalk/NativeDoodleProgress.swift",
+          "gitBlobSha": "9337bd4102a771793e46b34dccf4e3b0972e1a9e"
+        },
+        {
+          "path": "ios/PlainWalk/NativeFixedTabBar.swift",
+          "gitBlobSha": "ce09f8e01b6212b6eed2c4b678f717f4cea67d40"
+        },
+        {
+          "path": "ios/PlainWalk/NativeLUTView.swift",
+          "gitBlobSha": "ae5dd73242a36088f02d6e36bfe35b2ec04d7eb3"
+        },
+        {
+          "path": "ios/PlainWalk/NativeLayerView.swift",
+          "gitBlobSha": "7d64fab6965c761cbc48021304c7e6f1bb687d10"
+        },
+        {
+          "path": "ios/PlainWalk/NativeMapController.swift",
+          "gitBlobSha": "2495caf7865bd446c1d2e83fd4895d8649c49357"
+        },
+        {
+          "path": "ios/PlainWalk/NativeMapProjection.swift",
+          "gitBlobSha": "629d881918babfcbde7f09f8a106a4d2c6d335c8"
+        },
+        {
+          "path": "ios/PlainWalk/NativeModels.swift",
+          "gitBlobSha": "ea33b169b5a97d5ea9d275faa9c320dd98a1c5e0"
+        },
+        {
+          "path": "ios/PlainWalk/NativeMyMapView.swift",
+          "gitBlobSha": "32756916b270042f4e435aad170ca4ee3100f0fc"
+        },
+        {
+          "path": "ios/PlainWalk/NativeNoteCanvas.swift",
+          "gitBlobSha": "338e938a786efb7b8a9dec65249fde4f3b193971"
+        },
+        {
+          "path": "ios/PlainWalk/NativeNoteTransform.swift",
+          "gitBlobSha": "eb33acecad0392788105179405537e22c2e8543b"
+        },
+        {
+          "path": "ios/PlainWalk/NativePhotoMetadata.swift",
+          "gitBlobSha": "03395c745381f4443b3935c2891b9fa1606a5590"
+        },
+        {
+          "path": "ios/PlainWalk/NativeProfileView.swift",
+          "gitBlobSha": "babb97bdc3cd806a6f06139cd92c341891eee1f8"
+        },
+        {
+          "path": "ios/PlainWalk/NativeRecordsView.swift",
+          "gitBlobSha": "f2eb3d52f99d57d58fddaa9a44fb60411e6a8d60"
+        },
+        {
+          "path": "ios/PlainWalk/NativeReplayMovie.swift",
+          "gitBlobSha": "f3e51f34c6ed4136eb0d14e8e483b2bfc27ecd4d"
+        },
+        {
+          "path": "ios/PlainWalk/NativeScreenshotFixtures.swift",
+          "gitBlobSha": "7062f7a037833b4166fd217690730988a34caec0"
+        },
+        {
+          "path": "ios/PlainWalk/NativeSettingsView.swift",
+          "gitBlobSha": "e04ada81ae2df0ebe09dc03bee2a370bbc58758f"
+        },
+        {
+          "path": "ios/PlainWalk/NativeStepGoalView.swift",
+          "gitBlobSha": "c8de937e299f634b755aa24d038941295e4b6e85"
+        },
+        {
+          "path": "ios/PlainWalk/NativeStore.swift",
+          "gitBlobSha": "d56213ad22cd741fdfe9f28801ad3de0020c9f2f"
+        },
+        {
+          "path": "ios/PlainWalk/NativeTrackEditorView.swift",
+          "gitBlobSha": "e8c5aeb0028166a82bd7f18c50aa1b19befd1902"
+        },
+        {
+          "path": "ios/PlainWalk/NativeTrackIO.swift",
+          "gitBlobSha": "dcce45d6b4f20aa09cf27a8ea709a2dfad73f6ff"
+        },
+        {
+          "path": "ios/PlainWalk/NativeTrackMath.swift",
+          "gitBlobSha": "ed86204ff1df643f7c75277e72ed8a02bb3f7f7e"
+        },
+        {
+          "path": "ios/PlainWalk/NativeUtilityViews.swift",
+          "gitBlobSha": "8c64c7014557f094b4ca289f95ac9225dd77273e"
+        },
+        {
+          "path": "ios/PlainWalk/NotificationService.swift",
+          "gitBlobSha": "e085f97077a11f806984d67b77eba48b79bf2070"
+        },
+        {
+          "path": "ios/PlainWalk/PlainWalkApp.swift",
+          "gitBlobSha": "d46727b329476360ee1c39e23ad620298c9a79ff"
+        }
+      ],
+      "scope": "Preserve actual PNG commits: B29 collection/layer/developer/settings41, D creation10, E records13, F maps8. Baseline14 is captured at runtime validation commit G. F-to-G changes only a DEBUG numerical viewport predicate; the production camera source and all other canonical app Swift files are identical, so F map images remain valid. No PNG provenance is relabeled.",
+      "readinessChanges": {
+        "probe": "Actual UIView overlay; real draw/window/ancestor/modal/transition checks retained",
+        "uiAppearanceWaitSeconds": 60,
+        "observedColdMetalPipelineSeconds": 49.4,
+        "cameraSettleDeadlineSeconds": 5
+      },
+      "datelineChanges": {
+        "fit": "Cross-world bounds use a normalized center and small padded geographic region",
+        "distance": "Nearest world X alias before measuring centers",
+        "proof": "Retain <1 degree local span, both map points contained and pixel positions visible; include numeric diagnostics"
+      },
+      "equivalentMapCapture": {
+        "captureCommit": "63b4d832d656cdaa8ca8166cd1c28f8091a58ef9",
+        "validationCommit": "e9f77e354bc528488ec318b8b32f115c0c391893",
+        "productionSourceIdenticalAfterExcludingDebug": true,
+        "allOtherCanonicalAppSwiftFilesUnchanged": true,
+        "productionSourceSHA256": "4e234fdb756efa433af98f89e260b1838f71f315a2ee98910ed16f494c525494"
+      }
+    },
+    "images": [
+      {
+        "group": "baseline",
+        "filename": "ios-native-map.png",
+        "sourceCommit": "e9f77e354bc528488ec318b8b32f115c0c391893",
+        "sha256": "e379521d475acb6a496f7bf404f2cb3a428914d9765a3c9c334bec4899bf5c7d",
+        "individuallyViewed": true,
+        "visibleState": "Empty white-map state shows first-walk guidance, zero explored totals, complete record/location/layer controls and a single fixed My Map footer. No lower-content clipping.",
+        "p0p1Result": "PASS: no visible app P0/P1 issue",
+        "p2Residual": "Map-action glyphs remain approximations of the original design; no GPS data is shown.",
+        "path": "baseline/ios-native-map.png"
+      },
+      {
+        "group": "baseline",
+        "filename": "ios-native-settings.png",
+        "sourceCommit": "e9f77e354bc528488ec318b8b32f115c0c391893",
+        "sha256": "46a04bc9be4c4e7964d526006610ca1cf68e1f0ec88232b867f18ebcb88d3670",
+        "individuallyViewed": true,
+        "visibleState": "Settings page shows movement choices, home/work/place rows, explicit unsupported-automation explanation, appearance/unit rows and one Profile footer. Partial unit row is a normal scroll boundary.",
+        "p0p1Result": "PASS: no visible app P0/P1 issue",
+        "p2Residual": "Original feature parity is not established; unavailable automatic behavior is disclosed visibly.",
+        "path": "baseline/ios-native-settings.png"
+      },
+      {
+        "group": "baseline",
+        "filename": "ios-native-records.png",
+        "sourceCommit": "e9f77e354bc528488ec318b8b32f115c0c391893",
+        "sha256": "b50a545d085f03d85b7e6a7ac262c0ad90f01806d8090b3a34f9862a066c5d13",
+        "individuallyViewed": true,
+        "visibleState": "Empty records page shows zero weekly totals, November dot calendar, weekly-review row and both action cards above one fixed Records footer.",
+        "p0p1Result": "PASS: no visible app P0/P1 issue",
+        "p2Residual": "Weekly calendar remains taller and less dense than the original promo reference.",
+        "path": "baseline/ios-native-records.png"
+      },
+      {
+        "group": "baseline",
+        "filename": "ios-native-profile.png",
+        "sourceCommit": "e9f77e354bc528488ec318b8b32f115c0c391893",
+        "sha256": "ab1d85a58f079943826b070be7d9415768c023000ad0ad0007e509e9c4703377",
+        "individuallyViewed": true,
+        "visibleState": "Empty profile shows zero totals, seven collection rows and the next section above one fixed Profile footer. Visible rows are readable and contained.",
+        "p0p1Result": "PASS: no visible app P0/P1 issue",
+        "p2Residual": null,
+        "path": "baseline/ios-native-profile.png"
+      },
+      {
+        "group": "baseline",
+        "filename": "ios-native-layers.png",
+        "sourceCommit": "e9f77e354bc528488ec318b8b32f115c0c391893",
+        "sha256": "78188a164d91b3ca3e5233aacc6bd282653890910ca4b332e2040161bdb38f37",
+        "individuallyViewed": true,
+        "visibleState": "Layer sheet shows palette, line, photo-pin and location-style choices, complete outline toggle and Close. Lower explanatory text continues naturally beyond the scroll boundary.",
+        "p0p1Result": "PASS: no visible app P0/P1 issue",
+        "p2Residual": "Cat artwork remains approximate; omitted Plus/lock treatment follows prior user instruction.",
+        "path": "baseline/ios-native-layers.png"
+      },
+      {
+        "group": "baseline",
+        "filename": "ios-native-answer.png",
+        "sourceCommit": "e9f77e354bc528488ec318b8b32f115c0c391893",
+        "sha256": "51ef4cac4252784a70d24456d5df215450e5882ce5c3db6abc22e0a037fe47c8",
+        "individuallyViewed": true,
+        "visibleState": "No-fix answer map shows a fully rendered Japan-wide viewport with Japan land, complete title/Close, layers/location controls and both readable bottom actions.",
+        "p0p1Result": "PASS: no visible app P0/P1 issue",
+        "p2Residual": "Wide no-GPS fallback differs from a location-centred reference; this image does not establish GPS accuracy.",
+        "path": "baseline/ios-native-answer.png"
+      },
+      {
+        "group": "baseline",
+        "filename": "ios-native-spots.png",
+        "sourceCommit": "e9f77e354bc528488ec318b8b32f115c0c391893",
+        "sha256": "39576d8ec8af651af67abf736397820fbf9f7083acc13268c5abfa6790ab9925",
+        "individuallyViewed": true,
+        "visibleState": "Empty photo collection shows full heading, icon and explanatory text, plus one fixed Profile footer. No horizontal clipping.",
+        "p0p1Result": "PASS: no visible app P0/P1 issue",
+        "p2Residual": "Empty-state typography and rounded back-button treatment retain the documented reference differences.",
+        "path": "baseline/ios-native-spots.png"
+      },
+      {
+        "group": "baseline",
+        "filename": "ios-native-doodles.png",
+        "sourceCommit": "e9f77e354bc528488ec318b8b32f115c0c391893",
+        "sha256": "76abd555a96452defb26a45318ca225788e2db1646bd02cebfe6feade008aace",
+        "individuallyViewed": true,
+        "visibleState": "Empty doodle collection shows its complete introductory card, explanation, visible draw action and header controls. One Profile footer is present; no clipped button.",
+        "p0p1Result": "PASS: no visible app P0/P1 issue",
+        "p2Residual": "Introductory typography and wording retain documented differences from the original reference.",
+        "path": "baseline/ios-native-doodles.png"
+      },
+      {
+        "group": "baseline",
+        "filename": "ios-native-menu.png",
+        "sourceCommit": "e9f77e354bc528488ec318b8b32f115c0c391893",
+        "sha256": "2cf04b6e62f7d66832bd3ab134a106e708bef0eb27415263c944e00b83aba767",
+        "individuallyViewed": true,
+        "visibleState": "Menu sheet shows answer-map/layer/statistics/replay actions, seven collection rows and settings section start, with Close visible. Lower continuation is a normal scroll boundary.",
+        "p0p1Result": "PASS: no visible app P0/P1 issue",
+        "p2Residual": null,
+        "path": "baseline/ios-native-menu.png"
+      },
+      {
+        "group": "baseline",
+        "filename": "ios-native-stepGoal.png",
+        "sourceCommit": "e9f77e354bc528488ec318b8b32f115c0c391893",
+        "sha256": "d7fba3b04bbd5c9c1adac2dd73485b0196e4760280690da31d5caf61cc008dfd",
+        "individuallyViewed": true,
+        "visibleState": "Step-goal body shows unavailable current steps, goal toggle,5000-step value, slider, +/- adjustment and preset action. An OS Apple Intelligence notification obscures the header area.",
+        "p0p1Result": "PASS: no visible app P0/P1 issue",
+        "p2Residual": "Screenshot limitation: external OS notification covers the title/Close area, which cannot be assessed from this PNG; no app display bug is established.",
+        "path": "baseline/ios-native-stepGoal.png"
+      },
+      {
+        "group": "baseline",
+        "filename": "ios-native-lut.png",
+        "sourceCommit": "e9f77e354bc528488ec318b8b32f115c0c391893",
+        "sha256": "39e253013e832d1347c995b26b92d9dc161173265ddfaa11385eb7c46fdf7aaa",
+        "individuallyViewed": true,
+        "visibleState": "LUT sheet shows rendered colour chart, choose-photo and comparison controls, film selector,100% intensity slider and cube-import action, with title/Close visible.",
+        "p0p1Result": "PASS: no visible app P0/P1 issue",
+        "p2Residual": null,
+        "path": "baseline/ios-native-lut.png"
+      },
+      {
+        "group": "baseline",
+        "filename": "ios-native-spot.png",
+        "sourceCommit": "e9f77e354bc528488ec318b8b32f115c0c391893",
+        "sha256": "39f05ca09b207345ff1981cde4774e1f3dab12cc6331001ad0c3d7521ec76822",
+        "individuallyViewed": true,
+        "visibleState": "Empty photo-entry sheet shows Cancel/disabled Save, photo/video selector, readable capture/select buttons, film/note/marker controls and the location requirement. Remaining form continues vertically.",
+        "p0p1Result": "PASS: no visible app P0/P1 issue",
+        "p2Residual": null,
+        "path": "baseline/ios-native-spot.png"
+      },
+      {
+        "group": "baseline",
+        "filename": "ios-native-noteEditor.png",
+        "sourceCommit": "e9f77e354bc528488ec318b8b32f115c0c391893",
+        "sha256": "d59d3a61cdf506f08fee8c3bd1082eabd41e8b6ab870c12f271848d3151cfcd3",
+        "individuallyViewed": true,
+        "visibleState": "Empty note editor shows Close/Save, date, input area, paper/font selectors and an empty dated preview. The long preview continues vertically without horizontal clipping.",
+        "p0p1Result": "PASS: no visible app P0/P1 issue",
+        "p2Residual": null,
+        "path": "baseline/ios-native-noteEditor.png"
+      },
+      {
+        "group": "baseline",
+        "filename": "ios-native-developer.png",
+        "sourceCommit": "e9f77e354bc528488ec318b8b32f115c0c391893",
+        "sha256": "ef71712bac4f7e2f4c3bc24a61fe6100c8e01b873230f65e3b1b7cf3d57b500f",
+        "individuallyViewed": true,
+        "visibleState": "Diagnostic sheet clearly shows xcode,OS26.4.1,iPhone Simulator, stopped recording, zero points, GPS unavailable and permission states, with title/Close visible.",
+        "p0p1Result": "PASS: no visible app P0/P1 issue",
+        "p2Residual": "Minor wording remains: GPS unavailable is followed by the unit m. This is Simulator evidence, not a physical-device run.",
+        "path": "baseline/ios-native-developer.png"
+      },
+      {
+        "group": "records",
+        "filename": "ios-mapData.png",
+        "sourceCommit": "9f9a05ea0052e943c3368f7baf1f8490491e619a",
+        "sha256": "7714d7ce5981333d86d3558ae285419843312169dac247bbea3ec6f739a930d0",
+        "individuallyViewed": true,
+        "visibleState": "White map shows two synthetic trail loops, a picture marker and destination label; distance totals and one fixed three-tab footer are fully visible.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": "Map glyph styling remains approximate; synthetic loops do not establish GPS accuracy.",
+        "path": "records/ios-mapData.png"
+      },
+      {
+        "group": "records",
+        "filename": "ios-recordsData.png",
+        "sourceCommit": "9f9a05ea0052e943c3368f7baf1f8490491e619a",
+        "sha256": "1e02369b961c97965ea0841ea3078924ee969e71e34b4c48dd3479b7a04ad6bc",
+        "individuallyViewed": true,
+        "visibleState": "Records page shows weekly totals, November dot calendar, weekly-review row and both action cards; one fixed Records footer. No duplicate footer or horizontal clipping.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": "Weekly calendar/card remains substantially taller and less dense than the original promo reference.",
+        "path": "records/ios-recordsData.png"
+      },
+      {
+        "group": "records",
+        "filename": "ios-profileData.png",
+        "sourceCommit": "9f9a05ea0052e943c3368f7baf1f8490491e619a",
+        "sha256": "5dd4733bb0ccd0f392315a7f8ab014dadb3fa36e5874d9afe6e97e4ba6d05efe",
+        "individuallyViewed": true,
+        "visibleState": "Profile shows two walks/two days/3.19 km totals, seven collection rows and the next section; one Profile footer. Visible rows remain clear.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "records/ios-profileData.png"
+      },
+      {
+        "group": "records",
+        "filename": "ios-stats.png",
+        "sourceCommit": "9f9a05ea0052e943c3368f7baf1f8490491e619a",
+        "sha256": "988af9eaf2d84e8960e1e078ee9a677b0b7394db25ca76326880ee5f6fb4e395",
+        "individuallyViewed": true,
+        "visibleState": "Walking-statistics sheet shows four complete totals, two recent walks, title and Close. All visible text and actions fit.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "records/ios-stats.png"
+      },
+      {
+        "group": "records",
+        "filename": "ios-walk.png",
+        "sourceCommit": "9f9a05ea0052e943c3368f7baf1f8490491e619a",
+        "sha256": "3629271be65fe0462758749548e4cfd595e651a73a34e7b83b060b429e0847e5",
+        "individuallyViewed": true,
+        "visibleState": "Walk detail shows the complete synthetic loop, date, three totals, replay/GPX/map/edit actions and a clear synthetic-data explanation.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": "Action composition remains different from the original promo reference; exact state equivalence is unproven.",
+        "path": "records/ios-walk.png"
+      },
+      {
+        "group": "records",
+        "filename": "ios-profileBottom.png",
+        "sourceCommit": "9f9a05ea0052e943c3368f7baf1f8490491e619a",
+        "sha256": "e5f663bf5dbbe8d03dc87bb29da17f2903a2be7c9835dc8bf7913c92ccafac2b",
+        "individuallyViewed": true,
+        "visibleState": "Scrolled profile shows settings/import/backup rows and final slogan above one fixed Profile footer. No terminal-row clipping; upper rows naturally scroll behind the header.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "records/ios-profileBottom.png"
+      },
+      {
+        "group": "records",
+        "filename": "ios-recordsBottom.png",
+        "sourceCommit": "9f9a05ea0052e943c3368f7baf1f8490491e619a",
+        "sha256": "b21842e1864a7a3a7dee36d58c58554059c0f6ce1d68b27392346c7fb9c89552",
+        "individuallyViewed": true,
+        "visibleState": "Scrolled records page shows both action cards and both complete walk cards with readable totals; final card clears the single Records footer.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": "The calendar retains the previously documented generous height/density difference.",
+        "path": "records/ios-recordsBottom.png"
+      },
+      {
+        "group": "records",
+        "filename": "ios-walkPhotos.png",
+        "sourceCommit": "9f9a05ea0052e943c3368f7baf1f8490491e619a",
+        "sha256": "784fc8b1e806981a551c3a7302aeb27d389a4b3efee5d45989c5dfb0f232f788",
+        "individuallyViewed": true,
+        "visibleState": "Scrolled walk detail shows all four actions, full synthetic-data note and a photo thumbnail cell that stays inside the screen.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": "The fill-cropped synthetic thumbnail clips its embedded label at the left edge; this is image crop rather than a missing cell.",
+        "path": "records/ios-walkPhotos.png"
+      },
+      {
+        "group": "records",
+        "filename": "ios-walkRename.png",
+        "sourceCommit": "9f9a05ea0052e943c3368f7baf1f8490491e619a",
+        "sha256": "42c859b0cbfc2f0dedec94e0e6da599b1368b76997e635c80f6d4a047394398b",
+        "individuallyViewed": true,
+        "visibleState": "Rename sheet shows complete Cancel/Save controls, populated name field and note field. Sheet is presented correctly; keyboard is not shown.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "records/ios-walkRename.png"
+      },
+      {
+        "group": "records",
+        "filename": "ios-trackEditor.png",
+        "sourceCommit": "9f9a05ea0052e943c3368f7baf1f8490491e619a",
+        "sha256": "d365230c338743b7c41ac388b22d3e2dd0d145e31b7c4fc825da7022263a8026",
+        "individuallyViewed": true,
+        "visibleState": "Track-editor sheet is fully presented with Cancel/disabled Save, complete instructions, rendered Tokyo map and synthetic trail, distance row and first-point selection action. No routing failure is visible.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "records/ios-trackEditor.png"
+      },
+      {
+        "group": "records",
+        "filename": "ios-day.png",
+        "sourceCommit": "9f9a05ea0052e943c3368f7baf1f8490491e619a",
+        "sha256": "8c4f23304a526f9f7b4ed7cc1ae0c285a484dfee081ce247afbda0d41182e06d",
+        "individuallyViewed": true,
+        "visibleState": "Day sheet shows date, Close and one complete walk card; no clipped card or overlapping control.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "records/ios-day.png"
+      },
+      {
+        "group": "records",
+        "filename": "ios-week.png",
+        "sourceCommit": "9f9a05ea0052e943c3368f7baf1f8490491e619a",
+        "sha256": "764ae709cc78b32d54aeb2045913b75dd7f82e19eacb117fea77f0b02b874cf8",
+        "individuallyViewed": true,
+        "visibleState": "Weekly-review sheet shows period, three totals, two complete walk cards and Close. Remaining blank space is not evidence of a defect without an equivalent reference.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "records/ios-week.png"
+      },
+      {
+        "group": "records",
+        "filename": "ios-walkPhoto.png",
+        "sourceCommit": "9f9a05ea0052e943c3368f7baf1f8490491e619a",
+        "sha256": "47d62b980fd2653a4be51598d8a9e1d7e346794993d43f750461566e4382cd67",
+        "individuallyViewed": true,
+        "visibleState": "Photo detail shows full synthetic illustration, its label, title, note and timestamp with a visible Close control.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": "Photo detail time placement differs from the original promo over-image treatment; same-state equivalence is unproven.",
+        "path": "records/ios-walkPhoto.png"
+      },
+      {
+        "group": "maps",
+        "filename": "ios-answerData.png",
+        "sourceCommit": "63b4d832d656cdaa8ca8166cd1c28f8091a58ef9",
+        "sha256": "cc4549ea5ea815c0076ba2eae21207939decf6b990f60865f66176c078f54163",
+        "individuallyViewed": true,
+        "visibleState": "Flat answer map shows Tokyo/Otemachi street blocks, both saved loops and destination flag in one local viewport. Close/layers/location and both bottom actions are visible.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": "Road labels cross behind the unbacked title; POI/label density remains high.",
+        "path": "maps/ios-answerData.png"
+      },
+      {
+        "group": "maps",
+        "filename": "ios-answerSearch.png",
+        "sourceCommit": "63b4d832d656cdaa8ca8166cd1c28f8091a58ef9",
+        "sha256": "f811fbc83a23703cf2d0d59dae1b0dd039a5261d4c59e58468a3dd6e740eacb0",
+        "individuallyViewed": true,
+        "visibleState": "Search sheet is fully presented with title/Close, Tokyo query and one saved-fixture result explicitly marked synthetic, above a rendered Tokyo map.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": "Minor fixture issue: result name repeats the verification prefix; real search quality is not represented.",
+        "path": "maps/ios-answerSearch.png"
+      },
+      {
+        "group": "maps",
+        "filename": "ios-answerSelection.png",
+        "sourceCommit": "63b4d832d656cdaa8ca8166cd1c28f8091a58ef9",
+        "sha256": "82489df45aa00c8799e8ec1050bc89b65e9a6dbd1302958390129e020580b93d",
+        "individuallyViewed": true,
+        "visibleState": "Selection shows the local Tokyo map, existing/selected flag pins, a full selection card, readable navigate/bookmark controls and both bottom actions.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": "Nearby pin captions overlap, and the fixture verification prefix repeats.",
+        "path": "maps/ios-answerSelection.png"
+      },
+      {
+        "group": "maps",
+        "filename": "ios-answerSatellite.png",
+        "sourceCommit": "63b4d832d656cdaa8ca8166cd1c28f8091a58ef9",
+        "sha256": "a0ad7681062d9531a87a467a22d46e07709860ca4b2bd44c86b35c8923aa915e",
+        "individuallyViewed": true,
+        "visibleState": "Satellite map shows Tokyo buildings, saved loops and the expected local station viewport. Close/layers/location and both bottom actions render with complete icons/text, including the white destination flag and label.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": "Unbacked black title also has weak contrast against dark satellite roofs.",
+        "path": "maps/ios-answerSatellite.png"
+      },
+      {
+        "group": "maps",
+        "filename": "ios-answer3D.png",
+        "sourceCommit": "63b4d832d656cdaa8ca8166cd1c28f8091a58ef9",
+        "sha256": "b1ba23c882740e716353c370180b42d71e98ab01b1296a64dcc9b4b57d2f13d6",
+        "individuallyViewed": true,
+        "visibleState": "3D map shows clearly extruded Tokyo buildings, saved loops and destination flag in the expected station viewport; the previous cyan/Virta view is resolved. Both bottom actions have complete visible icons/text, including the white destination flag and label.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": "Map labels remain dense around the unbacked title; no exact original-app 3D match is claimed.",
+        "path": "maps/ios-answer3D.png"
+      },
+      {
+        "group": "maps",
+        "filename": "ios-mapSpot.png",
+        "sourceCommit": "63b4d832d656cdaa8ca8166cd1c28f8091a58ef9",
+        "sha256": "b2f0a25f278fa12ccab534b457918227f50f8c43a6a49b408b678dbdeb832d80",
+        "individuallyViewed": true,
+        "visibleState": "Photo-detail sheet shows a complete synthetic illustration, share action, title/note, timestamp and Close. Visible content fits.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": "Detail-card treatment differs from the original promo; same-state equivalence is unproven.",
+        "path": "maps/ios-mapSpot.png"
+      },
+      {
+        "group": "maps",
+        "filename": "ios-mapFlag.png",
+        "sourceCommit": "63b4d832d656cdaa8ca8166cd1c28f8091a58ef9",
+        "sha256": "bf395bb231a6b3c8e254576bffc3453b5f5b68843f69748da49d3b96a2d75524",
+        "individuallyViewed": true,
+        "visibleState": "Destination sheet shows its flag/name, readable location-share and remove-flag actions, plus Close. No clipped or hidden action.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "maps/ios-mapFlag.png"
+      },
+      {
+        "group": "maps",
+        "filename": "ios-health.png",
+        "sourceCommit": "63b4d832d656cdaa8ca8166cd1c28f8091a58ef9",
+        "sha256": "d5f03bcdfd5e76a0266e5eedb4397761bab45141555d8cc8010e71d785e552b9",
+        "individuallyViewed": true,
+        "visibleState": "Health-import sheet explicitly states fixture mode does not connect to HealthKit and directs actual permission/workout checks to iPhone; all explanation text and Close fit.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "maps/ios-health.png"
+      },
+      {
+        "group": "settings-b",
+        "filename": "ios-settings-import.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "97809494fa27af383804da9cdd7912509ae2eaf37b51cd575df56858f56b8395",
+        "individuallyViewed": true,
+        "visibleState": "Import state shows full file-import row, GPX export row, two backup rows and iCloud explanation, version/scope rows and beta section start. One bottom tab bar.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "settings-b/ios-settings-import.png"
+      },
+      {
+        "group": "settings-b",
+        "filename": "ios-settings-export.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "48f85fdb8ece7353f1bb7889228287e8c64df4e2c79b212d12580245feee3c9a",
+        "individuallyViewed": true,
+        "visibleState": "Export state shows full GPX export, two backup rows, iCloud explanation, version/scope rows and all three beta controls. No unexpected clipping.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "settings-b/ios-settings-export.png"
+      },
+      {
+        "group": "settings-b",
+        "filename": "ios-settings-backup.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "ead3e6049762306a5a26ff7840b29a2c48339199db48026d3c816a164578a073",
+        "individuallyViewed": true,
+        "visibleState": "Backup state shows full backup export/import card and explanation, version/scope, all beta controls and red reset action. Developer heading starts below.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "settings-b/ios-settings-backup.png"
+      },
+      {
+        "group": "settings-b",
+        "filename": "ios-settings-about.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "513c8a002a2fc570117e3882bfec3231da1ed7e00aa8ae5df68f25f217010774",
+        "individuallyViewed": true,
+        "visibleState": "About state shows full version/scope card, beta controls, red reset action, developer toggle and diagnostics row, and complete developer explanation. One tab bar.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "settings-b/ios-settings-about.png"
+      },
+      {
+        "group": "settings-b",
+        "filename": "ios-settings-beta.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "513c8a002a2fc570117e3882bfec3231da1ed7e00aa8ae5df68f25f217010774",
+        "individuallyViewed": true,
+        "visibleState": "Beta state shows complete beta switches (beta on, screen awake/GPS accuracy off), reset action, developer switch and diagnostics row plus full explanation.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "settings-b/ios-settings-beta.png"
+      },
+      {
+        "group": "settings-b",
+        "filename": "ios-settings-reset.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "d9a0f698497f6a0f4cc9a7148fb434d784623523dd2628ad9c0cb3c85c188428",
+        "individuallyViewed": true,
+        "visibleState": "Reset state shows full red reset action among complete beta and developer cards; no unexpected overlap or missing rendering.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "settings-b/ios-settings-reset.png"
+      },
+      {
+        "group": "settings-b",
+        "filename": "ios-settings-developer.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "800e3091ea2c5c03ff07939b51c821718d630918cbaf892a2000787360a92205",
+        "individuallyViewed": true,
+        "visibleState": "Developer settings state shows full developer switch and diagnostics row with explanation, plus beta/reset sections above; one tab bar.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "settings-b/ios-settings-developer.png"
+      },
+      {
+        "group": "settings-b",
+        "filename": "ios-resetDialog.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "d9b345e9534921db8d8406eb9bc88ff93ebca4dffbca493ee7625351a260b3d1",
+        "individuallyViewed": true,
+        "visibleState": "Native reset confirmation popover shows full title, full irreversible-deletion/backup explanation and complete red Delete All Records action, all inside screen.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "settings-b/ios-resetDialog.png"
+      },
+      {
+        "group": "settings-a",
+        "filename": "ios-settings-motion.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "e9fa01052da0a751301bc62f72e3927937f9254d06d70500b2dafab3af566a85",
+        "individuallyViewed": true,
+        "visibleState": "Settings screen shows motion selection with Nothing selected, Notify and Auto record rows; home/work/add-place rows; explanatory copy; light appearance and kilometer unit. One bottom tab bar, no unexpected clipping.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "settings-a/ios-settings-motion.png"
+      },
+      {
+        "group": "settings-a",
+        "filename": "ios-settings-places.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "75d646f9b3f96d59726862ce941afc66009509dd3d8c290d08e035a819f220ff",
+        "individuallyViewed": true,
+        "visibleState": "Settings places scroll state shows home/work/add-place card, full explanation, light appearance, kilometer unit, step goal and camera LUT cards. Notification heading begins at scroll boundary; one bottom tab bar.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "settings-a/ios-settings-places.png"
+      },
+      {
+        "group": "settings-a",
+        "filename": "ios-settings-appearance.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "56b26d28eaae871cc50d885925465e92a844d40d52ff58560740aac8492058d6",
+        "individuallyViewed": true,
+        "visibleState": "Appearance scroll state shows Light, kilometer unit, step goal, camera LUT, and all four notification/time rows with switches. Content continues naturally below tab bar; no card overflow.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "settings-a/ios-settings-appearance.png"
+      },
+      {
+        "group": "settings-a",
+        "filename": "ios-settings-units.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "0c518364e1ace87b252bc3d073a791b807892e296e1a5ed671f8e037dc66d906",
+        "individuallyViewed": true,
+        "visibleState": "Units scroll state shows kilometer selector, step goal, LUT, full notifications card with 7:45 time and off switches, explanation and start of Health section. One tab bar; no missing rendering.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "settings-a/ios-settings-units.png"
+      },
+      {
+        "group": "settings-a",
+        "filename": "ios-settings-steps.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "a87180e5a15026335531670327ccf44f349e023e9320db2b7417b28e4ce1561d",
+        "individuallyViewed": true,
+        "visibleState": "Steps scroll state shows full daily-goal and LUT rows, notifications controls, and Health toggle/workout row. No new text clipping or overlap.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "settings-a/ios-settings-steps.png"
+      },
+      {
+        "group": "settings-a",
+        "filename": "ios-settings-camera.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "396be66696e6b1f57d57c51035e5f1621646772d3b42c57bccc5b7fd237fc348",
+        "individuallyViewed": true,
+        "visibleState": "Camera scroll state shows LUT row, full notifications controls, Health rows and complete Health explanation. Import heading starts below. No unexpected missing content.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "settings-a/ios-settings-camera.png"
+      },
+      {
+        "group": "settings-a",
+        "filename": "ios-settings-notifications.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "71d142c5da99be1645abba68c54c314a3761f614f693dcbf767ac6643c2bab39",
+        "individuallyViewed": true,
+        "visibleState": "Notifications scroll state shows full notifications controls, Health rows and explanation, full file import row and export heading below. No clipping beyond normal scroll boundary.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "settings-a/ios-settings-notifications.png"
+      },
+      {
+        "group": "settings-a",
+        "filename": "ios-settings-health.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "9dcb56e6fd20482964e3e97321e156c8adce158135c3a18a6a6c9b78316e55d5",
+        "individuallyViewed": true,
+        "visibleState": "Health scroll state shows complete Health rows and explanation, file import and GPX export rows, full two-row backup card and iCloud explanation. About heading below; one tab bar.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "settings-a/ios-settings-health.png"
+      },
+      {
+        "group": "layers-developer",
+        "filename": "ios-layers-palette.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "2eaa074fee1931f1a0609a3fdfbdf602588dac6b8110feb4d17275e4f97142dc",
+        "individuallyViewed": true,
+        "visibleState": "Map-layer sheet shows all five palettes, solid/dotted line choices, five photo pin shapes, five current-location choices and boundary switch. Known stylized cats remain P2.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": "Known stylized cat icons; not a new regression.",
+        "path": "layers-developer/ios-layers-palette.png"
+      },
+      {
+        "group": "layers-developer",
+        "filename": "ios-layers-line.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "819ea57a42682ccc60b71309ddbad353a609c6e23d32a17ff1d56b3b2ab25612",
+        "individuallyViewed": true,
+        "visibleState": "Line scroll state shows both complete line choices, pin and current-location rows, boundary switch with attribution, and fade-other-routes switch. No unexpected clipping.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": "Known stylized cat icons; not a new regression.",
+        "path": "layers-developer/ios-layers-line.png"
+      },
+      {
+        "group": "layers-developer",
+        "filename": "ios-layers-photoPins.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "7a651b33f5c86b7f5857c0a9f83c19936a87fa4f84d7a7c7e3e4f184d34c4212",
+        "individuallyViewed": true,
+        "visibleState": "Photo-pins state shows all five complete pin choices, location choices, complete boundary explanation/attribution, fade toggle and transport section start.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": "Known stylized cat icons; not a new regression.",
+        "path": "layers-developer/ios-layers-photoPins.png"
+      },
+      {
+        "group": "layers-developer",
+        "filename": "ios-layers-currentLocation.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "fb71dbac1fedc49c6c89f7475f32480ac316f50a78d054845edfc72d228d56db",
+        "individuallyViewed": true,
+        "visibleState": "Current-location state shows dot plus four cat choices, boundary toggle/explanation/attribution, fade toggle, and all four transport switches. No major clipping.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": "Known stylized cat icons; not a new regression.",
+        "path": "layers-developer/ios-layers-currentLocation.png"
+      },
+      {
+        "group": "layers-developer",
+        "filename": "ios-layers-boundary.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "524074d610a73423de5d851136d42fabbf2789f68e69c9c034a842b25518824a",
+        "individuallyViewed": true,
+        "visibleState": "Boundary state shows complete boundary toggle/explanation/attribution, fade toggle, all four transport switches and display-card start.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "layers-developer/ios-layers-boundary.png"
+      },
+      {
+        "group": "layers-developer",
+        "filename": "ios-layers-fade.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "c93afef0dc8eb8aa26b4bf0ebb42b2aa9b894353a4122f4c54c6a06209a0b25f",
+        "individuallyViewed": true,
+        "visibleState": "Fade state shows complete fade-other-routes toggle/explanation, four transport switches and lower display toggles through photos. No missing drawing.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "layers-developer/ios-layers-fade.png"
+      },
+      {
+        "group": "layers-developer",
+        "filename": "ios-layers-transport.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "ebe77a4e3af1c475dd66fb08de4803c08491cdd362e033cf18bcad27d75b2f6a",
+        "individuallyViewed": true,
+        "visibleState": "Transport state shows four complete transport switches and full six-row display card: widen frequent paths, smooth track, grid, current-location highlight, photos and tweets.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "layers-developer/ios-layers-transport.png"
+      },
+      {
+        "group": "layers-developer",
+        "filename": "ios-layers-display.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "709e31cbcb4e835a0de53116db51f0984bf43c1dcb5fe1f27db627cbb7e044ec",
+        "individuallyViewed": true,
+        "visibleState": "Display state shows full transport card and all six complete display switches. No unexpected clipping or overlapping labels.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "layers-developer/ios-layers-display.png"
+      },
+      {
+        "group": "layers-developer",
+        "filename": "ios-developer-status.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "331c1bc8e19b7ffbc4045ef9c274f1eebc34284846bf7938f5a6b5995b1bed45",
+        "individuallyViewed": true,
+        "visibleState": "Developer status shows Xcode environment, OS 26.4.1, full iPhone Simulator label, stopped/paused state, 0 points and unavailable GPS; permission table fully rendered.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "layers-developer/ios-developer-status.png"
+      },
+      {
+        "group": "layers-developer",
+        "filename": "ios-developer-permissions.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "102092b8107787d90c88047ba4987ec8b9964ef4a436309f324414dc6743cd54",
+        "individuallyViewed": true,
+        "visibleState": "Developer permissions state shows all six permission/accuracy rows plus complete four-action storage test card marked not run, and checklist section start.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "layers-developer/ios-developer-permissions.png"
+      },
+      {
+        "group": "layers-developer",
+        "filename": "ios-developer-storage.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "28a13c13bdd5ae7a9b0fd57bb0a6bd89d063a96e37381e6170c250b083c612b7",
+        "individuallyViewed": true,
+        "visibleState": "Storage state shows full four storage/restore test actions and not-run status; checklist rows show unverified labels with no overlap.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "layers-developer/ios-developer-storage.png"
+      },
+      {
+        "group": "layers-developer",
+        "filename": "ios-developer-checklist.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "f19359bf250a867b24197f645600eb75bb2d558a82309c551b0d20a95f1f6043",
+        "individuallyViewed": true,
+        "visibleState": "Checklist state shows all nine complete unverified rows, complete background GPS note and full diagnostics share/delete card with explanatory text.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "layers-developer/ios-developer-checklist.png"
+      },
+      {
+        "group": "layers-developer",
+        "filename": "ios-developer-logs.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "c47f38e298d2223b0529bc2d5064a6554357d8cecd8c017dd22e5c9ca4a4a506",
+        "individuallyViewed": true,
+        "visibleState": "Logs state shows remaining checklist rows, full background GPS note, diagnostics share/delete actions and complete privacy/storage explanation; no unrendered content.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "layers-developer/ios-developer-logs.png"
+      },
+      {
+        "group": "collections",
+        "filename": "ios-spotsData.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "359d5610a8c74595de4288e97a96269c23afa61eb7bbfef944e174dbd2c2dc2c",
+        "individuallyViewed": true,
+        "visibleState": "Populated photo collection shows one inset rounded tree thumbnail, wrapped title and date; one bottom tab bar. Thumbnail uses image crop within its bounds; card itself is not clipped.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "collections/ios-spotsData.png"
+      },
+      {
+        "group": "collections",
+        "filename": "ios-stickersData.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "adf1956d98bda2e9b5e61875c5bf578c02be404e6f0141d4983e5a9d26cd294a",
+        "individuallyViewed": true,
+        "visibleState": "Sticker collection shows full exchange card, synthetic tree sticker and date; one bottom tab bar.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "collections/ios-stickersData.png"
+      },
+      {
+        "group": "collections",
+        "filename": "ios-badgesData.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "aad4fea906dc205973927886cabaca0ba2671dcccc42d910930232bdc8c19fc1",
+        "individuallyViewed": true,
+        "visibleState": "Two complete badge cards show Chiyoda 2.72 km and Chuo 0.55 km with district polygons and visit dots. Known stylized badge art remains P2.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": "Known stylized badge artwork; not a new regression.",
+        "path": "collections/ios-badgesData.png"
+      },
+      {
+        "group": "collections",
+        "filename": "ios-doodlesData.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "589b1cc6af06dbdebae61061c326c5aa57ed181c775ac332277196a163a62a70",
+        "individuallyViewed": true,
+        "visibleState": "Doodle list shows complete explanatory card and draw action plus saved small-curve card with thumbnail/date.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "collections/ios-doodlesData.png"
+      },
+      {
+        "group": "collections",
+        "filename": "ios-sharedMapsData.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "8d9586c41e175a2ba7d8e6fb38f9edcf40e75a2e3c8b15fe2adc239cf1e36bed",
+        "individuallyViewed": true,
+        "visibleState": "Shared maps list shows saved two-route map row, create-paper action and full explanatory copy.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "collections/ios-sharedMapsData.png"
+      },
+      {
+        "group": "collections",
+        "filename": "ios-bookmarksData.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "b570e97f7f2bb805c0d72dad823db702217fc52821a37158d5c7fac8b90b354e",
+        "individuallyViewed": true,
+        "visibleState": "Bookmark list shows full Tokyo Station row and search-in-map action, with one bottom tab bar.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "collections/ios-bookmarksData.png"
+      },
+      {
+        "group": "collections",
+        "filename": "ios-notesData.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "92867cadfc7e92290a8f49d67ec860f4ac5cc03b51ff23ec1810f3692fb2f701",
+        "individuallyViewed": true,
+        "visibleState": "Note list shows dated populated note card, complete text preview and count of four attachments; compose button visible.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "collections/ios-notesData.png"
+      },
+      {
+        "group": "collections",
+        "filename": "ios-spotDetail.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "28bc68e4346da0d25da61dda06259816bd5f772226118e322bb0b46cc8dc7928",
+        "individuallyViewed": true,
+        "visibleState": "Photo detail shows full inset tree image, title/date, share and make-sticker actions, and red delete action.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "collections/ios-spotDetail.png"
+      },
+      {
+        "group": "collections",
+        "filename": "ios-stickerPicker.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "994af0f1eb8e6e68cd2a72bcfc80ff74e3a1473518e431d66772d796c71261fd",
+        "individuallyViewed": true,
+        "visibleState": "Give-sticker sheet shows close action, complete sharing explanation, one tree sticker and date.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "collections/ios-stickerPicker.png"
+      },
+      {
+        "group": "collections",
+        "filename": "ios-bookmarkDetail.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "6a404caa8ecb12079538ee4b5490743009ccc0667f0bdab72441959a8597f24d",
+        "individuallyViewed": true,
+        "visibleState": "Bookmark detail shows bookmark icon, full saved title, navigate action and remove-bookmark action.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "collections/ios-bookmarkDetail.png"
+      },
+      {
+        "group": "collections",
+        "filename": "ios-paperEditor.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "ea6ec9837e6416292d0a4380fecdda12cdd6ad6f7152a2ddc8dff9022940a3b9",
+        "individuallyViewed": true,
+        "visibleState": "Create-paper sheet shows name field and two walk rows with switches, dates and complete inclusion explanation.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "collections/ios-paperEditor.png"
+      },
+      {
+        "group": "collections",
+        "filename": "ios-paperDetail.png",
+        "sourceCommit": "b29eddf2d39fe2bb4693704f5f3624a02328f269",
+        "sha256": "cfd9adb87c24164c19f84e1a3947caf1baeafc464dd507602a56bf242eb95b27",
+        "individuallyViewed": true,
+        "visibleState": "Shared map detail shows two overlapping route loops, two-route count, share-file button, explanation and delete action.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "collections/ios-paperDetail.png"
+      },
+      {
+        "group": "creation",
+        "filename": "ios-doodleEditor.png",
+        "sourceCommit": "b6ab64dfecba44bc9b0d9534cd6d19c08519739f",
+        "sha256": "8f725722cdf09ecc9e6c9d9d5f3e6173d71bfc6d24d2d95ad7c074127d1d2fcf",
+        "individuallyViewed": true,
+        "visibleState": "D source sheet shows Cancel / Draw doodle / disabled Save, complete draw-or-move control, fully rendered Tokyo MapKit map, name field and complete two-line explanation. No overlapping controls or major clipping.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "creation/ios-doodleEditor.png"
+      },
+      {
+        "group": "creation",
+        "filename": "ios-doodleDetail.png",
+        "sourceCommit": "b6ab64dfecba44bc9b0d9534cd6d19c08519739f",
+        "sha256": "c44f5e66b01a20373d4fc5decb36c390bd5d41baef5560e0311872cea4021053",
+        "individuallyViewed": true,
+        "visibleState": "D source named small-curve detail shows rendered Tokyo map with dashed curved doodle, complete explanation and red delete action.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "creation/ios-doodleDetail.png"
+      },
+      {
+        "group": "creation",
+        "filename": "ios-badgeDetail.png",
+        "sourceCommit": "b6ab64dfecba44bc9b0d9534cd6d19c08519739f",
+        "sha256": "945a3c2b7f89eec6a4a23131e77b627c522d238301e30afdcab1cdfa875a4cfa",
+        "individuallyViewed": true,
+        "visibleState": "D source area-badge detail shows pale Chiyoda polygon and visit dots, complete district/prefecture labels, 2.72 km / 2 walks and full explanatory copy. Known stylized badge remains P2.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": "Known stylized badge artwork; not a new regression.",
+        "path": "creation/ios-badgeDetail.png"
+      },
+      {
+        "group": "creation",
+        "filename": "ios-noteEditorData.png",
+        "sourceCommit": "b6ab64dfecba44bc9b0d9534cd6d19c08519739f",
+        "sha256": "a11d34e3558086f773d7c117abebba3573e911b99a419bbc7d1f45e470f9b0ab",
+        "individuallyViewed": true,
+        "visibleState": "D source note sheet shows close/save, date, populated text editor, grid/serif controls and populated paper preview with synthetic illustration, route and sticker. Preview continues as normal scroll content.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "creation/ios-noteEditorData.png"
+      },
+      {
+        "group": "creation",
+        "filename": "ios-noteControls.png",
+        "sourceCommit": "b6ab64dfecba44bc9b0d9534cd6d19c08519739f",
+        "sha256": "1f0ae58f048d619ed68dcddd2e9268ce8a0b100a209e4da8514cea69687f733c",
+        "individuallyViewed": true,
+        "visibleState": "D source note lower state shows material chips, all five complete sliders (horizontal/vertical position, size, tilt, opacity), front/remove actions and full image-share button.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "creation/ios-noteControls.png"
+      },
+      {
+        "group": "creation",
+        "filename": "ios-photoSelected.png",
+        "sourceCommit": "b6ab64dfecba44bc9b0d9534cd6d19c08519739f",
+        "sha256": "b79d54328621b79019df36a6de4e704a5e3a1878ee88a0723827a24e698d7db8",
+        "individuallyViewed": true,
+        "visibleState": "D source selected-photo sheet shows complete inset synthetic tree image, photo/video selector, take/select actions, film card, note and mark selector. Lower metadata starts at normal scroll boundary; no left card clipping.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "creation/ios-photoSelected.png"
+      },
+      {
+        "group": "creation",
+        "filename": "ios-photoLocation.png",
+        "sourceCommit": "b6ab64dfecba44bc9b0d9534cd6d19c08519739f",
+        "sha256": "64dec1bd878f0333d9603907b023aeb514010133d9000cd3a34596251697374a",
+        "individuallyViewed": true,
+        "visibleState": "D source photo-location lower state visibly shows complete timestamp explanation, full missing-location explanation and entire 現在地に置く action below mark selector, with photo actions, film and caption above. Actual lower controls fit inside sheet; earlier capture proof gap is resolved.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "creation/ios-photoLocation.png"
+      },
+      {
+        "group": "creation",
+        "filename": "ios-replayAll.png",
+        "sourceCommit": "b6ab64dfecba44bc9b0d9534cd6d19c08519739f",
+        "sha256": "a3bd6258edfa3cf24dadf3c25e26f304a59ad4c7dec82724efdc5cb3b9f55f2e",
+        "individuallyViewed": true,
+        "visibleState": "D source replay-all sheet shows two complete overlapping route loops, full progress slider, Play and video-export actions, and close button.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "creation/ios-replayAll.png"
+      },
+      {
+        "group": "creation",
+        "filename": "ios-replayWalk.png",
+        "sourceCommit": "b6ab64dfecba44bc9b0d9534cd6d19c08519739f",
+        "sha256": "0477c623a8972d9bf0a594b58766cad3381693c0e2adf5e03b08c358e43738cf",
+        "individuallyViewed": true,
+        "visibleState": "D source one-walk replay sheet shows single nearly closed route loop, complete progress slider, Play and video-export actions, and close button.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "creation/ios-replayWalk.png"
+      },
+      {
+        "group": "creation",
+        "filename": "ios-lutSelected.png",
+        "sourceCommit": "b6ab64dfecba44bc9b0d9534cd6d19c08519739f",
+        "sha256": "fb4d51adb33fbb8f2c90fccd4f8bdcc5bcededada09d631a48d2d7eaff0d05fb",
+        "individuallyViewed": true,
+        "visibleState": "D source LUT sheet shows filtered tree preview, photo selector, original-compare switch, warm-film selection, strength 80 percent and full slider. Own LUT section continues below normal viewport boundary.",
+        "p0p1Result": "PASS: no visible P0/P1 issue",
+        "p2Residual": null,
+        "path": "creation/ios-lutSelected.png"
+      }
+    ]
+  },
+  "web": {
+    "version": 1,
+    "reviewedAt": "2026-11-09T07:52:28.843672+00:00",
+    "sourceCommit": "722e90a798ec9c4b9ced14195e62bccb37e23c92",
+    "sourceManifestSha256": "b1513804de44f688ac24ce23283cfbb3e95bbbcc6f7a50d4510710e98599e37c",
+    "captureGeneratedAt": "2026-11-09T07:37:48.665Z",
+    "viewport": {
+      "width": 393,
+      "height": 852
+    },
+    "engine": "Chromium mobile emulation",
+    "individuallyReviewed": true,
+    "reviewedImageCount": 113,
+    "captureImageCount": 113,
+    "routeStateCount": 86,
+    "p0Count": 0,
+    "p1Count": 0,
+    "scope": "Final visual QA of every updated Web image for new clipping, missing rendering, residual loading spinners and incorrect captured state. Existing P2 differences from the original app are outside this pass. Intentional empty lists, zero-progress replay and unsupported-3D explanations are valid states. This is Chromium mobile emulation with synthetic data, not physical-device or original-app parity validation.",
+    "historicalAuditPreserved": {
+      "path": "docs/references/image-audit-2026-11-01.json",
+      "sha256": "1b0c7e2f0c99833af71bdb6474e25ed7a9aa0416048717b4d84a50caed7cabc1"
+    },
+    "findings": [],
+    "screens": [
+      {
+        "key": "map",
+        "title": "マイマップ",
+        "category": "地図",
+        "state": "populated",
+        "path": "web-map.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "map",
+        "visibleHeadings": [],
+        "sha256": "f853113cc2cf54cd3274c18ab28966ea215d9a6c8f7bcd9f0eaf822ea420544c",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "現在地追従の白地図に軌跡・写真ピン・歩数1234・距離0.24kmと固定タブを表示。",
+        "finding": null
+      },
+      {
+        "key": "map-empty",
+        "title": "マイマップ・初期状態",
+        "category": "地図",
+        "state": "empty",
+        "path": "web-map-empty.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "map-empty",
+        "visibleHeadings": [],
+        "sha256": "5fd698e90f27621b1e241f3f74a6e377a31a026706eea3ef4784abfcbf83ad64",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "空の白地図で最初の記録案内、歩数なし、距離0.00kmを表示。意図した空状態。",
+        "finding": null
+      },
+      {
+        "key": "map-dark",
+        "title": "マイマップ・ダーク",
+        "category": "地図",
+        "state": "populated",
+        "path": "web-map-dark.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "map-dark",
+        "visibleHeadings": [],
+        "sha256": "8ed3cc3539cce0ba6d1496d79f822ea6f8fd7ef35e286a579a47d002e4133ba3",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "暗色地図に明るい軌跡、旗と写真ピン、歩数・距離と固定操作を表示。",
+        "finding": null
+      },
+      {
+        "key": "answer",
+        "title": "答え合わせマップ",
+        "category": "地図",
+        "state": "populated",
+        "path": "web-answer.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "answer",
+        "visibleHeadings": [],
+        "sha256": "e089b2044a8d32dc4c1b384ad29409ec57086093d9d6bf5cf574509981d71dc0",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "答え合わせの実地図に軌跡とピン、目的地を決める・白い不透明ならくがき操作を表示。",
+        "finding": null
+      },
+      {
+        "key": "answer-tilt",
+        "title": "答え合わせ・平面表示（Webの3Dは未対応）",
+        "category": "地図",
+        "state": "flat-fallback-not-3D",
+        "path": "web-answer-tilt.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "answer-tilt",
+        "visibleHeadings": [
+          "地図の傾斜表示"
+        ],
+        "sha256": "b484bf717a3bedc1f825073e899f59758af5d564d0997276ce4a7719fd8cc7ad",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "平面地図の背面上にWebの建物3D・傾斜表示未対応の説明と了解操作を表示。意図した非対応状態。",
+        "finding": null
+      },
+      {
+        "key": "menu",
+        "title": "メニュー",
+        "category": "地図",
+        "state": "populated",
+        "path": "web-menu.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "menu",
+        "visibleHeadings": [
+          "PlainWalk"
+        ],
+        "sha256": "d35f39958d50f142f13e64279b2d0d47a385231c76a106f48c22de5c7e3a0b66",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "PlainWalkメニューに地図・旗・写真・再生・ノート・統計・取り込み・設定の各行と末尾注記を表示。",
+        "finding": null
+      },
+      {
+        "key": "layers",
+        "title": "地図レイヤー・全区間",
+        "category": "地図",
+        "state": "populated",
+        "path": "web-layers.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "layers",
+        "visibleHeadings": [
+          "地図レイヤー"
+        ],
+        "sha256": "9cb5088dc7fc47b29bbdca87074894eae746608990b66ea69295eb5ead165a87",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "レイヤー上部の配色・線・写真ピン・現在地の選択群と境界切り替えを表示。",
+        "finding": null
+      },
+      {
+        "key": "layers-part2",
+        "title": "地図レイヤー・全区間",
+        "category": "地図",
+        "state": "populated",
+        "path": "web-layers-part2.png",
+        "part": 2,
+        "scrollTop": 736,
+        "sourceRoute": "layers",
+        "visibleHeadings": [
+          "地図レイヤー"
+        ],
+        "sha256": "f9731ef2780f0d85e95ee90e962e2a2ac531adb1b6e173ad451bc7bb2e8d61d2",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "レイヤー中下段に移動手段と線・グリッド等の切り替えを表示。上下端は連続スクロール区間。",
+        "finding": null
+      },
+      {
+        "key": "layers-part3",
+        "title": "地図レイヤー・全区間",
+        "category": "地図",
+        "state": "populated",
+        "path": "web-layers-part3.png",
+        "part": 3,
+        "scrollTop": 807,
+        "sourceRoute": "layers",
+        "visibleHeadings": [
+          "地図レイヤー"
+        ],
+        "sha256": "bbd8b8152b52da007405c361701a6ad3246c99594933cf6162b3ea67f6ce2025",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "レイヤー最下部まで移動手段・表示切り替え行が収まり、最後のつぶやき行を表示。",
+        "finding": null
+      },
+      {
+        "key": "record-start",
+        "title": "記録を始める",
+        "category": "記録",
+        "state": "before-recording",
+        "path": "web-record-start.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "record-start",
+        "visibleHeadings": [
+          "今日の一歩を、白地図に。"
+        ],
+        "sha256": "f911797aa34ceb3cc968a980c6a267d102ffb201353b2bbe2f52ebc41cf14d74",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "記録前の足跡図と説明、散歩開始・体験操作を表示。",
+        "finding": null
+      },
+      {
+        "key": "record-paused",
+        "title": "記録・一時停止中",
+        "category": "記録",
+        "state": "paused synthetic checkpoint",
+        "path": "web-record-paused.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "record-paused",
+        "visibleHeadings": [
+          "さんぽの記録"
+        ],
+        "sha256": "f892fd84ac2137a4d2b84078822fc036577de1a11c6653964c3b0d0276540666",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "一時停止中の4点・0.24km・6分と保存終了・再開・写真・破棄操作を表示。",
+        "finding": null
+      },
+      {
+        "key": "record-discard",
+        "title": "記録を破棄・確認",
+        "category": "記録",
+        "state": "confirmation",
+        "path": "web-record-discard.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "record-discard",
+        "visibleHeadings": [
+          "記録を破棄しますか？"
+        ],
+        "sha256": "e877f22c761a8e43f6b63172d2f6dba238ff18c69249498b745f1585ccce84e0",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "記録破棄確認の注意文、赤い破棄操作と戻る操作を表示。",
+        "finding": null
+      },
+      {
+        "key": "record-recovery",
+        "title": "記録の復旧",
+        "category": "記録",
+        "state": "synthetic paused checkpoint recovery",
+        "path": "web-record-recovery.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "record-recovery",
+        "visibleHeadings": [
+          "中断したさんぽがあります"
+        ],
+        "sha256": "e761220b6085b9104b7d3e51636efddbcc5e42932c9c0830a7c97d7eccee8020",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "中断した4点の記録が見つかった案内と再開・保存・破棄操作を表示。",
+        "finding": null
+      },
+      {
+        "key": "records",
+        "title": "記録・カレンダー",
+        "category": "記録",
+        "state": "populated",
+        "path": "web-records.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "records",
+        "visibleHeadings": [
+          "記録"
+        ],
+        "sha256": "c70d28108206ec8f8dcf7634824a4189cd192740fc3c2d73037fec9cb1c97aff",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "記録カレンダーに1回・0.24km、選択日、合成さんぽ一覧と固定タブを表示。",
+        "finding": null
+      },
+      {
+        "key": "records-part2",
+        "title": "記録・カレンダー",
+        "category": "記録",
+        "state": "populated",
+        "path": "web-records-part2.png",
+        "part": 2,
+        "scrollTop": 34,
+        "sourceRoute": "records",
+        "visibleHeadings": [
+          "記録"
+        ],
+        "sha256": "da8e7782e838ec5d3684eb47ed71199de9836d3de9b200d510a5c75edded4bad",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "記録の下端スクロールで合成さんぽカードと距離・開拓表示が収まる。",
+        "finding": null
+      },
+      {
+        "key": "records-empty",
+        "title": "記録・空状態",
+        "category": "記録",
+        "state": "empty",
+        "path": "web-records-empty.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "records-empty",
+        "visibleHeadings": [
+          "記録"
+        ],
+        "sha256": "a388ac0e46bd8f41e6a1a284c271cd20bcb7c567a4f9450a127f293fc7e4a82f",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "空の記録カレンダーで0回・0.00km、記録なし案内の上部を表示。意図した空状態。",
+        "finding": null
+      },
+      {
+        "key": "records-empty-part2",
+        "title": "記録・空状態",
+        "category": "記録",
+        "state": "empty",
+        "path": "web-records-empty-part2.png",
+        "part": 2,
+        "scrollTop": 91,
+        "sourceRoute": "records-empty",
+        "visibleHeadings": [
+          "記録"
+        ],
+        "sha256": "fe4327db57ec77d2235e473da48565354946dcb2b0c11507dbaa51dc0f5d1541",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "空の記録一覧の最下部で足跡と記録なし案内全文を表示。",
+        "finding": null
+      },
+      {
+        "key": "record-day",
+        "title": "1日の記録",
+        "category": "記録",
+        "state": "populated",
+        "path": "web-record-day.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "record-day",
+        "visibleHeadings": [
+          "記録",
+          "2026-11-09"
+        ],
+        "sha256": "9809a23a2c68ff5d1869f53ff5ccbb1e59dd9b9db219e07d19985f405855f44b",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "選択日2026-11-09の合成さんぽ0.24kmとこの日のノート操作をシート内に表示。",
+        "finding": null
+      },
+      {
+        "key": "record-week",
+        "title": "今週のふりかえり",
+        "category": "記録",
+        "state": "populated",
+        "path": "web-record-week.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "record-week",
+        "visibleHeadings": [
+          "今週のふりかえり"
+        ],
+        "sha256": "e25f7ce9d3d0e2666dcdb5fb035d6c81960b3f3a8196fb3ab7243904de3fa00f",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "今週のふりかえりに1回・0.24kmの集計、合成さんぽとノート操作を表示。",
+        "finding": null
+      },
+      {
+        "key": "statistics",
+        "title": "歩行の統計",
+        "category": "記録",
+        "state": "populated",
+        "path": "web-statistics.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "statistics",
+        "visibleHeadings": [
+          "歩行の統計"
+        ],
+        "sha256": "e9b28015465822fcdbbd255508b17c81895706b3add427da71e74a957db99017",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "統計に1回・0.24km・1日、週間棒グラフと開拓レベルを表示。",
+        "finding": null
+      },
+      {
+        "key": "statistics-part2",
+        "title": "歩行の統計",
+        "category": "記録",
+        "state": "populated",
+        "path": "web-statistics-part2.png",
+        "part": 2,
+        "scrollTop": 133,
+        "sourceRoute": "statistics",
+        "visibleHeadings": [
+          "歩行の統計"
+        ],
+        "sha256": "67b289c19d2fdb67a6eb272a42490a9aa0156a9d53c095abae897284d2cf95a2",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "統計下部で週間グラフ、開拓の近似説明、最長さんぽカードと歩数への行を表示。",
+        "finding": null
+      },
+      {
+        "key": "steps",
+        "title": "歩数と目標",
+        "category": "記録",
+        "state": "populated",
+        "path": "web-steps.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "steps",
+        "visibleHeadings": [
+          "歩数と目標"
+        ],
+        "sha256": "078f058fa512adb1407ba87a3a080fad38a12f039a9cf741587bbedb4202d340",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Webの歩数取得制限説明と1234歩・目標5000の入力欄、保存操作を表示。",
+        "finding": null
+      },
+      {
+        "key": "walk-detail",
+        "title": "さんぽ詳細",
+        "category": "記録",
+        "state": "populated",
+        "path": "web-walk-detail.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "walk-detail",
+        "visibleHeadings": [
+          "記録",
+          "検証用のさんぽ"
+        ],
+        "sha256": "c594578d1c543761c34a44a95a0996eb16bf183439a235919539df4f89b2c700",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "さんぽ詳細で経路図、日時、距離・開拓・6分、名前と合成データ注記を表示。",
+        "finding": null
+      },
+      {
+        "key": "walk-detail-part2",
+        "title": "さんぽ詳細",
+        "category": "記録",
+        "state": "populated",
+        "path": "web-walk-detail-part2.png",
+        "part": 2,
+        "scrollTop": 267,
+        "sourceRoute": "walk-detail",
+        "visibleHeadings": [
+          "記録",
+          "検証用のさんぽ"
+        ],
+        "sha256": "bc94affc5bca898be9121910cf7f7ea5e5558f0eb608fe5dedd431576dba0030",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "さんぽ詳細下部で名前・注記・保存・地図・再生・書き出し・修正・削除操作が収まる。",
+        "finding": null
+      },
+      {
+        "key": "walk-delete",
+        "title": "さんぽ削除・確認",
+        "category": "記録",
+        "state": "confirmation",
+        "path": "web-walk-delete.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "walk-delete",
+        "visibleHeadings": [
+          "この記録を削除しますか？"
+        ],
+        "sha256": "4a370a04163a4d44a9d0ac7e459cd430bb8615e863c0375faa7833c25ade25ac",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "さんぽ削除の確認文と赤い削除・キャンセル操作を表示。",
+        "finding": null
+      },
+      {
+        "key": "walk-map",
+        "title": "さんぽを白地図で見る",
+        "category": "記録",
+        "state": "populated",
+        "path": "web-walk-map.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "walk-map",
+        "visibleHeadings": [],
+        "sha256": "4b9e3c2e9f70d91e4ed131b0bd99ba3102880b044c62fdd03e7d5fd1fa1e1a1f",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "単一さんぽの白地図に軌跡・旗・写真ピンと選択さんぽの案内、固定タブを表示。",
+        "finding": null
+      },
+      {
+        "key": "walk-editor",
+        "title": "軌跡を手で修正",
+        "category": "編集",
+        "state": "populated",
+        "path": "web-walk-editor.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "walk-editor",
+        "visibleHeadings": [],
+        "sha256": "bc61bb8398723fd35982be496a49b47200d94f23b034b13ee227effd4055181e",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "軌跡編集画面に経路点の丸印、キャンセル・戻す・保存のツールバーと説明を表示。",
+        "finding": null
+      },
+      {
+        "key": "walk-editor-point",
+        "title": "軌跡の点・編集操作",
+        "category": "編集",
+        "state": "populated",
+        "path": "web-walk-editor-point.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "walk-editor-point",
+        "visibleHeadings": [
+          "記録点を修正"
+        ],
+        "sha256": "843781026bc95fbb938ff5686f1a25545653d6fd4b89e815a2e703e34f1b2e28",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "2/4点目の編集シートに区切る・削除操作と位置移動案内を表示。",
+        "finding": null
+      },
+      {
+        "key": "replay-all",
+        "title": "地図の成長を再生",
+        "category": "記録",
+        "state": "populated",
+        "path": "web-replay-all.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "replay-all",
+        "visibleHeadings": [
+          "地図の成長"
+        ],
+        "sha256": "0b3c127044437c82ccf94b3a9b185944df3321ebbd709c40ec67d00f0afb6ec0",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "全体再生は0/4・スライダー0で経路キャンバスが完全に空。修正後の意図した初期状態。",
+        "finding": null
+      },
+      {
+        "key": "replay-walk",
+        "title": "1回のさんぽを再生",
+        "category": "記録",
+        "state": "populated",
+        "path": "web-replay-walk.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "replay-walk",
+        "visibleHeadings": [
+          "地図の成長"
+        ],
+        "sha256": "0b3c127044437c82ccf94b3a9b185944df3321ebbd709c40ec67d00f0afb6ec0",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "単一さんぽ再生も0/4・スライダー0で経路キャンバスが完全に空。意図した初期状態。",
+        "finding": null
+      },
+      {
+        "key": "share-card",
+        "title": "さんぽの共有カード",
+        "category": "記録",
+        "state": "populated",
+        "path": "web-share-card.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "share-card",
+        "visibleHeadings": [
+          "さんぽのカード"
+        ],
+        "sha256": "508fee6237e0dca97b68912ca899591deabbf97771523467b6652e03f9f90aec",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "共有カードに経路プレビュー、合成さんぽ0.24km、正方形選択と画像保存操作を表示。",
+        "finding": null
+      },
+      {
+        "key": "profile",
+        "title": "プロフィール",
+        "category": "プロフィール",
+        "state": "populated",
+        "path": "web-profile.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "profile",
+        "visibleHeadings": [
+          "プロフィール",
+          "あなたの白地図"
+        ],
+        "sha256": "07bfddc4f774fd10e5148f20bc0145a6d718f3a1ab656be0ebd785902ff4b12d",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "プロフィール上部に猫、1回・1日・0.24km、各コレクションへの行と固定タブを表示。",
+        "finding": null
+      },
+      {
+        "key": "profile-part2",
+        "title": "プロフィール",
+        "category": "プロフィール",
+        "state": "populated",
+        "path": "web-profile-part2.png",
+        "part": 2,
+        "scrollTop": 556,
+        "sourceRoute": "profile",
+        "visibleHeadings": [
+          "プロフィール",
+          "あなたの白地図"
+        ],
+        "sha256": "a022cd063cec632d6d4addd4138b4d6dfd5d07b556d90c45e3f47b3596c9392d",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "プロフィール下部に残りのコレクション、地図設定、取り込み、バックアップ、案内の各行と末尾注記を表示。",
+        "finding": null
+      },
+      {
+        "key": "spots",
+        "title": "ここいいな",
+        "category": "コレクション",
+        "state": "populated",
+        "path": "web-spots.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "spots",
+        "visibleHeadings": [
+          "ここいいな"
+        ],
+        "sha256": "0d76c8b8775ec59ab38fc7aaba9599908fac5395b349ea9dcb09ab58bf457977",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "ここいいな一覧に合成動画と写真の2カード、日時、追加操作を表示。両カードのアイコン画像は合成fixture。",
+        "finding": null
+      },
+      {
+        "key": "spots-empty",
+        "title": "ここいいな・空状態",
+        "category": "コレクション",
+        "state": "empty",
+        "path": "web-spots-empty.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "spots-empty",
+        "visibleHeadings": [
+          "ここいいな",
+          "まだ「ここいいな」がありません"
+        ],
+        "sha256": "96497e292dcba9569395ef74138f2435e0cbcbe51e18ea47fbe36d246871eaed",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "ここいいな空状態にカメラ図・まだありませんの見出し・追加案内を表示。意図した空状態。",
+        "finding": null
+      },
+      {
+        "key": "stickers",
+        "title": "ステッカー",
+        "category": "コレクション",
+        "state": "populated",
+        "path": "web-stickers.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "stickers",
+        "visibleHeadings": [
+          "ステッカー"
+        ],
+        "sha256": "ac5e00d44d6b8390b18702913a5e53ed5c2176eaf8a25834f425cf1af9c640b6",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "ステッカー一覧に合成切り抜き画像1枚・日付と画像交換案内行を表示。",
+        "finding": null
+      },
+      {
+        "key": "stickers-empty",
+        "title": "ステッカー・空状態",
+        "category": "コレクション",
+        "state": "empty",
+        "path": "web-stickers-empty.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "stickers-empty",
+        "visibleHeadings": [
+          "ステッカー"
+        ],
+        "sha256": "8750addef1f66e1283a590e5d5328e2ffd7becb8e6c27bd1cc92c10e2ea55f2f",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "ステッカー未登録時の説明と交換案内行を表示。意図した空状態。",
+        "finding": null
+      },
+      {
+        "key": "badges",
+        "title": "エリアバッジ",
+        "category": "コレクション",
+        "state": "populated",
+        "path": "web-badges.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "badges",
+        "visibleHeadings": [
+          "エリアバッジ"
+        ],
+        "sha256": "9c2c396a659780ce058ca2f8610e5680619d5ccc9ae52bb7d098ca294b0e61e2",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "バッジ一覧に訪問した街1・都道府県1、検索・外観選択、千代田区の境界図カードと出典を表示。",
+        "finding": null
+      },
+      {
+        "key": "badges-empty",
+        "title": "エリアバッジ・空状態",
+        "category": "コレクション",
+        "state": "empty",
+        "path": "web-badges-empty.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "badges-empty",
+        "visibleHeadings": [
+          "エリアバッジ",
+          "まだバッジがありません"
+        ],
+        "sha256": "e44c440ea869cab7c7df9af9a2647f5e3b21767454be81dc2c4a286286f7165c",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "バッジ空状態に地図図とまだバッジがありませんの案内を表示。意図した空状態。",
+        "finding": null
+      },
+      {
+        "key": "doodles",
+        "title": "らくがき",
+        "category": "コレクション",
+        "state": "populated",
+        "path": "web-doodles.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "doodles",
+        "visibleHeadings": [
+          "らくがき",
+          "答え合わせマップに絵を描いて、いつか歩いてみる。"
+        ],
+        "sha256": "e881eaba87e76fe989fb7f519ae8230f2ebca1e85bfe78c130e6d8fd468d47a2",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "らくがきの案内・描く操作と合成下絵の経路カードを表示。",
+        "finding": null
+      },
+      {
+        "key": "doodles-empty",
+        "title": "らくがき・空状態",
+        "category": "コレクション",
+        "state": "empty",
+        "path": "web-doodles-empty.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "doodles-empty",
+        "visibleHeadings": [
+          "らくがき",
+          "答え合わせマップに絵を描いて、いつか歩いてみる。"
+        ],
+        "sha256": "91bbff750580661618a8fbd0c8c80b1c59638edd2ffef4801764ff606b249f81",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Intentional empty doodle page: explanation and draw action render fully; bottom tabs visible.",
+        "finding": null
+      },
+      {
+        "key": "shared",
+        "title": "共有の白地図",
+        "category": "コレクション",
+        "state": "populated",
+        "path": "web-shared.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "shared",
+        "visibleHeadings": [
+          "共有の白地図"
+        ],
+        "sha256": "0ab4cfd95e3e3397e9424a8ad3839b98f08cb710f7366c9f40cd877b462c0d7e",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Populated shared-map list shows one route thumbnail and create action; sharing limitation text readable.",
+        "finding": null
+      },
+      {
+        "key": "shared-empty",
+        "title": "共有の白地図・空状態",
+        "category": "コレクション",
+        "state": "empty",
+        "path": "web-shared-empty.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "shared-empty",
+        "visibleHeadings": [
+          "共有の白地図",
+          "共有の白地図はまだありません"
+        ],
+        "sha256": "0fa639bb6bef253be4f4bee3d817f69d74aacb04e7beea3e56f638ebae3f777a",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Intentional empty shared-map message and create action render; no blank/loading state.",
+        "finding": null
+      },
+      {
+        "key": "bookmarks",
+        "title": "気になる場所",
+        "category": "コレクション",
+        "state": "populated",
+        "path": "web-bookmarks.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "bookmarks",
+        "visibleHeadings": [
+          "気になる場所"
+        ],
+        "sha256": "f4ba7a60aca7d0890ec81a07e57b3bd1cd2729b6682d4bc978ce3cabe3d45018",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "One named bookmark row is visible under the correct page heading; tabs remain visible.",
+        "finding": null
+      },
+      {
+        "key": "bookmarks-empty",
+        "title": "気になる場所・空状態",
+        "category": "コレクション",
+        "state": "empty",
+        "path": "web-bookmarks-empty.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "bookmarks-empty",
+        "visibleHeadings": [
+          "気になる場所",
+          "気になる場所はまだありません"
+        ],
+        "sha256": "4da157857f7183edc8cd3b658d2fd46d3692cf56dad4993e370f94acec18963d",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Intentional empty bookmark explanation is visible under the correct heading.",
+        "finding": null
+      },
+      {
+        "key": "flags",
+        "title": "目的地の旗",
+        "category": "コレクション",
+        "state": "populated",
+        "path": "web-flags.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "flags",
+        "visibleHeadings": [
+          "目的地の旗"
+        ],
+        "sha256": "d61023d52be2472d20f337e0b6ec1478f40973f4fdad12e5c3846399d0a43193",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Flag sheet shows the named destination, coordinates, reorder/remove controls and create button without clipping.",
+        "finding": null
+      },
+      {
+        "key": "flags-empty",
+        "title": "目的地の旗・空状態",
+        "category": "コレクション",
+        "state": "empty",
+        "path": "web-flags-empty.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "flags-empty",
+        "visibleHeadings": [
+          "目的地の旗"
+        ],
+        "sha256": "e2af31bf656ad0a0617b719634f80799c30c7fd5b1bec79a309945b428570306",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Intentional empty flag sheet shows no-flags message and create action clearly.",
+        "finding": null
+      },
+      {
+        "key": "badge-detail",
+        "title": "エリアバッジ詳細",
+        "category": "コレクション",
+        "state": "populated",
+        "path": "web-badge-detail.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "badge-detail",
+        "visibleHeadings": [
+          "エリアバッジ",
+          "千代田区"
+        ],
+        "sha256": "881fb52bf2abd23a3ed73dee0791aacfb170c5a6892951ca93454002751723c3",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Chiyoda boundary outline, local route mark, one walk and0.24km statistics render; map action visible.",
+        "finding": null
+      },
+      {
+        "key": "photo-detail",
+        "title": "写真ピン詳細",
+        "category": "コレクション",
+        "state": "populated",
+        "path": "web-photo-detail.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "photo-detail",
+        "visibleHeadings": [
+          "ここいいな"
+        ],
+        "sha256": "692e281dd766af09287e2c47c4d1401f31907fb6fe8c78b6c4f6e9accca2d320",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Synthetic stair-route photo renders with caption, date, coordinates and all three detail actions.",
+        "finding": null
+      },
+      {
+        "key": "video-detail",
+        "title": "短い動画ピン詳細",
+        "category": "コレクション",
+        "state": "decoded-paused synthetic two-second MP4 fixture; real playback advanced",
+        "path": "web-video-detail.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "video-detail",
+        "visibleHeadings": [
+          "ここいいな"
+        ],
+        "sha256": "9168f63f16ca190c96f80a580f3c0825a4b04d81732837bc767e6cc725cf7387",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Real green two-second video frame is paused at0:00/0:02 with controls and no spinner; detail actions visible.",
+        "finding": null
+      },
+      {
+        "key": "photo-delete",
+        "title": "写真ピン削除・確認",
+        "category": "コレクション",
+        "state": "confirmation",
+        "path": "web-photo-delete.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "photo-delete",
+        "visibleHeadings": [
+          "このピンを削除しますか？"
+        ],
+        "sha256": "780e666b9f266547866d371414c5be34a8c3b10d9eb862e0de25993b206821d6",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Deletion confirmation contains explanation, red delete action and cancel action fully visible.",
+        "finding": null
+      },
+      {
+        "key": "sticker-detail",
+        "title": "ステッカー詳細",
+        "category": "コレクション",
+        "state": "populated",
+        "path": "web-sticker-detail.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "sticker-detail",
+        "visibleHeadings": [
+          "ステッカー"
+        ],
+        "sha256": "d3b584dd73b374ba33858adec86ed989c356ad2312646351fb02461c2e775f04",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Synthetic sticker image renders fully with share-image and view-in-note actions.",
+        "finding": null
+      },
+      {
+        "key": "sticker-exchange",
+        "title": "ステッカーをあげる・対応範囲",
+        "category": "コレクション",
+        "state": "availability explanation",
+        "path": "web-sticker-exchange.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "sticker-exchange",
+        "visibleHeadings": [
+          "ステッカーをあげる"
+        ],
+        "sha256": "5799a858a6e9b5e1ca293a3d0684642733ad7abce49f44a0a0c8ba227aa4f49c",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Availability explanation explicitly says proximity exchange is unsupported; text is fully visible.",
+        "finding": null
+      },
+      {
+        "key": "bookmark-detail",
+        "title": "気になる場所の詳細",
+        "category": "コレクション",
+        "state": "populated",
+        "path": "web-bookmark-detail.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "bookmark-detail",
+        "visibleHeadings": [
+          "検証用の気になる場所"
+        ],
+        "sha256": "39779a93ddf16a33da1517ebc21cf1c9f5e474ae0f975cb3a0e7ddfca0257ea4",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Named bookmark detail shows coordinates, destination/map actions and remove action without clipping.",
+        "finding": null
+      },
+      {
+        "key": "doodle-detail",
+        "title": "らくがきの詳細",
+        "category": "コレクション",
+        "state": "populated",
+        "path": "web-doodle-detail.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "doodle-detail",
+        "visibleHeadings": [
+          "検証用の下絵"
+        ],
+        "sha256": "2aeba2cbfe4f1969dcbe2baf98396b3e02d75a6f3491fd611f9be64cb509bd82",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Saved doodle route renders inside its card with map and delete actions.",
+        "finding": null
+      },
+      {
+        "key": "doodle-editor",
+        "title": "らくがきを描く",
+        "category": "編集",
+        "state": "populated",
+        "path": "web-doodle-editor.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "doodle-editor",
+        "visibleHeadings": [],
+        "sha256": "d4e54d2c9b51bb1ef641b8901c445f1760a693064f4cc1f032a5947fcf682ebb",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Answer-map tiles, saved route/pins, drawing toolbar and finger-drawing instruction render without missing bands.",
+        "finding": null
+      },
+      {
+        "key": "shared-create",
+        "title": "共有の紙を作る",
+        "category": "コレクション",
+        "state": "populated",
+        "path": "web-shared-create.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "shared-create",
+        "visibleHeadings": [
+          "紙を作る"
+        ],
+        "sha256": "c13d85e29fb03d61dca0c5d3d59342f69af7b65254dd64ccf9d3127a33c97b02",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Shared-paper creation shows name field, walk checkbox and create action fully visible.",
+        "finding": null
+      },
+      {
+        "key": "shared-detail",
+        "title": "共有の紙の詳細",
+        "category": "コレクション",
+        "state": "populated",
+        "path": "web-shared-detail.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "shared-detail",
+        "visibleHeadings": [
+          "検証用の共有白地図"
+        ],
+        "sha256": "669b40fa3c5613dd4e2d74dbf38de0b6d21904c87c4c74b99cbd1192511003f0",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Shared-paper detail correctly shows one included route, file-sharing action and delete action.",
+        "finding": null
+      },
+      {
+        "key": "flag-detail",
+        "title": "目的地の旗の詳細",
+        "category": "コレクション",
+        "state": "populated",
+        "path": "web-flag-detail.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "flag-detail",
+        "visibleHeadings": [
+          "検証用の旗"
+        ],
+        "sha256": "f7f5715e5abb9e955709bf06399ac95b41b1e8a022fff8841c5055d09ebfd7a9",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Named flag detail shows coordinates and map/share/delete actions fully visible.",
+        "finding": null
+      },
+      {
+        "key": "flag-create",
+        "title": "目的地の旗を追加",
+        "category": "編集",
+        "state": "populated",
+        "path": "web-flag-create.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "flag-create",
+        "visibleHeadings": [
+          "旗を立てる"
+        ],
+        "sha256": "1f1ebf3833e37099a2d956a5df0f00f7aded03a987bfffddde35aa4172faab79",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Flag form shows name and latitude/longitude fields with location-selection and submit actions.",
+        "finding": null
+      },
+      {
+        "key": "bookmark-create",
+        "title": "気になる場所を保存",
+        "category": "編集",
+        "state": "populated",
+        "path": "web-bookmark-create.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "bookmark-create",
+        "visibleHeadings": [
+          "気になる場所を保存"
+        ],
+        "sha256": "d707874cd9ad3845e616c7f0228eed50c993c50be6c38993f13b70f6e36e914a",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Bookmark naming sheet shows name field and save action over the chosen map.",
+        "finding": null
+      },
+      {
+        "key": "photo-import",
+        "title": "写真を取り込む・場所の選択",
+        "category": "写真",
+        "state": "populated",
+        "path": "web-photo-import.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "photo-import",
+        "visibleHeadings": [
+          "ここいいな"
+        ],
+        "sha256": "4490b1f97e0a6bd24ccee49eff2491b7542d446f823ea351fa0b34fec457c635",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Photo-import entry shows photo selection, map-location and current-location actions fully visible.",
+        "finding": null
+      },
+      {
+        "key": "photo-capture",
+        "title": "写真を残す",
+        "category": "写真",
+        "state": "populated",
+        "path": "web-photo-capture.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "photo-capture",
+        "visibleHeadings": [
+          "ここいいな"
+        ],
+        "sha256": "b3921d019aa6677eddfe4b1283bb40d46140b04c59dfc0ae448fc900208cc9cb",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Photo mode shows empty photo picker, film choices, collapsed LUT controls and caption; category row continues in next scroll frame.",
+        "finding": null
+      },
+      {
+        "key": "photo-capture-part2",
+        "title": "写真を残す",
+        "category": "写真",
+        "state": "populated",
+        "path": "web-photo-capture-part2.png",
+        "part": 2,
+        "scrollTop": 172,
+        "sourceRoute": "photo-capture",
+        "visibleHeadings": [
+          "ここいいな"
+        ],
+        "sha256": "430e9563f073b4c797a08621f7cbd7d709b30a46ba42e35d9c3a57af930e1504",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Lower photo-form frame fully shows film/LUT controls, caption, category choices, submit button and privacy note.",
+        "finding": null
+      },
+      {
+        "key": "video-capture",
+        "title": "短い動画を残す",
+        "category": "写真",
+        "state": "populated",
+        "path": "web-video-capture.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "video-capture",
+        "visibleHeadings": [
+          "ここいいな"
+        ],
+        "sha256": "c9e5a059529eaf8a8e5e0079696c56420c76094cf7aa389285196c26965cf846",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Video mode shows picker/audio/camera controls and explicit photo-only film/LUT notice; filters are absent and submit action visible.",
+        "finding": null
+      },
+      {
+        "key": "note",
+        "title": "ノート・配置済み",
+        "category": "ノート",
+        "state": "populated",
+        "path": "web-note.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "note",
+        "visibleHeadings": [
+          "2026-11-09 のノート"
+        ],
+        "sha256": "ea5805c125555b4caa876225d0f70b0cd7c901ab75221d6f4a2429bd76c56998",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Populated note shows synthetic text, material actions and grid canvas with photo/sticker images; canvas continues below viewport.",
+        "finding": null
+      },
+      {
+        "key": "note-part2",
+        "title": "ノート・配置済み",
+        "category": "ノート",
+        "state": "populated",
+        "path": "web-note-part2.png",
+        "part": 2,
+        "scrollTop": 474,
+        "sourceRoute": "note",
+        "visibleHeadings": [
+          "2026-11-09 のノート"
+        ],
+        "sha256": "9595c21204c9ba8511f4c39fa8ed33f7da1addcbc42fa80a97c59a0e95498698",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Lower populated-note frame shows complete canvas materials, paper/font choices and save/export/remove-emoji actions.",
+        "finding": null
+      },
+      {
+        "key": "note-empty",
+        "title": "ノート・初期状態",
+        "category": "ノート",
+        "state": "empty",
+        "path": "web-note-empty.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "note-empty",
+        "visibleHeadings": [
+          "2026-11-09 のノート"
+        ],
+        "sha256": "aa1401dfd63db3897fa7f49d0b3d6c1994252f384b6008b89d062c1848f81a73",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Intentional empty note shows placeholder text and blank paper canvas rather than a failed render.",
+        "finding": null
+      },
+      {
+        "key": "note-empty-part2",
+        "title": "ノート・初期状態",
+        "category": "ノート",
+        "state": "empty",
+        "path": "web-note-empty-part2.png",
+        "part": 2,
+        "scrollTop": 474,
+        "sourceRoute": "note-empty",
+        "visibleHeadings": [
+          "2026-11-09 のノート"
+        ],
+        "sha256": "2c63082b9a7770ef8b509217cc40f68f1dd64b23d6641358c3b631280050cd8f",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Lower empty-note frame shows blank paper, paper/font selectors and complete save/export/remove-emoji actions.",
+        "finding": null
+      },
+      {
+        "key": "note-photo-picker",
+        "title": "ノートの写真選択",
+        "category": "ノート",
+        "state": "populated",
+        "path": "web-note-photo-picker.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "note-photo-picker",
+        "visibleHeadings": [
+          "ノートに写真を貼る"
+        ],
+        "sha256": "f5dfe4c9ccb160375d47cec8a17d51740f7e8115e428dfa0b02e19f26aff4ad2",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Photo picker shows file input and two synthetic image cards, plus return-to-note action.",
+        "finding": null
+      },
+      {
+        "key": "note-sticker-picker",
+        "title": "ノートの切り抜き素材選択",
+        "category": "ノート",
+        "state": "populated",
+        "path": "web-note-sticker-picker.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "note-sticker-picker",
+        "visibleHeadings": [
+          "写真からステッカー"
+        ],
+        "sha256": "307e89ec041e2b8da3decd43f0c4347e23f8033595c1b808c873253cb67ce93f",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Sticker-source picker shows file input and two synthetic image cards, plus return-to-note action.",
+        "finding": null
+      },
+      {
+        "key": "note-cutout",
+        "title": "ノートの写真切り抜き",
+        "category": "ノート",
+        "state": "populated",
+        "path": "web-note-cutout.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "note-cutout",
+        "visibleHeadings": [
+          "被写体を囲んで切り抜く"
+        ],
+        "sha256": "994fbdcef2d5393c7d07e6210b31ff1a4233c9af551768e34cf342654bf23dd1",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Cutout editor shows instructions, full synthetic image and all cut/undo/return actions without clipping.",
+        "finding": null
+      },
+      {
+        "key": "note-item-controls",
+        "title": "ノート・素材の調整",
+        "category": "ノート",
+        "state": "populated",
+        "path": "web-note-item-controls.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "note-item-controls",
+        "visibleHeadings": [
+          "2026-11-09 のノート"
+        ],
+        "sha256": "9f2818993359a4a68225bde3d01763b42ae954abf85f9dab0a4d8b779e6e8e8c",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Selected note photo has a visible blue selection outline on the rendered grid canvas; controls continue below viewport.",
+        "finding": null
+      },
+      {
+        "key": "note-item-controls-part2",
+        "title": "ノート・素材の調整",
+        "category": "ノート",
+        "state": "populated",
+        "path": "web-note-item-controls-part2.png",
+        "part": 2,
+        "scrollTop": 650,
+        "sourceRoute": "note-item-controls",
+        "visibleHeadings": [
+          "2026-11-09 のノート"
+        ],
+        "sha256": "0b24c2c81177a0e1b1e3d8f3b1613ae7c34ae3802e8bdf1b2f96e3f911030c76",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Selected-item lower frame shows size/rotation sliders, finish selector, front/remove actions and paper/font controls.",
+        "finding": null
+      },
+      {
+        "key": "note-item-controls-part3",
+        "title": "ノート・素材の調整",
+        "category": "ノート",
+        "state": "populated",
+        "path": "web-note-item-controls-part3.png",
+        "part": 3,
+        "scrollTop": 753,
+        "sourceRoute": "note-item-controls",
+        "visibleHeadings": [
+          "2026-11-09 のノート"
+        ],
+        "sha256": "3c1a701e60badf73fee50ee75f864ca95288a7c95a79c3c00f7b37cfad5fd4f7",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Final selected-item frame shows complete controls and save/export/remove-emoji actions; overlap is normal scrolling.",
+        "finding": null
+      },
+      {
+        "key": "settings",
+        "title": "設定・全区間",
+        "category": "設定",
+        "state": "populated",
+        "path": "web-settings.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "settings",
+        "visibleHeadings": [
+          "設定"
+        ],
+        "sha256": "6b376428d38cc18e40c999f66f1af081012a4f544a5448b0699c5c8e43b31c7b",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Settings initial section shows movement policy and saved-place controls with Web capability text; tabs fixed and visible.",
+        "finding": null
+      },
+      {
+        "key": "settings-part2",
+        "title": "設定・全区間",
+        "category": "設定",
+        "state": "populated",
+        "path": "web-settings-part2.png",
+        "part": 2,
+        "scrollTop": 698,
+        "sourceRoute": "settings",
+        "visibleHeadings": [
+          "設定"
+        ],
+        "sha256": "0f69b5d03bf1006c59e5ce960ed6f1285d87f0e4a67e9c2b58812c69221630fd",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Settings appearance/units/steps/camera/notifications render; full07:45AM reminder time is readable without overlap.",
+        "finding": null
+      },
+      {
+        "key": "settings-part3",
+        "title": "設定・全区間",
+        "category": "設定",
+        "state": "populated",
+        "path": "web-settings-part3.png",
+        "part": 3,
+        "scrollTop": 1396,
+        "sourceRoute": "settings",
+        "visibleHeadings": [
+          "設定"
+        ],
+        "sha256": "b821a1ab88e834ca122f0bf9b1a6542500098cf5fe74e8670b1d226189493180",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Settings Health/import/export groups are rendered with Web limitations; partial top/bottom rows are normal adjacent-frame overlap.",
+        "finding": null
+      },
+      {
+        "key": "settings-part4",
+        "title": "設定・全区間",
+        "category": "設定",
+        "state": "populated",
+        "path": "web-settings-part4.png",
+        "part": 4,
+        "scrollTop": 2094,
+        "sourceRoute": "settings",
+        "visibleHeadings": [
+          "設定"
+        ],
+        "sha256": "32f002af900f91be8cc139c68880ba09f6dac5078c46282bf1dda1ece5bcc543",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Backup/about/beta groups render fully; top partial export row is covered by previous scroll frame.",
+        "finding": null
+      },
+      {
+        "key": "settings-part5",
+        "title": "設定・全区間",
+        "category": "設定",
+        "state": "populated",
+        "path": "web-settings-part5.png",
+        "part": 5,
+        "scrollTop": 2491,
+        "sourceRoute": "settings",
+        "visibleHeadings": [
+          "設定"
+        ],
+        "sha256": "96cce131daec3025673224614cb2ccfc110f1c2b055f693a6b9aaa208c24fb1a",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "Final settings frame fully shows beta/developer groups and red reset row above fixed tabs.",
+        "finding": null
+      },
+      {
+        "key": "lut",
+        "title": "LUT・案内",
+        "category": "設定",
+        "state": "no LUT imported",
+        "path": "web-lut.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "lut",
+        "visibleHeadings": [
+          "LUT"
+        ],
+        "sha256": "426f7d1d2d34d17fa0133b9d2eccb966a2e7a12927191aec890eb597fb902ba2",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "未登録LUTの案内。タイトルと説明、未登録文が読み切れ、欠けなし。",
+        "finding": null
+      },
+      {
+        "key": "health",
+        "title": "ヘルスケア・入口",
+        "category": "設定",
+        "state": "native API unavailable in Web",
+        "path": "web-health.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "health",
+        "visibleHeadings": [
+          "ヘルスケアのワークアウト"
+        ],
+        "sha256": "79107029588f6ee9d57ae84dfbad32f3634ebb03342c2a35dcc567145156d207",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "WebではHealthKitワークアウトを読めない説明と了解ボタン。許可読み込みを装う操作なし。",
+        "finding": null
+      },
+      {
+        "key": "home-place",
+        "title": "自宅・対応範囲",
+        "category": "設定",
+        "state": "unsupported explanation",
+        "path": "web-home-place.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "home-place",
+        "visibleHeadings": [
+          "自宅"
+        ],
+        "sha256": "91c6dfe9ee9a6115d6ae3a734df93fb55be4ebb5959250c605479f071f691b41",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "自宅監視の未対応説明と手動記録案内、了解ボタンが収まる。",
+        "finding": null
+      },
+      {
+        "key": "work-place",
+        "title": "職場・対応範囲",
+        "category": "設定",
+        "state": "unsupported explanation",
+        "path": "web-work-place.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "work-place",
+        "visibleHeadings": [
+          "職場"
+        ],
+        "sha256": "15ff4d5104db32637d362433c2a7797e68f162cf75b8cb4843ae33ee549890cf",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "職場監視の未対応説明と手動記録案内、了解ボタンが収まる。",
+        "finding": null
+      },
+      {
+        "key": "add-place",
+        "title": "よく行く場所・対応範囲",
+        "category": "設定",
+        "state": "unsupported explanation",
+        "path": "web-add-place.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "add-place",
+        "visibleHeadings": [
+          "よく行く場所"
+        ],
+        "sha256": "d08d165c23eb944e0646c1f467b7f91b17cb99ef6e5845104567a010d1dd52f4",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "よく行く場所の未対応説明。タイトル、本文、了解ボタンの欠けなし。",
+        "finding": null
+      },
+      {
+        "key": "movement-policy",
+        "title": "動き出したとき・対応範囲",
+        "category": "設定",
+        "state": "unsupported explanation",
+        "path": "web-movement-policy.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "movement-policy",
+        "visibleHeadings": [
+          "動き出したとき"
+        ],
+        "sha256": "caff17d8634e13da5774325c465f9e5f910a523a842c6bf1693271061c8d6b64",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "画面を閉じた間の移動検知がWebでできない説明と手動導線の案内が見える。",
+        "finding": null
+      },
+      {
+        "key": "about",
+        "title": "このWeb版について",
+        "category": "設定",
+        "state": "populated",
+        "path": "web-about.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "about",
+        "visibleHeadings": [
+          "PlainWalk Web について"
+        ],
+        "sha256": "b1eab4437712128c7c7d22d0e4474b0ab67f2375ebd1ca00fd4ca9100d28dbfb",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "非公式版、参照資料、未実装範囲への行、プライバシー説明が表示。文字や行の重なりなし。",
+        "finding": null
+      },
+      {
+        "key": "limitations",
+        "title": "iOSとWebの対応範囲",
+        "category": "設定",
+        "state": "populated",
+        "path": "web-limitations.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "limitations",
+        "visibleHeadings": [
+          "iOS と Web 版の対応範囲"
+        ],
+        "sha256": "b0ba215430f53475a004b7b626c49252dfa83007364ab881eb74016c8154b85c",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "iOSとWebの対応範囲の先頭区間。機能一覧と制限説明が読みやすく、下続きは次画像へ。",
+        "finding": null
+      },
+      {
+        "key": "limitations-part2",
+        "title": "iOSとWebの対応範囲",
+        "category": "設定",
+        "state": "populated",
+        "path": "web-limitations-part2.png",
+        "part": 2,
+        "scrollTop": 170,
+        "sourceRoute": "limitations",
+        "visibleHeadings": [
+          "iOS と Web 版の対応範囲"
+        ],
+        "sha256": "1d2bad73bd7c8a711617232846a4a4a2a74dca102ea24164b3467d869e2f7e97",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "対応範囲の後半。未対応機能と動画フィルム未対応の説明、ホーム画面追加案内を表示。上端は前区間と重なる通常スクロール。",
+        "finding": null
+      },
+      {
+        "key": "diagnostics",
+        "title": "GPSの診断",
+        "category": "開発者",
+        "state": "populated",
+        "path": "web-diagnostics.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "diagnostics",
+        "visibleHeadings": [
+          "記録の診断"
+        ],
+        "sha256": "7091d774bd1b1d3325da54c480dfc8cc222c3d6c327cc1caafb903883f24f1fb",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "IndexedDB利用可能、記録1回4点、GPS未取得、通常状態とGPSフィルター説明が収まる。",
+        "finding": null
+      },
+      {
+        "key": "storage",
+        "title": "保存領域",
+        "category": "開発者",
+        "state": "populated",
+        "path": "web-storage.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "storage",
+        "visibleHeadings": [
+          "保存領域"
+        ],
+        "sha256": "327142793373107e8875317a5951e113a166c725c4085d255cae8a449fda5f2c",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "保存領域0.1MB/10240MBの表示と保持リクエスト、バックアップ操作が見える。",
+        "finding": null
+      },
+      {
+        "key": "developer",
+        "title": "開発者向け・全区間",
+        "category": "開発者",
+        "state": "populated",
+        "path": "web-developer.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "developer",
+        "visibleHeadings": [
+          "開発者向け"
+        ],
+        "sha256": "1bd1a97b88b80cee0cd75fb387993fa3b1351451472ee09f86f5b16398fe2cf3",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "開発者画面の環境Web/PWA、停止、保存済み1回、393×852、試験操作と権限項目が表示。次区間への通常続き。",
+        "finding": null
+      },
+      {
+        "key": "developer-part2",
+        "title": "開発者向け・全区間",
+        "category": "開発者",
+        "state": "populated",
+        "path": "web-developer-part2.png",
+        "part": 2,
+        "scrollTop": 698,
+        "sourceRoute": "developer",
+        "visibleHeadings": [
+          "開発者向け"
+        ],
+        "sha256": "9344d1865290ce4af55db812da428e5387bfa95bd50fe2d9777292a092c77939",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "開発者の権限・通信・保存余り、表示検証スイッチと実機チェック項目が表示。スクロール続きで横欠けなし。",
+        "finding": null
+      },
+      {
+        "key": "developer-part3",
+        "title": "開発者向け・全区間",
+        "category": "開発者",
+        "state": "populated",
+        "path": "web-developer-part3.png",
+        "part": 3,
+        "scrollTop": 1356,
+        "sourceRoute": "developer",
+        "visibleHeadings": [
+          "開発者向け"
+        ],
+        "sha256": "48188145a6c6b172fbe830c01165c4dae4a55b5525e90ab0e69ed6c7a55bb76b",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "実機チェックの後半と診断ログ、ログ消去、座標等を含めない説明が見える。固定タブと操作は収まる。",
+        "finding": null
+      },
+      {
+        "key": "developer-storage-test",
+        "title": "開発者・保存テスト結果",
+        "category": "開発者",
+        "state": "populated",
+        "path": "web-developer-storage-test.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "developer-storage-test",
+        "visibleHeadings": [
+          "開発者向け"
+        ],
+        "sha256": "1bd1a97b88b80cee0cd75fb387993fa3b1351451472ee09f86f5b16398fe2cf3",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "保存試験後の開発者先頭。Web/PWA環境・保存済み記録・試験ボタンと権限項目が正しく表示。",
+        "finding": null
+      },
+      {
+        "key": "developer-storage-test-part2",
+        "title": "開発者・保存テスト結果",
+        "category": "開発者",
+        "state": "populated",
+        "path": "web-developer-storage-test-part2.png",
+        "part": 2,
+        "scrollTop": 698,
+        "sourceRoute": "developer-storage-test",
+        "visibleHeadings": [
+          "開発者向け"
+        ],
+        "sha256": "9d8eed1a7a8a522e23a3f33e77f03cd542ef5999173046cb06df760b7ded897a",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "保存往復テストの結果『成功・2ms』が表示。権限情報、表示検証、実機チェック項目に重なりなし。",
+        "finding": null
+      },
+      {
+        "key": "developer-storage-test-part3",
+        "title": "開発者・保存テスト結果",
+        "category": "開発者",
+        "state": "populated",
+        "path": "web-developer-storage-test-part3.png",
+        "part": 3,
+        "scrollTop": 1396,
+        "sourceRoute": "developer-storage-test",
+        "visibleHeadings": [
+          "開発者向け"
+        ],
+        "sha256": "dedc4ce1b512a24293efb13a80901affa71c7047fd1aa711f0b5e408a033df82",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "保存往復試験後、実機チェック後半とstorageProbe成功ログが見える。下説明は次画像に続く正常区間。",
+        "finding": null
+      },
+      {
+        "key": "developer-storage-test-part4",
+        "title": "開発者・保存テスト結果",
+        "category": "開発者",
+        "state": "populated",
+        "path": "web-developer-storage-test-part4.png",
+        "part": 4,
+        "scrollTop": 1477,
+        "sourceRoute": "developer-storage-test",
+        "visibleHeadings": [
+          "開発者向け"
+        ],
+        "sha256": "afda9990e8c6f9848319601d337eca95bfb7f7999b2f71455dc63894147e11f7",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "試験後の最終区間。storageProbe成功ログ、消去操作と個人情報を含めない説明まで読める。",
+        "finding": null
+      },
+      {
+        "key": "reset-confirm",
+        "title": "データのリセット・確認",
+        "category": "設定",
+        "state": "confirmation only",
+        "path": "web-reset-confirm.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "reset-confirm",
+        "visibleHeadings": [
+          "データをリセットしますか？"
+        ],
+        "sha256": "fbf05675ccb821b8cee1b416a6c24dafc94de73923ce5ddc90d33b7b4e5673cf",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "全データ削除の確認シート。対象と事前バックアップ案内、書き出し、赤文字の削除操作が見える。削除未実行状態。",
+        "finding": null
+      },
+      {
+        "key": "demo",
+        "title": "体験モード",
+        "category": "地図",
+        "state": "demo; no saved walk",
+        "path": "web-demo.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "demo",
+        "visibleHeadings": [],
+        "sha256": "7b0f49a2b7e6e105e7ce6b825c6b30a92dba9fc8883df89ca6387c30c056a8fb",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "体験モードのタップ案内、現在点、合成歩数と距離、記録・現在地・レイヤー・固定タブが表示。未歩行の空白地図は意図通り。",
+        "finding": null
+      },
+      {
+        "key": "track-import",
+        "title": "GPX取り込み確認",
+        "category": "取り込み",
+        "state": "confirmation only",
+        "path": "web-track-import.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "track-import",
+        "visibleHeadings": [
+          "歩行の記録を取り込む"
+        ],
+        "sha256": "bd3c082c4d16b839d8eb678e11864f6f1da82659d1796fb5980bd111ff9b03ab",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "GPX取り込み確認。折れ線が全体に描かれ、検証用ファイル名、0.24km・4点、取り込み保存ボタンが見える。",
+        "finding": null
+      },
+      {
+        "key": "backup-import",
+        "title": "バックアップ取り込み確認",
+        "category": "取り込み",
+        "state": "confirmation only",
+        "path": "web-backup-import.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "backup-import",
+        "visibleHeadings": [
+          "バックアップを取り込む"
+        ],
+        "sha256": "2253c395d200121ffb97c3ddc4053e516ebb2ae2cb5d59e674574fac55984b3a",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "バックアップ確認。1回のさんぽ・2件のピン・1本の旗、重複しない追加説明と確認操作が収まる。",
+        "finding": null
+      },
+      {
+        "key": "note-route",
+        "title": "ノート・道を貼る",
+        "category": "ノート",
+        "state": "synthetic route added to draft",
+        "path": "web-note-route.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "note-route",
+        "visibleHeadings": [
+          "2026-11-09 のノート"
+        ],
+        "sha256": "51f2c82ff877bd0e748df240901e3f5372d2fe14d7aff4f74cd105725f1a830c",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "ノートに追加した道が選択枠内で黒い明瞭な折れ線として表示。テキスト・素材・操作ボタンが描画される。",
+        "finding": null
+      },
+      {
+        "key": "note-route-part2",
+        "title": "ノート・道を貼る",
+        "category": "ノート",
+        "state": "synthetic route added to draft",
+        "path": "web-note-route-part2.png",
+        "part": 2,
+        "scrollTop": 650,
+        "sourceRoute": "note-route",
+        "visibleHeadings": [
+          "2026-11-09 のノート"
+        ],
+        "sha256": "997bb9ad5a2de2191e548952bb87a2ccf00b55cbed8802b0581e54836f56e3f8",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "ノート下部スクロール。サイズと回転スライダー、仕上げ、前面・削除、紙と書体、ノート保存を表示。上部素材は前区間と重なる。",
+        "finding": null
+      },
+      {
+        "key": "note-route-part3",
+        "title": "ノート・道を貼る",
+        "category": "ノート",
+        "state": "synthetic route added to draft",
+        "path": "web-note-route-part3.png",
+        "part": 3,
+        "scrollTop": 753,
+        "sourceRoute": "note-route",
+        "visibleHeadings": [
+          "2026-11-09 のノート"
+        ],
+        "sha256": "089e8a6996f707e926a47e4a730cb990ba0688731ad9cec2782f841f14ea4df4",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "ノート最下部。素材調整、紙・書体、保存、画像保存、絵文字除去の全操作が収まる。",
+        "finding": null
+      },
+      {
+        "key": "photo-selected",
+        "title": "写真を残す・画像選択済み",
+        "category": "写真",
+        "state": "synthetic app icon; no EXIF",
+        "path": "web-photo-selected.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "photo-selected",
+        "visibleHeadings": [
+          "ここいいな"
+        ],
+        "sha256": "3b4e0ec66e78b7e58bb2c71ac826918ac36e4935e9d99c719ebf5d50e194c579",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "選択済み合成PNGアイコンが写真プレビューに描画され、写真用フィルム4種とLUT折り畳みが見える。",
+        "finding": null
+      },
+      {
+        "key": "photo-selected-part2",
+        "title": "写真を残す・画像選択済み",
+        "category": "写真",
+        "state": "synthetic app icon; no EXIF",
+        "path": "web-photo-selected-part2.png",
+        "part": 2,
+        "scrollTop": 225,
+        "sourceRoute": "photo-selected",
+        "visibleHeadings": [
+          "ここいいな"
+        ],
+        "sha256": "f60224ba3733821733fa41a8d38922ac57c894d6dceb14893d70eb667e38fe2b",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "写真選択後の下区間。カテゴリ、手動配置と撮影時刻不明の案内、保存操作が見え、プレビューは前区間に続く。",
+        "finding": null
+      },
+      {
+        "key": "photo-lut-import",
+        "title": "写真・カスタムLUTの読み込み",
+        "category": "写真",
+        "state": "expanded import controls; no file chooser",
+        "path": "web-photo-lut-import.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "photo-lut-import",
+        "visibleHeadings": [
+          "ここいいな"
+        ],
+        "sha256": "37ff576ec0c363869349712e7aee9cbf14a48b4dff1e9abef7dbec898c684025",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "写真モードでLUT読み込みを展開。カメラ仮枠、フィルム4種、実ファイル入力とサイズ案内が表示。下続きは次区間。",
+        "finding": null
+      },
+      {
+        "key": "photo-lut-import-part2",
+        "title": "写真・カスタムLUTの読み込み",
+        "category": "写真",
+        "state": "expanded import controls; no file chooser",
+        "path": "web-photo-lut-import-part2.png",
+        "part": 2,
+        "scrollTop": 305,
+        "sourceRoute": "photo-lut-import",
+        "visibleHeadings": [
+          "ここいいな"
+        ],
+        "sha256": "03bd54042dd3eef19b1ac9e38cd9823a7e5857d1df668b492101fca080338bee",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "LUT展開の下区間。ファイル選択、サイズ2〜33案内、本文、カテゴリ、保存操作まで欠けなく読める。",
+        "finding": null
+      },
+      {
+        "key": "video-selected",
+        "title": "短い動画を残す・選択済み",
+        "category": "写真",
+        "state": "decoded-paused synthetic two-second MP4 fixture; real playback advanced",
+        "path": "web-video-selected.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "video-selected",
+        "visibleHeadings": [
+          "ここいいな"
+        ],
+        "sha256": "66ae05f6086e6baebe4f67a6d952dfe77efadea5145da79d9680043445ef39b6",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "選択済み2秒MP4が緑色の実デコードフレームで停止。再生バーに進行あり、ローディング輪なし。写真専用効果の案内が見える。",
+        "finding": null
+      },
+      {
+        "key": "video-selected-part2",
+        "title": "短い動画を残す・選択済み",
+        "category": "写真",
+        "state": "decoded-paused synthetic two-second MP4 fixture; real playback advanced",
+        "path": "web-video-selected-part2.png",
+        "part": 2,
+        "scrollTop": 241,
+        "sourceRoute": "video-selected",
+        "visibleHeadings": [
+          "ここいいな"
+        ],
+        "sha256": "8483fd9a19985bfa41cadcd07592d251920c18f83536ac8af4abe757e3ac2761",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "選択動画の下区間。動画プレビューは停止フレームを保ち、音声・カメラ操作、写真専用効果の案内、本文・カテゴリ・保存が表示。",
+        "finding": null
+      },
+      {
+        "key": "record-too-short",
+        "title": "道がない記録の保存案内",
+        "category": "記録",
+        "state": "empty synthetic checkpoint",
+        "path": "web-record-too-short.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "record-too-short",
+        "visibleHeadings": [
+          "まだ道が記録されていません"
+        ],
+        "sha256": "4134c3f0c4210bd839de9a1766aa740b534d44fdb688f1f88921df1f085f33c1",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "軌跡0点の記録保存案内。『まだ道が記録されていません』と記録継続・破棄の選択肢が表示。正常な空記録状態。",
+        "finding": null
+      },
+      {
+        "key": "badges-load-error",
+        "title": "エリアバッジ・読み込みエラー",
+        "category": "コレクション",
+        "state": "intentional boundary request failure",
+        "path": "web-badges-load-error.png",
+        "part": 1,
+        "scrollTop": 0,
+        "sourceRoute": "badges-load-error",
+        "visibleHeadings": [
+          "エリアバッジ",
+          "街の境界を読み込めませんでした"
+        ],
+        "sha256": "9e0d38a507edfdca67f5ed6f282f9880fd1e30607c4d07e8d4cf02a9cee251ce",
+        "viewedIndividually": true,
+        "status": "pass",
+        "observed": "意図的境界取得失敗。日本語の読み込み失敗説明、既存記録保持の案内、再試行ボタンと固定タブが表示。生の技術エラーなし。",
+        "finding": null
+      }
+    ],
+    "appSourceProvenance": {
+      "from": "722e90a798ec9c4b9ced14195e62bccb37e23c92",
+      "through": "e9f77e354bc528488ec318b8b32f115c0c391893",
+      "files": 27,
+      "diff": [],
+      "blobs": [
+        {
+          "path": "web/README.md",
+          "gitBlobSha": "343a0088b75d93dedb1fc85ee9515429dcfc2f48"
+        },
+        {
+          "path": "web/public/data/NOTICE.md",
+          "gitBlobSha": "c541b9774773f1b425b404b3eb13b9b9fa42dc9a"
+        },
+        {
+          "path": "web/public/icon.png",
+          "gitBlobSha": "571410e5021ac03424701ef07e1b78d2235abe23"
+        },
+        {
+          "path": "web/public/icon.svg",
+          "gitBlobSha": "75f381594e2fe5024331493d3a51f3acca26535c"
+        },
+        {
+          "path": "web/public/index.html",
+          "gitBlobSha": "33215f7baba4e3427540854b5d4c515c9fcd3c4b"
+        },
+        {
+          "path": "web/public/iphone/index.html",
+          "gitBlobSha": "919aed5e1f13f247a0722676a91cfe9bfb42c376"
+        },
+        {
+          "path": "web/public/manifest.webmanifest",
+          "gitBlobSha": "896381e5c4296137f8f8672f0a4c4250a83e8389"
+        },
+        {
+          "path": "web/public/screens/gallery.css",
+          "gitBlobSha": "8989072acedf720c0109a2a4d2c8b9adbf05496a"
+        },
+        {
+          "path": "web/public/screens/gallery.js",
+          "gitBlobSha": "ad76260d4e6fc23379def0a9be924d8f7bface43"
+        },
+        {
+          "path": "web/public/screens/index.html",
+          "gitBlobSha": "4698426f7359f889192214a20dad0e2b11f91fc8"
+        },
+        {
+          "path": "web/public/sw.js",
+          "gitBlobSha": "1cd7293f80451bd8f92940dcedc0a9c5e1a723bf"
+        },
+        {
+          "path": "web/src/app.js",
+          "gitBlobSha": "4251f8fb33fe01d1f6094b4dade7a3350624488d"
+        },
+        {
+          "path": "web/src/areas.js",
+          "gitBlobSha": "52a6f78b908701e6c2cd4850ee7ae321034edfa5"
+        },
+        {
+          "path": "web/src/collections.js",
+          "gitBlobSha": "8311b79850814bbcf3adcc595065cbba81d04daf"
+        },
+        {
+          "path": "web/src/companion.js",
+          "gitBlobSha": "0ee3cfe4dc75ceb8c124f7cbed3503177b64968b"
+        },
+        {
+          "path": "web/src/core.js",
+          "gitBlobSha": "e73b9c0321a68a304888f69c4f3dae718a9dec1b"
+        },
+        {
+          "path": "web/src/developer-ui.js",
+          "gitBlobSha": "526f4d09f4006c02ba5342a009c5fdd7a420047c"
+        },
+        {
+          "path": "web/src/diagnostics.js",
+          "gitBlobSha": "c9c94ee4988e2dc5b7a6ac2372f29705917bb3ce"
+        },
+        {
+          "path": "web/src/effects.js",
+          "gitBlobSha": "69f8046a3069da57cdc35d5da41523e81168390a"
+        },
+        {
+          "path": "web/src/map-geometry.js",
+          "gitBlobSha": "db88c2b8d0f38d3d7d885ecb69629941c049bfae"
+        },
+        {
+          "path": "web/src/media.js",
+          "gitBlobSha": "7e9b02e008c7362e172aeb34c59670a9605df1a6"
+        },
+        {
+          "path": "web/src/native.js",
+          "gitBlobSha": "c84ab1a52ca4311d48e61952d6d1cde21dfd9249"
+        },
+        {
+          "path": "web/src/notebook.js",
+          "gitBlobSha": "829adc2ccb86ca4b754639b1fbe5eabfd2d2926c"
+        },
+        {
+          "path": "web/src/photo-metadata.js",
+          "gitBlobSha": "678881154ff0defac805db5062e73980516baa1a"
+        },
+        {
+          "path": "web/src/reference-ui.js",
+          "gitBlobSha": "3ff1d1ebe63870e87013079fbcc73a85e3eb7e84"
+        },
+        {
+          "path": "web/src/style.css",
+          "gitBlobSha": "ce06cf0f867bbf530769df713b67e4d186f70fda"
+        },
+        {
+          "path": "web/src/units.js",
+          "gitBlobSha": "83d5b10ff3f2e97a5776eeda39b16277f03d1f69"
+        }
+      ]
+    }
+  }
+}

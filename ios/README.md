@@ -2,7 +2,7 @@
 
 通常の起動先は `NativeRootView` です。SwiftUI のタブ・ナビゲーション・シート、Canvas の白地図、MapKit の答え合わせ地図を使います。Web ページをそのまま表示する起動構成から変更しました。PlainWalk の公開画面と機能を基にした独立実装で、元アプリのソースや署名済みアプリではありません。
 
-2026-11-09 の再開後、CI で本体・Playgrounds のビルドが通過しましたが、Simulator の MapKit 3D pitch 検証は未通過です。地図の表示範囲と写真一覧の撮影に関する追加修正も、最新 CI での実行確認を待っています。[CI 41302732947](https://github.com/mai-ima/plainWalk/actions/runs/41302732947) の自己テスト・86 枚撮影の成功は旧版の履歴です。実機・配布署名は未検証で、署名済み IPA はありません。最新の結果は [ルート README](../README.md#検証と限界)を参照してください。
+Nativeアプリのコンパイル・Simulator実行と、Playgroundsコンパイルの基準ソース `e9f77e354bc528488ec318b8b32f115c0c391893` の [CI 42598341045](https://github.com/mai-ima/plainWalk/actions/runs/42598341045) は全11ジョブ成功です。Web単体49件、Chromium9スイート（地図描画12シナリオ）、39 Swiftファイルの構造・構文検査、本体・Live Activity拡張・Playgroundsのコンパイル、Playgrounds生成71ファイルと正本のバイト照合、Simulatorの自己テスト・実表示・文字確認を含みます。後続の画面一覧専用JavaScript修正は、このCI後に配信用資源の実操作を対象とした別のブラウザ検証で確認しました。Native/Playgroundsの同梱互換Web資源はCI時点のまま維持し、検証済み71ファイルは再生成していません。 Native86枚の撮影・文字確認と全画像の個別目視は、[画像別の実際の撮影元とSHA-256](../docs/references/image-audit-2026-11-09.json)に記録しました。`b29eddf2d39fe2bb4693704f5f3624a02328f269` の41枚、`b6ab64dfecba44bc9b0d9534cd6d19c08519739f` の10枚、`9f9a05ea0052e943c3368f7baf1f8490491e619a` の13枚、`e9f77e354bc528488ec318b8b32f115c0c391893` の14枚、`63b4d832d656cdaa8ca8166cd1c28f8091a58ef9` の8枚が実際の撮影元で、最終ソースの一括撮影とはしません。実機・署名は未検証で、署名済みIPA・TestFlight配布はありません。NativeのstepGoal1枚はOSのApple Intelligence通知がヘッダーへ重なる撮影状態で、タイトルと閉じる操作の外観はそのPNGから確認できません。アプリの欠けとは判定せず、通知を画像編集で除去していません。
 
 ## iPhone で使う方針
 

@@ -6,7 +6,7 @@ const category = $("#category");
 const viewer = $("#viewer");
 const imageStage = $("#image-stage");
 const viewerImage = $("#viewer-image");
-const state = { screens: [], filtered: [], platform: "all", current: -1, opener: null };
+const state = { screens: [], filtered: [], platform: "all", current: -1, opener: null, loaded: false };
 const platformNames = { native: "Swift", web: "Web" };
 const stateNames = { empty: "初期状態", populated: "記録あり", fixture: "検証用データ", captured: "撮影済み", missing: "未撮影", "physical-only": "実機で確認", unsupported: "未対応", pending: "準備中", error: "撮影失敗" };
 
@@ -86,6 +86,15 @@ function render() {
 }
 
 function activeScreens() { return state.filtered.filter(available); }
+function selectPlatform(platform) {
+  state.platform = platform;
+  for (const tab of document.querySelectorAll("[data-platform]")) {
+    const selected = tab.dataset.platform === platform;
+    tab.classList.toggle("active", selected);
+    tab.setAttribute("aria-pressed", String(selected));
+  }
+  render();
+}
 function setViewerScreen(index) {
   const screens = activeScreens();
   if (!screens.length) return;
@@ -118,9 +127,28 @@ function openViewer(screen, opener, push = true) {
 function closeViewer() {
   if (history.state?.plainwalkScreenViewer) history.back();
   else {
-    viewer.close();
     history.replaceState(history.state, "", location.pathname + location.search);
+    syncViewerFromURL();
   }
+}
+function syncViewerFromURL() {
+  if (!state.loaded) return;
+  const key = new URLSearchParams(location.hash.slice(1)).get("screen");
+  const screen = state.screens.find((item) => item.id === key && available(item));
+  if (!screen) {
+    if (viewer.open) viewer.close();
+    return;
+  }
+  if (!state.filtered.some((item) => item.id === screen.id)) {
+    search.value = "";
+    category.value = "all";
+    selectPlatform("all");
+  }
+  // A single history navigation may emit both popstate and hashchange.
+  // Keep an already synchronized viewer intact, including its zoom/scroll.
+  if (viewer.open && activeScreens()[state.current]?.id === screen.id) return;
+  const card = grid.children[state.filtered.findIndex((item) => item.id === screen.id)];
+  openViewer(screen, card?.querySelector(".screen-open"), false);
 }
 function stepViewer(delta) {
   const screen = setViewerScreen(state.current + delta);
@@ -136,22 +164,19 @@ $("#viewer-zoom").addEventListener("click", () => {
   $("#viewer-zoom").setAttribute("aria-pressed", String(zoom));
 });
 viewer.addEventListener("cancel", (event) => { event.preventDefault(); closeViewer(); });
-viewer.addEventListener("close", () => { viewerImage.removeAttribute("src"); state.opener?.focus({ preventScroll: true }); });
-window.addEventListener("popstate", () => { if (viewer.open) viewer.close(); });
+viewer.addEventListener("close", () => {
+  if (viewer.open) return; // Back/Forward may reopen before a queued close event.
+  viewerImage.removeAttribute("src");
+  state.opener?.focus({ preventScroll: true });
+});
+window.addEventListener("popstate", syncViewerFromURL);
+window.addEventListener("hashchange", syncViewerFromURL);
 window.addEventListener("keydown", (event) => {
   if (!viewer.open) return;
   if (event.key === "ArrowLeft") { event.preventDefault(); stepViewer(-1); }
   if (event.key === "ArrowRight") { event.preventDefault(); stepViewer(1); }
 });
-for (const tab of document.querySelectorAll("[data-platform]")) tab.addEventListener("click", () => {
-  state.platform = tab.dataset.platform;
-  for (const other of document.querySelectorAll("[data-platform]")) {
-    const selected = other === tab;
-    other.classList.toggle("active", selected);
-    other.setAttribute("aria-pressed", String(selected));
-  }
-  render();
-});
+for (const tab of document.querySelectorAll("[data-platform]")) tab.addEventListener("click", () => selectPlatform(tab.dataset.platform));
 search.addEventListener("input", render);
 category.addEventListener("change", render);
 
@@ -170,12 +195,9 @@ try {
   $("#capture-summary").textContent = state.screens.length ? `Web ${web} 枚 / Swift ${native} 枚${pending ? ` · 未撮影など ${pending} 項目` : ""}` : "画像は準備中です。";
   const date = new Date(manifest.generatedAt);
   if (Number.isFinite(date.getTime())) $("#updated-at").textContent = `更新 ${date.toLocaleString("ja-JP", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })}`;
+  state.loaded = true;
   render();
-  const key = new URLSearchParams(location.hash.slice(1)).get("screen");
-  if (key) {
-    const screen = state.screens.find((screen) => screen.id === key && available(screen));
-    if (screen) openViewer(screen, null, false);
-  }
+  syncViewerFromURL();
 } catch {
   $("#capture-summary").textContent = "画像は準備中です。";
   render();
