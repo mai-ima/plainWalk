@@ -8,7 +8,7 @@ mkdir -p .build/screenshots
 PW_APP_CONTAINER=$(xcrun simctl get_app_container "$PW_SIM_DEVICE" org.example.plainwalkweb data)
 PW_READY_FILE="$PW_APP_CONTAINER/Library/Application Support/PlainWalk/native-ready.json"
 rm -f "$PW_READY_FILE" "$PW_APP_CONTAINER/Library/Application Support/PlainWalk/native-settings-ready.json" "$PW_APP_CONTAINER/Library/Application Support/PlainWalk"/screen-*.ready
-xcrun simctl launch "$PW_SIM_DEVICE" org.example.plainwalkweb -AppleLanguages '(ja)' -AppleLocale ja_JP -PlainWalkSmokeTest
+xcrun simctl launch --terminate-running-process "$PW_SIM_DEVICE" org.example.plainwalkweb -AppleLanguages '(ja)' -AppleLocale ja_JP -PlainWalkSmokeTest
 for PW_ATTEMPT in $(seq 1 60); do
   if [[ -f "$PW_READY_FILE" ]]; then
     python3 -c 'import json,sys; data=json.load(open(sys.argv[1])); assert data.get("ready") is True and data.get("recordingPersistence") is True and data.get("nativeUI") is True and data.get("storage") is True and data.get("trackMath") is True and data.get("trackIO") is True and data.get("importCompatibility") is True and data.get("modelState") is True and data.get("mapCamera") is True and data.get("mapProjection") is True and data.get("trackEditor") is True and data.get("photoEffects") is True and data.get("photoMetadata") is True and data.get("boundaryGeometry") is True and data.get("noteTransform") is True and data.get("replayMovie") is True; print("Native SwiftUI application, storage, track import and recorder recovery checks passed on iOS Simulator.")' "$PW_READY_FILE"
@@ -16,21 +16,19 @@ for PW_ATTEMPT in $(seq 1 60); do
     cp "$PW_APP_CONTAINER/Library/Application Support/PlainWalk/native-export-smoke.mp4" .build/exports/native-export-smoke.mp4
     sleep 2
     xcrun simctl io "$PW_SIM_DEVICE" screenshot .build/screenshots/ios-native-map.png
-    xcrun simctl terminate "$PW_SIM_DEVICE" org.example.plainwalkweb
     rm -f "$PW_READY_FILE"
-    xcrun simctl launch "$PW_SIM_DEVICE" org.example.plainwalkweb -AppleLanguages '(ja)' -AppleLocale ja_JP -PlainWalkSmokeTest -PlainWalkScreenOnly -PlainWalkNativeSettingsSmokeTest
+    xcrun simctl launch --terminate-running-process "$PW_SIM_DEVICE" org.example.plainwalkweb -AppleLanguages '(ja)' -AppleLocale ja_JP -PlainWalkSmokeTest -PlainWalkScreenOnly -PlainWalkNativeSettingsSmokeTest
     for PW_SETTINGS_ATTEMPT in $(seq 1 20); do
       if [[ -f "$PW_APP_CONTAINER/Library/Application Support/PlainWalk/native-settings-ready.json" && -f "$PW_APP_CONTAINER/Library/Application Support/PlainWalk/screen-settings.ready" ]]; then
         xcrun simctl io "$PW_SIM_DEVICE" screenshot .build/screenshots/ios-native-settings.png
         for PW_SCREEN in records profile layers answer spots doodles menu stepGoal lut spot noteEditor developer; do
-          xcrun simctl terminate "$PW_SIM_DEVICE" org.example.plainwalkweb
           PW_SCREEN_FILE="$PW_APP_CONTAINER/Library/Application Support/PlainWalk/screen-$PW_SCREEN.ready"
           if [[ "$PW_SCREEN" == "spots" || "$PW_SCREEN" == "doodles" ]]; then
             PW_SCREEN_FILE="$PW_APP_CONTAINER/Library/Application Support/PlainWalk/screen-collection:$PW_SCREEN.ready"
           fi
           PW_SCREEN_TRACE_FILE="${PW_SCREEN_FILE%.ready}.trace"
           rm -f "$PW_READY_FILE" "$PW_SCREEN_FILE" "$PW_SCREEN_TRACE_FILE"
-          xcrun simctl launch "$PW_SIM_DEVICE" org.example.plainwalkweb -AppleLanguages '(ja)' -AppleLocale ja_JP -PlainWalkSmokeTest -PlainWalkScreenOnly "-PlainWalkScreen=$PW_SCREEN"
+          xcrun simctl launch --terminate-running-process "$PW_SIM_DEVICE" org.example.plainwalkweb -AppleLanguages '(ja)' -AppleLocale ja_JP -PlainWalkSmokeTest -PlainWalkScreenOnly "-PlainWalkScreen=$PW_SCREEN"
           for PW_SCREEN_ATTEMPT in $(seq 1 20); do
             if [[ -f "$PW_SCREEN_FILE" ]]; then break; fi
             sleep 1

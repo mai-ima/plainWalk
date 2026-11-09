@@ -59,10 +59,9 @@ for scene in scenes:
     key = scene["key"]
     marker = signals / ("screen-" + scene["marker"] + ".ready")
     trace = marker.with_suffix(".trace")
-    command("xcrun", "simctl", "terminate", udid, "org.example.plainwalkweb", required=False)
     for path in [ready, marker, trace, signals / "capture-scroll.ready", signals / "capture-dialog.ready"]:
         path.unlink(missing_ok=True)
-    launch = ["xcrun", "simctl", "launch", udid, "org.example.plainwalkweb",
+    launch = ["xcrun", "simctl", "launch", "--terminate-running-process", udid, "org.example.plainwalkweb",
               "-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP",
               "-PlainWalkSmokeTest", "-PlainWalkScreenOnly", "-PlainWalkScreenshotFixture"]
     if "capture" in scene:

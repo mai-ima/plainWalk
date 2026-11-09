@@ -306,7 +306,7 @@ import MapKit
         }
         located.surface.pitched = true; located.coordinator.update(located.surface, map: located.map)
         try await settle(located, "平面から3D")
-        try require(near(located.map, coordinate) && (0.9...1.1).contains(distanceRatio(located.map, flatDistance)), "3D切り替えで中心と倍率を保持")
+        try require(near(located.map, coordinate) && (0.9...1.1).contains(distanceRatio(located.map, flatDistance)), "3D切り替えで中心と倍率を保持（距離比 \(distanceRatio(located.map, flatDistance))、中心 \(located.map.camera.centerCoordinate.latitude),\(located.map.camera.centerCoordinate.longitude)）")
         try require(abs(located.map.camera.pitch - 55) < 1, "3Dの角度を適用")
         let beforeZoom = located.map.camera.centerCoordinateDistance
         located.surface.zoomRevision += 1; located.coordinator.update(located.surface, map: located.map)
@@ -537,8 +537,12 @@ private struct NativeAnswerResult: Identifiable { var id: String; var place: Nat
                 let animated = self.animateCamera; self.animateCamera = false
                 guard needsChange else { return }
                 let oldDistance = camera.centerCoordinateDistance, oldPitch = camera.pitch
+                let center = camera.centerCoordinate
                 camera.pitch = pitch
-                camera.centerCoordinateDistance = min(30_000_000, max(100, camera.centerCoordinateDistance * self.pendingZoom))
+                camera.centerCoordinate = center
+                // Pitch can change the slant distance through altitude. Use the
+                // pre-pitch distance so switching 2D/3D doesn't also change zoom.
+                camera.centerCoordinateDistance = min(30_000_000, max(100, oldDistance * self.pendingZoom))
                 self.pendingZoom = 1
                 guard abs(camera.pitch - oldPitch) > 0.1 || abs(camera.centerCoordinateDistance - oldDistance) > 0.01 else { return }
                 self.awaitingViewport = true
