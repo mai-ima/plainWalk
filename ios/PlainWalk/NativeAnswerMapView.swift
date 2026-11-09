@@ -272,7 +272,7 @@ import MapKit
             throw NativeError.message("答え合わせマップのカメラ確定を確認できません: \(name), center=\(camera.centerCoordinate.latitude),\(camera.centerCoordinate.longitude), distance=\(camera.centerCoordinateDistance), pitch=\(camera.pitch)")
         }
         func near(_ map: MKMapView, _ coordinate: CLLocationCoordinate2D, meters: Double = 250) -> Bool {
-            MKMetersBetweenMapPoints(MKMapPoint(map.camera.centerCoordinate), MKMapPoint(coordinate)) < meters
+            MKMapPoint(map.camera.centerCoordinate).distance(to: MKMapPoint(coordinate)) < meters
         }
         func distanceRatio(_ map: MKMapView, _ distance: Double) -> Double { map.camera.centerCoordinateDistance / distance }
         func contains(_ map: MKMapView, _ point: NativePoint) -> Bool {
@@ -479,7 +479,7 @@ private struct NativeAnswerResult: Identifiable { var id: String; var place: Nat
         }
         private func setRegion(_ region: MKCoordinateRegion, map: MKMapView, animated: Bool) {
             let corner = CLLocationCoordinate2D(latitude: min(85, max(-85, region.center.latitude + region.span.latitudeDelta / 2)), longitude: region.center.longitude)
-            prepareViewport(center: region.center, radius: max(1000, MKMetersBetweenMapPoints(MKMapPoint(region.center), MKMapPoint(corner)) * 4))
+            prepareViewport(center: region.center, radius: max(1000, MKMapPoint(region.center).distance(to: MKMapPoint(corner)) * 4))
             map.setRegion(region, animated: animated)
         }
         private func locate(_ point: NativePoint, map: MKMapView, animated: Bool) { setRegion(.init(center: .init(latitude: point.lat, longitude: point.lon), latitudinalMeters: 1000, longitudinalMeters: 1000), map: map, animated: animated) }
@@ -497,7 +497,7 @@ private struct NativeAnswerResult: Identifiable { var id: String; var place: Nat
                 guard CLLocationCoordinate2DIsValid(camera.centerCoordinate),
                       camera.centerCoordinateDistance.isFinite, camera.centerCoordinateDistance > 0 else { return }
                 if let center = self.viewportCenter {
-                    guard MKMetersBetweenMapPoints(MKMapPoint(camera.centerCoordinate), MKMapPoint(center)) <= self.viewportRadius else { return }
+                    guard MKMapPoint(camera.centerCoordinate).distance(to: MKMapPoint(center)) <= self.viewportRadius else { return }
                 }
                 let pitch: CGFloat = self.parent.pitched ? 55 : 0
                 let needsChange = (self.pendingPitch && abs(camera.pitch - pitch) > 0.1) || self.pendingZoom != 1
