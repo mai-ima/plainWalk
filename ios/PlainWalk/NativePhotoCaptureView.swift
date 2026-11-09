@@ -9,6 +9,7 @@ import UniformTypeIdentifiers
 @MainActor struct NativePhotoCaptureView: View {
     @ObservedObject var model: NativeAppModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.displayScale) private var displayScale
     @State private var photoItem: PhotosPickerItem?
     @State private var imageData: Data?
     @State private var originalImageData: Data?
@@ -146,10 +147,10 @@ import UniformTypeIdentifiers
             let laidOut = captureViewportFrame.width > 0 && captureViewportFrame.height > 0 && capturePlacementFrame.width > 0 && capturePlacementFrame.height > 0
             captureScrollTrace(folder, status: laidOut ? "checking-visibility" : "awaiting-layout", sample: sample)
             guard laidOut, importedPhoto, !busy else { visibleSamples = 0; continue }
-            // scrollTo(.bottom) can align the section exactly with the viewport
-            // edge. Requiring an extra inset would reject that fully visible state
-            // forever even though no part of the section is clipped.
-            if captureViewportFrame.contains(capturePlacementFrame) {
+            // Compare the physical pixel edges that are actually rendered.
+            // SwiftUI's fractional point layout can otherwise report a section
+            // less than half a pixel outside an exactly aligned viewport edge.
+            if pixelAlignedCaptureFrame(captureViewportFrame).contains(pixelAlignedCaptureFrame(capturePlacementFrame)) {
                 visibleSamples += 1
                 if visibleSamples >= 3 {
                     captureScrollTrace(folder, status: "ready", sample: sample)
@@ -167,6 +168,14 @@ import UniformTypeIdentifiers
         captureScrollTrace(folder, status: "visibility-timeout", sample: 60)
         #endif
     }
+    private func pixelAlignedCaptureFrame(_ frame: CGRect) -> CGRect {
+        let scale = displayScale > 0 && displayScale.isFinite ? displayScale : 1
+        let minX = (frame.minX * scale).rounded() / scale
+        let minY = (frame.minY * scale).rounded() / scale
+        let maxX = (frame.maxX * scale).rounded() / scale
+        let maxY = (frame.maxY * scale).rounded() / scale
+        return CGRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
+    }
     private func captureScrollTrace(_ folder: URL, status: String, sample: Int) {
         #if DEBUG
         func bounds(_ frame: CGRect) -> [String: Double] {
@@ -174,7 +183,11 @@ import UniformTypeIdentifiers
         }
         let trace: [String: Any] = ["capture": "photoLocation", "status": status, "sample": sample,
                                     "viewport": bounds(captureViewportFrame), "placement": bounds(capturePlacementFrame),
-                                    "fullyVisible": captureViewportFrame.contains(capturePlacementFrame),
+                                    "pixelAlignedViewport": bounds(pixelAlignedCaptureFrame(captureViewportFrame)),
+                                    "pixelAlignedPlacement": bounds(pixelAlignedCaptureFrame(capturePlacementFrame)),
+                                    "displayScale": Double(displayScale),
+                                    "rawFullyVisible": captureViewportFrame.contains(capturePlacementFrame),
+                                    "fullyVisible": pixelAlignedCaptureFrame(captureViewportFrame).contains(pixelAlignedCaptureFrame(capturePlacementFrame)),
                                     "busy": busy, "importedPhoto": importedPhoto]
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         if let data = try? JSONSerialization.data(withJSONObject: trace, options: [.sortedKeys]) {
