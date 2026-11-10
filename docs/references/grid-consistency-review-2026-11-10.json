@@ -1,0 +1,328 @@
+{
+  "version": 1,
+  "date": "2026-11-10",
+  "reviewer": "/root/notebook_web",
+  "scope": "Read-only review of independent Web/Swift exploration math; no implementation changes or new repository tests.",
+  "sourceFiles": [
+    {
+      "path": "/workspace/sites/plainwalk/web/src/core.js",
+      "sha256": "2d6c17eb6d95dec57e1e76b46574bbcc8b5a4bf39f930500eb01a38abf9a8193"
+    },
+    {
+      "path": "/workspace/sites/plainwalk/ios/PlainWalk/NativeTrackMath.swift",
+      "sha256": "288e2f552c7f482231327156d08a5ec303c127635f9d5c4e76bed80e7978607b"
+    },
+    {
+      "path": "/workspace/sites/plainwalk/tests/unit/exploration.test.js",
+      "sha256": "855b3e65c2b399cbe63192585983eb5fa7cdc4dc766e70f952db96690977280c"
+    },
+    {
+      "path": "/workspace/sites/plainwalk/docs/image-map-audit.md",
+      "sha256": "f93ed19a823f4ef4ad412bbbf386ac022ab2027a7249bdc8fff378c3027fa00b"
+    }
+  ],
+  "result": {
+    "verifiedCorrectnessFindings": 1,
+    "documentedApproximationReproduced": true,
+    "verifiedPerformanceFindings": 1,
+    "newMidnightOrDatelineBugFound": false
+  },
+  "verifiedFindings": [
+    {
+      "id": "COVERAGE_MONOTONICITY",
+      "kind": "user-visible correctness consequence of the already documented partial-cell approximation",
+      "trigger": "Import an earlier valid 1 m walk along the beginning of an existing 1 km road.",
+      "values": {
+        "alone": 1000.0000020924927,
+        "withEarlier1m": 994.1871720256981,
+        "withLater1m": 1000.0000020924927,
+        "earlierByWalk": {
+          "earlier": 1.0000000008757657,
+          "long": 993.1871720248224
+        },
+        "earlierValidated": true
+      },
+      "explanation": "The earlier short passage marks its entire 12 m cell as visited, so the later longer walk cannot contribute the remaining real coverage in that cell. Adding an already covered record can decrease the reported total. The same 1 m walk recorded later does not decrease it.",
+      "status": "Reproduced in Node with input accepted by validateBackup. Swift has the same visited-cell policy by source inspection; this particular numerical case was not executed in Apple SDK.",
+      "proposedTailCarryFixApplies": false
+    },
+    {
+      "id": "SYNC_GRID_WORK",
+      "kind": "responsiveness/cancellation risk, not a newly established arithmetic correctness bug",
+      "measurements": [
+        {
+          "n": 100,
+          "ms": 574.996834,
+          "total": 39999.96787277451,
+          "walked": 3959996.8194039455,
+          "cells": 3334
+        },
+        {
+          "n": 1000,
+          "ms": 5151.491876,
+          "total": 39999.96787277451,
+          "walked": 39959967.90489513,
+          "cells": 3334
+        }
+      ],
+      "explanation": "1000 points alternating over a 40 km segment are accepted by the backup shape/distance checks and perform about 3.3 million cell visits synchronously; the observed cloud Node run took about 5.15 s. No cancellation/yield exists in exploration/gridPieces. A legal 300000-point aggregate can require much more work, but no extrapolated iPhone timing is claimed.",
+      "scope": "Web synchronous call blocks its event loop; NativeAppModel rebuildLibrary calls the matching synchronous summary on MainActor. Native device performance was not measured.",
+      "proposal": "Keep revisions and atomic publication; process math in a cooperative worker/detached task using Sendable numeric snapshots, checking cancellation at bounded segment/cell intervals. Do not reject legitimate long travel solely on speed to hide processing cost."
+    }
+  ],
+  "documentedApproximation": {
+    "recordPartition": {
+      "1": 1000.0000020976731,
+      "2": 989.1874932927384,
+      "10": 938.6873999684806,
+      "100": 435.37396695137306
+    },
+    "sameCell": {
+      "walked": 7.783655616347186,
+      "split": 3.3358523999985215,
+      "joined": 7.783655590170629,
+      "byWalk": {
+        "a": 3.3358523999985215,
+        "b": 0
+      }
+    },
+    "classification": "Existing first-visited-cell approximation, not a new point-density regression. Full arbitrary partial coverage needs history richer than a boolean cell set."
+  },
+  "nonFindings": [
+    {
+      "id": "DAY_QUERY",
+      "evidence": {
+        "delta": 0
+      },
+      "scope": "100 deterministic random local five-point curves spanning midnight were evaluated on four query days. Total did not change. This is bounded evidence, not exhaustive proof."
+    },
+    {
+      "id": "SPARSE_DENSE_GLOBAL_CURVE",
+      "evidence": {
+        "runs": 250,
+        "max": {
+          "lat": -73.91465097665787,
+          "lon": 119.3794725635089,
+          "length": 27829.025887720287,
+          "angle": 22.473561549559236,
+          "delta": 0.2563753423637536,
+          "sparse": 27897.533849619525,
+          "dense": 27897.79022496189,
+          "walked": 27897.533849619525,
+          "sparseCells": 3037,
+          "denseCells": 3037
+        },
+        "badCount": 4,
+        "examples": [
+          {
+            "cfg": {
+              "lat": -50.03112569451332,
+              "lon": 130.3885580082424,
+              "length": 23802.480778492987,
+              "angle": 202.49832269735634
+            },
+            "delta": 0.01605532894245698,
+            "sparse": 23785.126282978763,
+            "dense": 23785.142338307705
+          },
+          {
+            "cfg": {
+              "lat": 57.549391984939575,
+              "lon": -90.69794138660654,
+              "length": 19327.18377264589,
+              "angle": 157.5144310388714
+            },
+            "delta": 0.014579256294382503,
+            "sparse": 19312.107475890538,
+            "dense": 19312.122055146832
+          },
+          {
+            "cfg": {
+              "lat": -73.91465097665787,
+              "lon": 119.3794725635089,
+              "length": 27829.025887720287,
+              "angle": 22.473561549559236
+            },
+            "delta": 0.2563753423637536,
+            "sparse": 27897.533849619525,
+            "dense": 27897.79022496189
+          },
+          {
+            "cfg": {
+              "lat": -69.18697014451027,
+              "lon": -97.79869798524305,
+              "length": 17912.881082691252,
+              "angle": 11.29447010345757
+            },
+            "delta": 0.029855588429199997,
+            "sparse": 17925.3150382781,
+            "dense": 17925.344893866528
+          }
+        ]
+      },
+      "explanation": "Four long latitude/longitude-linear examples differed by over 0.01 m between sparse and dense samples. These are not the same great-circle polyline: in the worst case sparse geodesic length is 27897.53384961831 m and dense length is 27897.832478320146 m. The dense exploration is 27897.79022494973 m. Do not classify that difference as a new sampling bug."
+    },
+    {
+      "id": "INVALID_DISTANCE",
+      "evidence": {
+        "result": "NaN",
+        "classification": "Defensive API inconsistency only; normal backup validation rejects these points."
+      },
+      "explanation": "Web trailDistance returns NaN for a NaN point, whereas Native distance guards invalid coordinates. User import validators reject this input, so no reachable app data-loss/accuracy defect was established."
+    }
+  ],
+  "designProposals": [
+    {
+      "id": "EXACT_ENDPOINT_TAIL_CARRY",
+      "priority": "small independent consistency improvement, requires root approval before editing",
+      "description": "Retain only the last continuous cell passage, its 16-direction min/max vectors, prior best diameter, and endpoint. At the next chronologically adjacent walk, carry this state only when its first point exactly equals the previous endpoint, timestamps do not go backwards, and no explicit break is declared. Exempt only that carried cell from the boolean visited test and credit only new diameter growth.",
+      "prototype": {
+        "prototypeOnly": true,
+        "sourceChanged": false,
+        "rows": [
+          {
+            "count": 1,
+            "current": 1000.0000020924927,
+            "tailCarry": 1000.0000020924927,
+            "walked": 1000.0000021002703
+          },
+          {
+            "count": 2,
+            "current": 989.1874932875568,
+            "tailCarry": 1000.0000020873285,
+            "walked": 1000.0000021002721
+          },
+          {
+            "count": 10,
+            "current": 938.687399963303,
+            "tailCarry": 1000.0000020459099,
+            "walked": 1000.000002100275
+          },
+          {
+            "count": 100,
+            "current": 435.37396693842896,
+            "tailCarry": 1000.0000016627641,
+            "walked": 1000.0000021002718
+          },
+          {
+            "count": 1000,
+            "current": 16.561136020653535,
+            "tailCarry": 1000.000001181235,
+            "walked": 1000.0000021002703
+          }
+        ],
+        "small": {
+          "continuous": 7.783655590170629,
+          "joined": 7.783655590170629
+        },
+        "disconnected": {
+          "current": 3.3358523999985215,
+          "tailCarry": 3.3358523999985215
+        },
+        "explicitBreak": {
+          "current": 3.3358523999985215,
+          "tailCarry": 3.3358523999985215
+        },
+        "retrace": {
+          "total": 1000.0000020873285,
+          "lastContribution": 0
+        },
+        "overnight": {
+          "prior": 500.00000103072136,
+          "today": 500.00000101518845,
+          "sum": 1000.0000020459098,
+          "total": 1000.0000020459099
+        }
+      },
+      "benefits": [
+        "Restores the documented 1 km split example for 2/10/100/1000 exact-endpoint parts to within about one micrometre.",
+        "Preserves disconnected/explicit-break examples and zero contribution on retracing.",
+        "Uses constant-size tail state instead of all historic cell geometry; no interval-union insertion or history-set copy is needed."
+      ],
+      "limits": [
+        "Does not fix the earlier-import coverage-monotonicity case or arbitrary partial passages in older/nonadjacent cells.",
+        "Exact endpoint equality deliberately avoids inventing a connector across a gap. Near endpoints remain separate.",
+        "Production integration must pass the carry through saved prefix, active accumulator, following imported suffix, relaunch rebuild, and both Web and Swift; changing summary only would make live and saved totals disagree.",
+        "A zero/single-point walk or invalid final segment must not leave stale carry; intentional gaps reset passage.",
+        "The prototype accesses currently public JS accumulator fields and is not a production API or Apple runtime validation."
+      ],
+      "space": "Two 16-element Double vectors carry 256 raw bytes before runtime/container overhead; only one tail plus a scalar, key and endpoint is retained. Exact runtime allocation has not been measured.",
+      "status": "REJECTED_FOR_DEFAULT: ordinary exact-endpoint partitions improve, but valid overlapping insertion can reduce coverage by changing carry adjacency."
+    },
+    {
+      "id": "PARTIAL_CELL_UNION",
+      "priority": "larger future redesign if full partition and coverage monotonicity are required",
+      "description": "Store per-cell unions of segment-projection intervals for each of 16 axes, then use the maximum union length as the independent cell measure. Splitting a segment does not change those unions, and disconnected gaps need not become a false chord. This changes the metric from continuous-passage diameter and requires new numerical/behavior specification.",
+      "performance": "A naive sorted-array interval union can become O(k^2) for k disjoint tiny intervals in one cell; 16 directions multiply memory and insertion cost. A balanced interval structure or a rigorously bounded quantized representation would be required. Full exact intervals can grow with all input segments; do not copy the global history map for every walk. Typical road retraces coalesce quickly but that is not a worst-case bound.",
+      "safety": "Do not replace all intervals with a global min/max hull: that invents a chord between disconnected passages and violates the existing gap regression. Do not assume a one-scalar maximum fixes partition invariance; it only chooses the longest partial passage."
+    }
+  ],
+  "reproductionScripts": [
+    "/workspace/scratch/grid-consistency-probe.mjs",
+    "/workspace/scratch/grid-additional-probe.mjs",
+    "/workspace/scratch/grid-tail-carry-prototype.mjs"
+  ],
+  "rawResults": [
+    "/workspace/scratch/grid-consistency-probe-results.jsonl",
+    "/workspace/scratch/grid-additional-probe-results.json",
+    "/workspace/scratch/grid-tail-carry-prototype-results.json"
+  ],
+  "limitations": [
+    "Independent implementation, not the original app formula.",
+    "No source modifications, public pushes, repository tests, or new CI runs were performed for this review.",
+    "No physical iPhone, Simulator timing or newly executed Swift numerical comparison for these scratch cases.",
+    "No new cancellation, midnight or dateline arithmetic defect established beyond the explicitly described findings."
+  ],
+  "decision": "Root rejected default math changes after the scalar + last-tail monotonicity counterexample. Keep the verified independent implementation and document limits; no half implementation or speculative default replacement.",
+  "rejectedProposalCounterexample": {
+    "proposal": "global per-cell maximum continuous passage CREDITED scalar + only last chronological exact-endpoint tail",
+    "sourceEdited": false,
+    "creditStorage": "The scratch CoverageView flushes each geometric best update only after the real accumulator delta is applied, storing previous score + actually credited delta. Thus scoreSum and total telescope even with existing perpiece/perwalk caps.",
+    "inputValidated": true,
+    "before": {
+      "total": 1000.0000020873285,
+      "byWalk": {
+        "A": 500.0000010436643,
+        "B": 500.00000104366416
+      },
+      "scoreSum": 1000.0000020873288,
+      "cells": 84
+    },
+    "after": {
+      "total": 998.8125197995587,
+      "byWalk": {
+        "A": 500.0000010436643,
+        "overlap": 0,
+        "B": 498.8125187558944
+      },
+      "scoreSum": 998.8125197995591,
+      "cells": 84
+    },
+    "decrease": 1.1874822877698534,
+    "insertedActualDistance": 1.0000000008757657,
+    "reason": "The inserted1m record starts during A and is already covered, so it adds0. It ends at another location and replaces the sole last-tail before B starts. A+B were formerly one joined cell passage; now the shared boundary cell is measured as two independent partial passages and only their maximum survives. The reduction also appears in the sum of final coverage scores, so this is not just a total accumulator bookkeeping issue.",
+    "script": "/workspace/scratch/grid-scalar-tail-counterexample.mjs",
+    "fullNumericalInputAndOutput": "/workspace/scratch/grid-scalar-tail-counterexample.json",
+    "metricLimit": "The read-only proof uses the existing 12m planar16-direction geometry with credited-score storage; the suggested ECEF tangent contraction was never implemented or measured. The loss comes from changed chronological passage grouping, not the few-micrometre metric/cap difference.",
+    "fullFixConstraint": "Retaining one latest chronological tail loses connections when another overlapping record is inserted. Endpoint-indexed multiple histories or a new connected/interval coverage measure needs a broader specification and resource evaluation; a single scalar plus a single tail cannot claim unconditional insertion monotonicity."
+  },
+  "sourceStillMatchesReview": [
+    {
+      "path": "/workspace/sites/plainwalk/web/src/core.js",
+      "matches": true
+    },
+    {
+      "path": "/workspace/sites/plainwalk/ios/PlainWalk/NativeTrackMath.swift",
+      "matches": true
+    },
+    {
+      "path": "/workspace/sites/plainwalk/tests/unit/exploration.test.js",
+      "matches": true
+    },
+    {
+      "path": "/workspace/sites/plainwalk/docs/image-map-audit.md",
+      "matches": true
+    }
+  ],
+  "applicationSourceEditsByThisAgentForMathTask": []
+}

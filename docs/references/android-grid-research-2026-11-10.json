@@ -1,0 +1,657 @@
+{
+  "investigatedAtUTC": "2026-11-10T09:34:14.680649+00:00",
+  "scope": "Focused static DEX study only; original APK was never executed, installed, or used to bypass billing. No assets, decompiled source or instruction listings were copied into app/repository. These findings describe Android1.1.0/versionCode4, not current iOS.",
+  "source": {
+    "url": "https://apkpure.net/plainwalk-draw-your-own-map/com.kanta.plainwalk/download",
+    "localXAPK": "/workspace/research/android/plainwalk-1.1.0.xapk",
+    "XAPKSHA256": "d312e1d16f99a6fb280b4b736803c5fe9993e5ebcfb00abbeb4f2dbe4a57ae1e",
+    "baseAPKEntry": "com.kanta.plainwalk.apk",
+    "baseAPKSHA256": "e67ff4630b07b389e544d4a8f25f162c2b05baf2bf276676026e2478394461d2",
+    "dexEntry": "classes.dex",
+    "dexSHA256": "49e13d1b061152e20236c977f66a5dd3b29dcecb6415d9b4bcc319da9d2c8858",
+    "dexBytes": 8199236,
+    "classCount": 9692
+  },
+  "offsetConvention": "codeItemOffsetHex is absolute within classes.dex. Relative instruction offsets cited below are byte offsets from code-item instruction start, which is codeItemOffset+16.",
+  "methods": [
+    {
+      "class": "Lm6/B4;",
+      "method": "a",
+      "descriptor": "(D D)Ljava/lang/String;",
+      "codeItemOffsetHex": "0x4d20c4",
+      "instructionStartOffsetHex": "0x4d20d4",
+      "codeItemSHA256": "54c171bb4a173443afa8b4ea2dc9e60728ed2f1ae1ad19cd8183334a06d13a09"
+    },
+    {
+      "class": "Lm6/B4;",
+      "method": "b",
+      "descriptor": "(D D D D)D",
+      "codeItemOffsetHex": "0x4d1d54",
+      "instructionStartOffsetHex": "0x4d1d64",
+      "codeItemSHA256": "ef27fd1a9de8b21a2723b7b715bce58b38f8a189891b57c5e717ac74576a8d80"
+    },
+    {
+      "class": "Lm6/B4;",
+      "method": "c",
+      "descriptor": "(D D Lt7/v;)Lt7/t;",
+      "codeItemOffsetHex": "0x4d211c",
+      "instructionStartOffsetHex": "0x4d212c",
+      "codeItemSHA256": "f98a3d77ff99f5c8278dfe56677b2c88d9687c288040733f4acbc37e4e23aee0"
+    },
+    {
+      "class": "Ll7/j;",
+      "method": "a",
+      "descriptor": "(D D D)D",
+      "codeItemOffsetHex": "0x4b7888",
+      "instructionStartOffsetHex": "0x4b7898",
+      "codeItemSHA256": "d1c122b7f8e2983e4632660db3c16f98919850e5be8358e3a5327e2893e09bf0"
+    },
+    {
+      "class": "LA5/G;",
+      "method": "a",
+      "descriptor": "(D D D D)D",
+      "codeItemOffsetHex": "0x14f8ec",
+      "instructionStartOffsetHex": "0x14f8fc",
+      "codeItemSHA256": "f14eed4b593089edfdf01b51c623b687e3309d26122d96545ae3057606662748"
+    },
+    {
+      "class": "Lt7/H;",
+      "method": "a",
+      "descriptor": "(Lt7/t; Lt7/t; D)Lt7/G;",
+      "codeItemOffsetHex": "0x61e4fc",
+      "instructionStartOffsetHex": "0x61e50c",
+      "codeItemSHA256": "cd6d2f42583c7e81918cd07270b733a1b0ca48683a41c29e02d032ba34d9daae"
+    },
+    {
+      "class": "Lt7/H;",
+      "method": "b",
+      "descriptor": "()V",
+      "codeItemOffsetHex": "0x61e6fc",
+      "instructionStartOffsetHex": "0x61e70c",
+      "codeItemSHA256": "eda8fa8c9dc7fa689c6406bf981fd44c19cb5d0b565ec6073680a572d4c48a96"
+    },
+    {
+      "class": "Lt7/H;",
+      "method": "c",
+      "descriptor": "()Ljava/util/HashMap;",
+      "codeItemOffsetHex": "0x61e4dc",
+      "instructionStartOffsetHex": "0x61e4ec",
+      "codeItemSHA256": "df16d2d6b8a0abda9c133edae65b30e592150611b333265e0dd2828288abcc76"
+    },
+    {
+      "class": "Lt7/H;",
+      "method": "<init>",
+      "descriptor": "()V",
+      "codeItemOffsetHex": "0x61e6a0",
+      "instructionStartOffsetHex": "0x61e6b0",
+      "codeItemSHA256": "3596a1044e49be3e3475b379de6c071d06e71fdf4b6eeacbb3acb86f251fbeed"
+    },
+    {
+      "class": "Lt7/H;",
+      "method": "<init>",
+      "descriptor": "(Ljava/util/Map;)V",
+      "codeItemOffsetHex": "0x61e6bc",
+      "instructionStartOffsetHex": "0x61e6cc",
+      "codeItemSHA256": "71707f598935b4ccfc72b83b5a6cc7c61cd934d827cbdccda9f3689d8b00e925"
+    },
+    {
+      "class": "Lt7/G;",
+      "method": "toString",
+      "descriptor": "()Ljava/lang/String;",
+      "codeItemOffsetHex": "0x61e334",
+      "instructionStartOffsetHex": "0x61e344",
+      "codeItemSHA256": "b6a1eacf0b69400916b1b6e878c0d6e66274e8daa00f924d66e34c9aeb19f9e1"
+    },
+    {
+      "class": "Lt7/v;",
+      "method": "toString",
+      "descriptor": "()Ljava/lang/String;",
+      "codeItemOffsetHex": "0x629bc0",
+      "instructionStartOffsetHex": "0x629bd0",
+      "codeItemSHA256": "bc9bd614a584ab5ba80be573aadcb5815a43547f2d60c1b1b0df1cba809db5ba"
+    },
+    {
+      "class": "Lt7/k;",
+      "method": "toString",
+      "descriptor": "()Ljava/lang/String;",
+      "codeItemOffsetHex": "0x6288a0",
+      "instructionStartOffsetHex": "0x6288b0",
+      "codeItemSHA256": "45949a79e8cb77d0d0c963cd2b946a16e2d6c317cbc6f2919be9df9803dba881"
+    },
+    {
+      "class": "Lt7/F;",
+      "method": "b",
+      "descriptor": "(Ljava/util/List; Lt7/v;)Ly8/i;",
+      "codeItemOffsetHex": "0x61e080",
+      "instructionStartOffsetHex": "0x61e090",
+      "codeItemSHA256": "5364e3f533beb8574375e0c3cccc48f35c1d6d2897e9e918ec397f12dd06341a"
+    },
+    {
+      "class": "Lcom/kanta/plainwalk/walk/c;",
+      "method": "x",
+      "descriptor": "(Lt7/k;)V",
+      "codeItemOffsetHex": "0x413464",
+      "instructionStartOffsetHex": "0x413474",
+      "codeItemSHA256": "d8693e0230f206afc64ddee065c9f55e55440fc07e73f6705bf01b210b94d0b5"
+    },
+    {
+      "class": "Lcom/kanta/plainwalk/walk/c;",
+      "method": "p",
+      "descriptor": "(Lt7/k;)V",
+      "codeItemOffsetHex": "0x412cdc",
+      "instructionStartOffsetHex": "0x412cec",
+      "codeItemSHA256": "c8190b5c50f282f79eaf1b52d15ded832f675d3377220fec1443fcc8bfcfef16"
+    },
+    {
+      "class": "Lcom/kanta/plainwalk/walk/c;",
+      "method": "r",
+      "descriptor": "(Ljava/util/ArrayList; Lt7/p;)Lt7/p;",
+      "codeItemOffsetHex": "0x410734",
+      "instructionStartOffsetHex": "0x410744",
+      "codeItemSHA256": "4598e7e9d0fac86bc11fd42985e3187da9dfde075f17e50f72628aa2f22b6d1c"
+    },
+    {
+      "class": "Lcom/kanta/plainwalk/walk/c;",
+      "method": "t",
+      "descriptor": "()V",
+      "codeItemOffsetHex": "0x41304c",
+      "instructionStartOffsetHex": "0x41305c",
+      "codeItemSHA256": "7230eb2ed3d50bac4f21bec03baa8d5228d489fd192aa6b0902e5c7244c24a72"
+    },
+    {
+      "class": "Lcom/kanta/plainwalk/walk/c;",
+      "method": "J",
+      "descriptor": "()Lcom/kanta/plainwalk/data/PersistedData;",
+      "codeItemOffsetHex": "0x410268",
+      "instructionStartOffsetHex": "0x410278",
+      "codeItemSHA256": "f904e000af0641838a9e3c33e3cb48d37f54e1193efe4ec3cc45b5c0f82fa87e"
+    },
+    {
+      "class": "Lcom/kanta/plainwalk/walk/c;",
+      "method": "g",
+      "descriptor": "(Z Lcom/kanta/plainwalk/walk/TriggerPlace;)V",
+      "codeItemOffsetHex": "0x411fe4",
+      "instructionStartOffsetHex": "0x411ff4",
+      "codeItemSHA256": "88b0aa03654e4e6fb9800e765b32b4d4e19c4b5d74062f6352c116f013d041d6"
+    },
+    {
+      "class": "Lcom/kanta/plainwalk/data/TrackPoint;",
+      "method": "toString",
+      "descriptor": "()Ljava/lang/String;",
+      "codeItemOffsetHex": "0x406dc0",
+      "instructionStartOffsetHex": "0x406dd0",
+      "codeItemSHA256": "44d292bfb9341ab7e6d03f97189affc9982f8d34951d9eba6afd5ddbb1a3130b"
+    },
+    {
+      "class": "Lcom/kanta/plainwalk/data/TrackSession;",
+      "method": "toString",
+      "descriptor": "()Ljava/lang/String;",
+      "codeItemOffsetHex": "0x407c7c",
+      "instructionStartOffsetHex": "0x407c8c",
+      "codeItemSHA256": "3ee3d6b7bb5153f275cd08bcb6b2bd8e6999c41f559144b0448eb91def4ce137"
+    },
+    {
+      "class": "Lcom/kanta/plainwalk/data/PersistedData;",
+      "method": "toString",
+      "descriptor": "()Ljava/lang/String;",
+      "codeItemOffsetHex": "0x4059a8",
+      "instructionStartOffsetHex": "0x4059b8",
+      "codeItemSHA256": "b27944580dfff93459a5e1417572fc371b65d06750ed3adc13eccfdd4e025f72"
+    },
+    {
+      "class": "Lt7/n;",
+      "method": "a",
+      "descriptor": "(Landroid/location/Location;)V",
+      "codeItemOffsetHex": "0x628bec",
+      "instructionStartOffsetHex": "0x628bfc",
+      "codeItemSHA256": "2128175e23e176cc8f1d5b00ad12030e6b6bbb5a28be2df90833ab4a78a0853a"
+    }
+  ],
+  "callgraphToCreditMethod": [
+    {
+      "callerClass": "Lcom/kanta/plainwalk/walk/c;",
+      "callerMethod": "r",
+      "callerDescriptor": "(Ljava/util/ArrayList; Lt7/p;)Lt7/p;",
+      "callerCodeItemOffsetHex": "0x410734",
+      "relativeInstructionOffsetHex": "0x3d2",
+      "callee": "Lt7/H;->a(Lt7/t; Lt7/t; D)Lt7/G;"
+    },
+    {
+      "callerClass": "Lcom/kanta/plainwalk/walk/c;",
+      "callerMethod": "x",
+      "callerDescriptor": "(Lt7/k;)V",
+      "callerCodeItemOffsetHex": "0x413464",
+      "relativeInstructionOffsetHex": "0xfa",
+      "callee": "Lt7/H;->a(Lt7/t; Lt7/t; D)Lt7/G;"
+    },
+    {
+      "callerClass": "Lm6/U3;",
+      "callerMethod": "j",
+      "callerDescriptor": "(Lcom/kanta/plainwalk/walk/c; Lo7/h; Lo7/g; Z Z LL8/a; LX0/s; I)V",
+      "callerCodeItemOffsetHex": "0x4e6aa0",
+      "relativeInstructionOffsetHex": "0xc62",
+      "callee": "Lt7/H;->a(Lt7/t; Lt7/t; D)Lt7/G;"
+    },
+    {
+      "callerClass": "Ls7/i;",
+      "callerMethod": "o",
+      "callerDescriptor": "(Ljava/lang/Object;)Ljava/lang/Object;",
+      "callerCodeItemOffsetHex": "0x5f6204",
+      "relativeInstructionOffsetHex": "0x152",
+      "callee": "Lt7/H;->a(Lt7/t; Lt7/t; D)Lt7/G;"
+    },
+    {
+      "callerClass": "Lt7/F;",
+      "callerMethod": "b",
+      "callerDescriptor": "(Ljava/util/List; Lt7/v;)Ly8/i;",
+      "callerCodeItemOffsetHex": "0x61e080",
+      "relativeInstructionOffsetHex": "0xe0",
+      "callee": "Lt7/H;->a(Lt7/t; Lt7/t; D)Lt7/G;"
+    }
+  ],
+  "verifiedArithmetic": {
+    "projection": {
+      "reference": "Lm6/B4;->c(D D Lt7/v;)Lt7/t; @0x4d211c",
+      "formula": "x=(longitude-origin.longitude)*111320*cos(origin.latitude*pi/180); y=-(latitude-origin.latitude)*110540",
+      "proof": "Origin field names verified by Lt7/v.toString; TrackPoint.a/b names verified by TrackPoint.toString; c uses Ll7/j.a=(first/second cos)*third and LA5/G.a=(first-second)*third+fourth. Returned Lt7/t fields preserve constructor input order. Null origin returns(0,0).",
+      "normalization": "No longitude-wrap normalization in this projection method. All formulas assume finite ordinary coordinates."
+    },
+    "cellKey": {
+      "reference": "Lm6/B4;->a(D D)Ljava/lang/String; @0x4d20c4 and Lt7/H.a relative0x84..0xc4",
+      "formula": "floor(x/12) + colon + floor(y/12); mathematical floor, then Java double-to-int conversion."
+    },
+    "segmentCredit": {
+      "reference": "Lt7/H;->a(Lt7/t; Lt7/t; D)Lt7/G; @0x61e4fc",
+      "precondition": "If projected hypot(b-a)<=0 OR caller distanceWeight<=0, return credit0/newCells0 with no state change.",
+      "sampleCount": "N=max(1,ceil(projected hypot(b-a)/2))",
+      "sampleLocations": "For j=0..N-1, t=(j+0.5)/N; sample=a+(b-a)*t. Endpoints are not sampled.",
+      "state": [
+        "a: persistent mutable cell-count HashMap, initialized by copying provided Map.",
+        "b: current-epoch HashSet; c: previous sampled cell key; d: previous cell newness Boolean. Names a/b/c/d are retained, not guessed original method names.",
+        "On entering a key different from c, set d to whether key is absent from a BEFORE insertion; count it as newCells if absent.",
+        "On first encounter in HashSet b, increment a[key] by1. Further samples in same epoch do not increment its count.",
+        "For every sample, including samples that continue previous call in the same cell, increment newSampleCount when d is true.",
+        "Return Credit.pioneered=distanceWeight*newSampleCount/N and Credit.newCells=newly absent cell entries. Semantic output labels are proven by Lt7/G.toString, not invented."
+      ],
+      "branches": {
+        "zeroGuard": "relative0x20..0x3c ->0x166",
+        "sampling": "relative0x40..0xa2",
+        "newnessAndCounting": "relative0xcc..0x142",
+        "result": "relative0x150..0x164"
+      }
+    },
+    "epochReset": {
+      "reference": "Lt7/H;->b()V @0x61e6fc",
+      "effect": "Clear HashSet b, previous key c and newness d. Preserve global count map a. Constructor copies initial map and starts empty epoch.",
+      "consequence": "Same-cell backtracking may still earn credit until the sampled cell changes or b() resets. This algorithm is not backtrack-invariant or strictly collinear-subdivision-invariant."
+    }
+  },
+  "callerProof": {
+    "live": {
+      "reference": "Lcom/kanta/plainwalk/walk/c;->x(Lt7/k;)V @0x413464",
+      "inputMeaning": "Lt7/k.toString proves lat/lon/accuracy/time/course/speed fields. Lt7/n.a reads Android Location latitude/longitude/getAccuracy/time and forwards to c.p; missing accuracy becomes-1.",
+      "gates": [
+        {
+          "condition": "accuracy<0 OR accuracy>40",
+          "effect": "Return without accepting point",
+          "relativeOffsets": "0x8..0x28 to0x36c"
+        },
+        {
+          "condition": "previous accepted fix exists AND B4.b(previous,current)<4m",
+          "effect": "Return without accepting point",
+          "relativeOffsets": "0x48..0x88 to0x36c"
+        },
+        {
+          "condition": "B4.b(previous,current)>300m",
+          "effect": "Increment TrackPoint leg index, set distance weight0, append current fix without connected distance/credit",
+          "relativeOffsets": "0x8c..0xac"
+        }
+      ],
+      "weight": "When prior fix exists and positive connected distance remains, B4.b(previous.lat/lon,current.lat/lon) is passed as H.a third argument at relative0xfa.",
+      "output": "Credit.a added to TrackSession.f at0x10e..0x116; distance weight added to TrackSession.e at0x106..0x10a. toString proves f=pioneered/e=distance. Last accepted-fix field k assigned at0x248.",
+      "limits": "Outer c.p recording/auto-start branches were not fully reconstructed; these gates describe x once called, not every possible location ingestion path."
+    },
+    "offline": {
+      "reference": "Lt7/F;->b(Ljava/util/List; Lt7/v;)Ly8/i; @0x61e080",
+      "process": "Create fresh H; iterate sessions in supplied order. Call H.b at each session start. For adjacent points, call B4.b/projection/H.a only when TrackPoint.leg fields equal. Sum credit; append min(sum,session.distance) per session. Return H and list of session credits.",
+      "proofOffsets": "sessionReset0x4e; leg equality0x88..0x90; geodesicWeight0xb8; projection0xc8/0xd8; credit0xe0; cap0x104..0x118",
+      "limits": "No timestamp sorting inside this routine; input ordering belongs to caller. Leg change skips a pair but does not itself call H.b, so last-key state persists across skipped pairs."
+    },
+    "distanceWeightRoutine": {
+      "reference": "Lm6/B4;->b(D D D D)D @0x4d1d54",
+      "verifiedConstants": {
+        "equatorialRadius": 6378137,
+        "flattening": 0.0033528106647474805,
+        "angularIterationTolerance": 1e-12,
+        "iterationLimit": 100,
+        "fallbackSphereRadius": 6371008.8
+      },
+      "finding": "Ellipsoidal iterative inverse-distance structure consistent with Vincenty; identical-coordinate branch returns0. After100 nonconvergent iterations, a spherical haversine/atan2 fallback is used.",
+      "limit": "No original-runtime numeric oracle; full ellipsoid expression not independently reimplemented here. Comparison tools can isolate cell logic using explicit provided distance weights."
+    }
+  },
+  "originAndPersistence": {
+    "restore": "c.t() @0x41304c relative0x130..0x172 restores Origin from PersistedData.c/d and H from PersistedData.b; toString proves names originLat/originLon/cellCounts.",
+    "initialization": "c.p(Fix) @0x412cdc relative0x10..0x26 assigns origin from delivered fix only when origin is null. This occurs before downstream x acceptance gates; do not call it first accepted recorded fix. c.r import path also creates missing origin from its first imported TrackPoint at0x274..0x290.",
+    "save": "c.J() @0x410268 relative0x48..0x7e copies H global cellCounts and origin lat/lon for PersistedData update.",
+    "sessionStart": "c.g() @0x411fe4 relative0x98..0xa8 calls H.b and clears previous accepted fix k.",
+    "limits": [
+      "No routine recentering within inspected paths; full app-wide reset/migration paths were not exhaustively traced.",
+      "Pause/resume service code also resets epoch and reconstructs session-touched cells; full correctness of all service-action branches not proven.",
+      "Daily allocation/time-zone split not established; H itself contains no dates and offline routine returns per-session values.",
+      "Current iOS may use a different algorithm; no parity guarantee is inferred from these old Android findings."
+    ]
+  },
+  "numericFixtures": [
+    {
+      "name": "Two new12m cells",
+      "segments": [
+        {
+          "a": [
+            0,
+            0
+          ],
+          "b": [
+            24,
+            0
+          ],
+          "distanceWeight": 24
+        }
+      ],
+      "resetBeforeSegmentIndices": [],
+      "results": [
+        {
+          "credit": 24.0,
+          "newCells": 2,
+          "N": 12
+        }
+      ],
+      "finalCounts": {
+        "0:0": 1,
+        "1:0": 1
+      },
+      "expectedCredits": [
+        24.0
+      ],
+      "status": "independently calculated, not original APK runtime output"
+    },
+    {
+      "name": "One previsited cell",
+      "segments": [
+        {
+          "a": [
+            0,
+            0
+          ],
+          "b": [
+            24,
+            0
+          ],
+          "distanceWeight": 24
+        }
+      ],
+      "resetBeforeSegmentIndices": [],
+      "results": [
+        {
+          "credit": 12.0,
+          "newCells": 1,
+          "N": 12
+        }
+      ],
+      "finalCounts": {
+        "0:0": 3,
+        "1:0": 1
+      },
+      "expectedCredits": [
+        12.0
+      ],
+      "status": "independently calculated, not original APK runtime output"
+    },
+    {
+      "name": "Newness survives same-cell reversal across calls",
+      "segments": [
+        {
+          "a": [
+            0,
+            0
+          ],
+          "b": [
+            12,
+            0
+          ],
+          "distanceWeight": 12
+        },
+        {
+          "a": [
+            12,
+            0
+          ],
+          "b": [
+            0,
+            0
+          ],
+          "distanceWeight": 12
+        }
+      ],
+      "resetBeforeSegmentIndices": [],
+      "results": [
+        {
+          "credit": 12.0,
+          "newCells": 1,
+          "N": 6
+        },
+        {
+          "credit": 12.0,
+          "newCells": 0,
+          "N": 6
+        }
+      ],
+      "finalCounts": {
+        "0:0": 1
+      },
+      "expectedCredits": [
+        12.0,
+        12.0
+      ],
+      "status": "independently calculated, not original APK runtime output"
+    },
+    {
+      "name": "Reentering prior cell stops novelty after transition",
+      "segments": [
+        {
+          "a": [
+            0,
+            0
+          ],
+          "b": [
+            24,
+            0
+          ],
+          "distanceWeight": 24
+        },
+        {
+          "a": [
+            24,
+            0
+          ],
+          "b": [
+            0,
+            0
+          ],
+          "distanceWeight": 24
+        }
+      ],
+      "resetBeforeSegmentIndices": [],
+      "results": [
+        {
+          "credit": 24.0,
+          "newCells": 2,
+          "N": 12
+        },
+        {
+          "credit": 12.0,
+          "newCells": 0,
+          "N": 12
+        }
+      ],
+      "finalCounts": {
+        "0:0": 1,
+        "1:0": 1
+      },
+      "expectedCredits": [
+        24.0,
+        12.0
+      ],
+      "status": "independently calculated, not original APK runtime output"
+    },
+    {
+      "name": "Epoch reset clears newness but retains global cell counts",
+      "segments": [
+        {
+          "a": [
+            0,
+            0
+          ],
+          "b": [
+            12,
+            0
+          ],
+          "distanceWeight": 12
+        },
+        {
+          "a": [
+            12,
+            0
+          ],
+          "b": [
+            0,
+            0
+          ],
+          "distanceWeight": 12
+        }
+      ],
+      "resetBeforeSegmentIndices": [
+        1
+      ],
+      "results": [
+        {
+          "credit": 12.0,
+          "newCells": 1,
+          "N": 6
+        },
+        {
+          "credit": 0.0,
+          "newCells": 0,
+          "N": 6
+        }
+      ],
+      "finalCounts": {
+        "0:0": 2
+      },
+      "expectedCredits": [
+        12.0,
+        0.0
+      ],
+      "status": "independently calculated, not original APK runtime output"
+    },
+    {
+      "name": "Distance-weight is independent of projected length",
+      "segments": [
+        {
+          "a": [
+            0,
+            0
+          ],
+          "b": [
+            24,
+            0
+          ],
+          "distanceWeight": 30
+        }
+      ],
+      "resetBeforeSegmentIndices": [],
+      "results": [
+        {
+          "credit": 30.0,
+          "newCells": 2,
+          "N": 12
+        }
+      ],
+      "finalCounts": {
+        "0:0": 1,
+        "1:0": 1
+      },
+      "expectedCredits": [
+        30.0
+      ],
+      "status": "independently calculated, not original APK runtime output"
+    },
+    {
+      "name": "Negative coordinates use mathematical floor",
+      "segments": [
+        {
+          "a": [
+            -24,
+            -1
+          ],
+          "b": [
+            0,
+            -1
+          ],
+          "distanceWeight": 24
+        }
+      ],
+      "resetBeforeSegmentIndices": [],
+      "results": [
+        {
+          "credit": 24.0,
+          "newCells": 2,
+          "N": 12
+        }
+      ],
+      "finalCounts": {
+        "-2:-1": 1,
+        "-1:-1": 1
+      },
+      "expectedCredits": [
+        24.0
+      ],
+      "status": "independently calculated, not original APK runtime output"
+    },
+    {
+      "name": "Zero projected distance receives zero despite positive weight",
+      "segments": [
+        {
+          "a": [
+            0,
+            0
+          ],
+          "b": [
+            0,
+            0
+          ],
+          "distanceWeight": 10
+        }
+      ],
+      "resetBeforeSegmentIndices": [],
+      "results": [
+        {
+          "credit": 0.0,
+          "newCells": 0,
+          "N": 0
+        }
+      ],
+      "finalCounts": {},
+      "expectedCredits": [
+        0.0
+      ],
+      "status": "independently calculated, not original APK runtime output"
+    }
+  ],
+  "independentImplementationDifferences": [
+    "Current iOS/Web approximation uses a global latitude-row grid,111195.08 scaling and per-new-cell maximum16-direction passage diameter. Verified old Android uses stored local origin,111320/110540 scaling and weighted midpoint sample counts.",
+    "Current haversine distance differs from old Android iterative ellipsoidal B4.b in normal cases.",
+    "Current backtrack/subdivision invariance goals differ from observed old Android current-new-cell continuation. Do not silently replace a user existing distance history or claim identical iOS calculations."
+  ],
+  "actionableNextStep": "Keep current defaults unchanged. An isolated read-only developer comparison can accept explicit origin, original ordered sessions/legs and provided segment distance weights, report old-Android-spec sample credit separately from current approximation, and label data/version/algorithm limits. Exact iOS default replacement requires current-iOS evidence and migration design."
+}

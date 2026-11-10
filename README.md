@@ -33,6 +33,7 @@ Web の GPS は画面ロックやアプリ切り替えで更新が止まる場�
 - [11月10日の公式資料・画像・動画の再確認](docs/public-research-2026-11-10.md)
 - [APK の静的解析と Android 画像](docs/apk-static-analysis.md)
 - [APK の記録・保存・動作分類の仕組みと差分](docs/apk-mechanism-notes.md)
+- [Androidの開拓距離の追加解析と、現行iOSとの未検証差分](docs/android-grid-research-2026-11-10.md)
 - [公式 Web コード・APK と実装の対応](docs/reference-mechanisms.md)
 - [実装範囲と残差](docs/reproduction-audit.md)
 - [実機検証と開発者機能](docs/device-testing.md)
