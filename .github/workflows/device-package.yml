@@ -1,0 +1,60 @@
+name: Package unsigned iPhone device app
+on:
+  push:
+    branches: [main, delivery/iphone-download]
+    paths:
+      - 'ios/**'
+      - 'web/src/**'
+      - 'web/public/**'
+      - 'datasets/**'
+      - 'scripts/build.mjs'
+      - 'scripts/package-ios-device.py'
+      - '.github/workflows/device-package.yml'
+      - 'package.json'
+      - 'package-lock.json'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: iphone-device-package-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  device:
+    runs-on: macos-26
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build bundled Web resources
+        run: npm run build
+      - name: Generate current native project
+        run: python3 ios/generate_project.py
+      - name: Compile real iPhoneOS app and Live Activity extension without signing
+        run: >-
+          xcodebuild -project ios/PlainWalk.xcodeproj -scheme PlainWalk
+          -configuration Release -sdk iphoneos
+          -destination 'generic/platform=iOS'
+          -derivedDataPath "$RUNNER_TEMP/plainwalk-device"
+          ARCHS=arm64 ONLY_ACTIVE_ARCH=NO
+          CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY= build
+      - name: Verify device binaries and create unsigned IPA
+        run: >-
+          python3 scripts/package-ios-device.py
+          --app "$RUNNER_TEMP/plainwalk-device/Build/Products/Release-iphoneos/PlainWalk.app"
+          --output-dir artifacts/iphone-device
+          --source-commit "$GITHUB_SHA"
+      - name: Verify downloadable IPA checksum
+        working-directory: artifacts/iphone-device
+        run: shasum -a 256 -c PlainWalk-iPhone-unsigned.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plainwalk-iphone-device-unsigned
+          path: |
+            artifacts/iphone-device/PlainWalk-iPhone-unsigned.ipa
+            artifacts/iphone-device/PlainWalk-iPhone-unsigned.json
+            artifacts/iphone-device/PlainWalk-iPhone-unsigned.sha256
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
