@@ -160,6 +160,7 @@ A("photo-import","写真を取り込む・場所の選択","photoImport",{catego
 add("photo-capture","写真を残す","写真",async p=>{await action(p,"photoImport");await action(p,"spotPick");await p.locator("#mapViewport").tap({position:{x:180,y:280}});},{scroll:true});
 add("video-capture","短い動画を残す","写真",async p=>{await action(p,"photoImport");await action(p,"spotPick");await p.locator("#mapViewport").tap({position:{x:180,y:280}});await dispatch(p,{spotMode:"video"});},{scroll:true});
 A("note","ノート・配置済み","notes",{category:"ノート",scroll:true});
+A("note-library","日付ごとのノート一覧","noteLibrary",{category:"ノート",scroll:true});
 A("note-empty","ノート・初期状態","notes",{category:"ノート",data:empty,state:"empty",scroll:true});
 add("note-second-page","同じ日の2枚目のノート","ノート",async p=>{await action(p,"notes");await p.locator("#notePage").selectOption("capture-note-second");await p.waitForFunction(()=>document.querySelector("#dailyNote")?.value.startsWith("同じ日の2枚目"));},{scroll:true,state:"synthetic additional page selected"});
 add("note-delete-confirm","ノートのページ削除・確認","ノート",async p=>{await action(p,"notes");await action(p,"noteDeletePage");},{state:"confirmation"});

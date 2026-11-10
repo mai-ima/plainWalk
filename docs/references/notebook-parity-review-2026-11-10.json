@@ -1,0 +1,121 @@
+{
+  "reviewedAtUTC": "2026-11-10T08:12:45.875Z",
+  "sourceFreezeConfirmedBy": "/root message: All source frozen now",
+  "scope": "Independent read-only notebook persistence helper review. No app source edits. Native UI changes excluded.",
+  "sources": [
+    {
+      "path": "ios/PlainWalk/NativeNotebookPages.swift",
+      "sha256": "7f4d750e65c660ae1c56c887eb381f7696a459fac1ba37903e97bba35b4f7407"
+    },
+    {
+      "path": "ios/PlainWalk/NativeStore.swift",
+      "sha256": "03187846e69dec84c7bd3d740329b4ec0f73bbd624c8a427aada0ad7118843f1"
+    },
+    {
+      "path": "ios/PlainWalk/NativeModels.swift",
+      "sha256": "6026858fa8036d3268502fa7f0944a9758cf8c1d8a7cbf2eea690a7b9b61dfd5"
+    },
+    {
+      "path": "web/src/notebook-pages.js",
+      "sha256": "89306c84932b5900f0e61ae075d791b64850deff474beb328e5adc89c71bbf56"
+    },
+    {
+      "path": "web/src/core.js",
+      "sha256": "2d6c17eb6d95dec57e1e76b46574bbcc8b5a4bf39f930500eb01a38abf9a8193"
+    },
+    {
+      "path": "tests/unit/notebook-pages.test.js",
+      "sha256": "8a040e30efe680e219ec22b318a4af940be0c3dc4448b164f2aa54c8047590d9"
+    }
+  ],
+  "executedChecks": [
+    {
+      "name": "Distinct unused IDs preserve identical content on initial and repeated import",
+      "status": "passed"
+    },
+    {
+      "name": "Same-ID conflicts from distinct root IDs preserve independent content-identical copies",
+      "status": "passed"
+    },
+    {
+      "name": "Nested intermediate-ID collision retains distinct root origins and is repeat-idempotent",
+      "status": "passed"
+    },
+    {
+      "name": "Legacy same-content/different-origin envelopes retain both roots and daily steps",
+      "status": "passed"
+    },
+    {
+      "name": "Legacy edits preserve refreshed daily steps and unknown metadata",
+      "status": "passed"
+    },
+    {
+      "name": "Tombstone import preserves tombstone/daily steps and stores live source copy once",
+      "status": "passed"
+    },
+    {
+      "name": "Null/missing core defaults compare identically without losing unknown metadata",
+      "status": "passed"
+    },
+    {
+      "name": "Page validation rejects invalid created values, reserved IDs, day, steps, tombstone, source marker",
+      "status": "passed"
+    }
+  ],
+  "validatorRejectedFixtures": [
+    "created=true",
+    "created=1",
+    "created=null",
+    "created=Infinity",
+    "created=8640000000000001",
+    "id=__proto__",
+    "id=constructor",
+    "id=prototype",
+    "id=legacy:2026-11-10"
+  ],
+  "nativeReadOnlyChecks": [
+    {
+      "name": "save current legacy steps survive stale draft steps",
+      "status": "passed_by_code_inspection",
+      "evidence": "save merges current legacy notes envelope and skips key steps when copying page value."
+    },
+    {
+      "name": "unknown page fields survive save and import conflicts",
+      "status": "passed_by_code_inspection",
+      "evidence": "save begins with current.value; overlays provided fields. content retains unrecognized fields. imported copies retain incoming raw dictionary."
+    },
+    {
+      "name": "stale save/deletion guards compare origin plus unknown-field content but ignore daily steps",
+      "status": "passed_by_code_inspection",
+      "evidence": "save/delete require sourceID equality and recursive JSON equal; content excludes identity, steps, pageDeleted and source marker."
+    },
+    {
+      "name": "distinct identical IDs, nested import origin, bool vs number equality",
+      "status": "passed_by_code_inspection_pending_macos_ci",
+      "evidence": "retainImported uses direct same ID+origin+content before collision; only collision branch searches same root origin+content. Native selfTest exercises these cases."
+    },
+    {
+      "name": "created/steps/reserved-ID/source-marker schema aligned",
+      "status": "passed_by_code_inspection_pending_macos_ci",
+      "evidence": "Native rejects extra steps/pageDeleted, reserved IDs; created calls nativeTime (finite, nonboolean, <=8.64e15); source marker is nonempty <=200 UTF16 units, matching Web."
+    }
+  ],
+  "resolvedFindings": [
+    "Previously reproduced loss of distinct same-content pages resolved in executed Node fixtures.",
+    "Previously identified native page schema omissions now guarded in source.",
+    "Remaining Web legacy envelope origin omission resolved and independently regression-tested."
+  ],
+  "unresolvedConfirmedBugs": [],
+  "limits": [
+    "Swift compiler unavailable in this Linux environment. Native validation/behavior was inspected statically; macOS native self-tests and simulator CI remain required.",
+    "This is persistence correctness verification, not a claim of original-app UI or feature parity."
+  ],
+  "existingUnitSuite": {
+    "command": "node --test tests/unit/notebook-pages.test.js",
+    "tests": 12,
+    "passed": 12,
+    "failed": 0,
+    "exitCode": 0
+  },
+  "hashesUnchangedAfterTests": true
+}

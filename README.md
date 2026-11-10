@@ -27,6 +27,8 @@ Web の GPS は画面ロックやアプリ切り替えで更新が止まる場�
 - [追加画像の目視・実装との比較](docs/research-parity-followup.md)
 - [写真の撮影日時・場所と取り込み](docs/photo-import-parity.md)
 - [iOS のノート操作と軌跡動画](docs/native-creation.md)
+- [同日の複数ノート・保存と取り込み](docs/notebook-pages.md)
+- [11月10日の公式資料・画像・動画の再確認](docs/public-research-2026-11-10.md)
 - [APK の静的解析と Android 画像](docs/apk-static-analysis.md)
 - [APK の記録・保存・動作分類の仕組みと差分](docs/apk-mechanism-notes.md)
 - [公式 Web コード・APK と実装の対応](docs/reference-mechanisms.md)
@@ -75,11 +77,13 @@ Playgrounds 版も SwiftUI / Canvas / MapKit を使います。HealthKit、Live 
 | 写真フィルム・3D LUT | 実装 | CoreImage、.cube 取り込み・比較プレビュー |
 | 手動軌跡修正 | 実装 | MapKit の点移動・削除・区切り・Undo |
 | 動画書き出し | 実装 | AVFoundation の MP4 / 標準共有 |
-| ノート | 写真・道の自由配置、切り抜き、PNG 出力 | 直接の移動・拡縮・回転、透明度・Undo、PNG 出力 |
+| ノート | 同日複数ページ・日付選択、自由配置、切り抜き、PNG | 同日複数ページ・日付選択、直接の配置・回転、透明度・Undo、PNG |
 
 共有白地図には選んだ線だけを入れ、日時・写真・メモを除きます。招待リンクによる共同編集・自動同期はありません。立体バッジや猫の見た目・演出は独自実装です。Watch、通常のウィジェット、自動開始、iCloud 自動同期、日本以外の境界、道路へのスナップ、公式と同じ近接交換は未実装です。
 
 ## 検証と限界
+
+2026-11-10 の [CI 42780970102](https://github.com/mai-ima/plainWalk/actions/runs/42780970102) は全11ジョブ成功です。Web単体61件・Chromium10スイート・40 Swift構文、本体と拡張・Playgroundsのコンパイル、Simulatorの保存・復旧・ノート等の自己検査が通過しました。ノートはLinux WebKitでも検査しています。PlaygroundsはコンパイルされたZIPと生成73ファイルを全件照合しました。最新の画面一覧はNative87枚・Web120枚の計207枚で、全画像の個別確認・SHA照合と、一覧のWebKit操作検査を終えています。[複数ノートの詳細と検証限界](docs/notebook-pages.md)を参照してください。
 
 ```sh
 npm test

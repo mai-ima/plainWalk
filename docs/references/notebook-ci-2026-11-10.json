@@ -1,0 +1,89 @@
+{
+  "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+  "runID": 42780970102,
+  "conclusion": "success",
+  "jobs": [
+    {
+      "name": "ios-build",
+      "id": 129710655802,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/mai-ima/plainWalk/actions/runs/42780970102/job/129710655802"
+    },
+    {
+      "name": "web",
+      "id": 129710655971,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/mai-ima/plainWalk/actions/runs/42780970102/job/129710655971"
+    },
+    {
+      "name": "playgrounds",
+      "id": 129710656026,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/mai-ima/plainWalk/actions/runs/42780970102/job/129710656026"
+    },
+    {
+      "name": "ios",
+      "id": 129711239419,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/mai-ima/plainWalk/actions/runs/42780970102/job/129711239419"
+    },
+    {
+      "name": "native-screens (settings-a)",
+      "id": 129711239502,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/mai-ima/plainWalk/actions/runs/42780970102/job/129711239502"
+    },
+    {
+      "name": "native-screens (records)",
+      "id": 129711239515,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/mai-ima/plainWalk/actions/runs/42780970102/job/129711239515"
+    },
+    {
+      "name": "native-screens (creation)",
+      "id": 129711239654,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/mai-ima/plainWalk/actions/runs/42780970102/job/129711239654"
+    },
+    {
+      "name": "native-screens (settings-b)",
+      "id": 129711239685,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/mai-ima/plainWalk/actions/runs/42780970102/job/129711239685"
+    },
+    {
+      "name": "native-screens (collections)",
+      "id": 129711239693,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/mai-ima/plainWalk/actions/runs/42780970102/job/129711239693"
+    },
+    {
+      "name": "native-screens (maps)",
+      "id": 129711239747,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/mai-ima/plainWalk/actions/runs/42780970102/job/129711239747"
+    },
+    {
+      "name": "native-screens (layers-developer)",
+      "id": 129711239789,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/mai-ima/plainWalk/actions/runs/42780970102/job/129711239789"
+    }
+  ],
+  "nativeCaptureReview": {
+    "runID": 42783354497,
+    "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+    "conclusion": "success"
+  }
+}

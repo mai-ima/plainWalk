@@ -1,0 +1,1937 @@
+{
+  "version": 1,
+  "reviewedAt": "2026-11-10T08:37:57.129556+00:00",
+  "scope": "Individual review of every current implementation PNG. Synthetic data; not original-app pixel parity or physical iPhone validation.",
+  "totalImages": 207,
+  "runtimeValidationCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+  "ciRun": 42780970102,
+  "reviewFiles": [
+    {
+      "filename": "web-notebook-review-a-2026-11-10.json",
+      "sha256": "4fddac84f3b85f0d812b599991fad2c91835564de8a334738801c20674a7a7ef"
+    },
+    {
+      "filename": "web-notebook-review-b-2026-11-10.json",
+      "sha256": "f89f7d45a315b72033695c3b58a7ef2acf9b560ba7c72443832cad1adbc94186"
+    },
+    {
+      "filename": "native-notebook-review-2026-11-10.json",
+      "sha256": "de7ced6fa88c98ce51a4ba984d0fa80543532bcdf42222e2e0e58f01a9a8a39c"
+    },
+    {
+      "filename": "native-notebook-review-b-2026-11-10.json",
+      "sha256": "ad33962270362ee4f4d7a22df5d79b981ed66606113cc702a00a7ff3137d341a"
+    }
+  ],
+  "web": {
+    "imageCount": 120,
+    "individuallyReviewed": true,
+    "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+    "sourceManifestSha256": "3307441bd323f43c6ac03c6ac132bb76b0ff4e316894ce861e15eae3024d1875",
+    "screens": [
+      {
+        "key": "map",
+        "path": "web-map.png",
+        "sha256": "f853113cc2cf54cd3274c18ab28966ea215d9a6c8f7bcd9f0eaf822ea420544c",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Populated synthetic route, location/flag/photo markers, statistics, recording and fixed tabs render. Off-screen route continuation is normal map clipping."
+      },
+      {
+        "key": "map-empty",
+        "path": "web-map-empty.png",
+        "sha256": "5fd698e90f27621b1e241f3f74a6e377a31a026706eea3ef4784abfcbf83ad64",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Intentional empty-map onboarding; unavailable steps shown as dash. Recording, locate, layers and tabs visible."
+      },
+      {
+        "key": "map-dark",
+        "path": "web-map-dark.png",
+        "sha256": "8ed3cc3539cce0ba6d1496d79f822ea6f8fd7ef35e286a579a47d002e4133ba3",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Dark map retains readable route, markers, statistics and controls."
+      },
+      {
+        "key": "answer",
+        "path": "web-answer.png",
+        "sha256": "d6c0ee65acad1673008fd49da1387f9f4056346198463f6e6dd91f81588063ae",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Answer-map tiles loaded; route/flag/photo overlay and primary actions visible; no tile-loading gaps."
+      },
+      {
+        "key": "answer-tilt",
+        "path": "web-answer-tilt.png",
+        "sha256": "436e33383345962a0a6d4a248d803f695d3d4179fa99b2c07f8440c5d741f412",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Intentional Web unsupported-3D explanation with acknowledgement button; no unexpected blank."
+      },
+      {
+        "key": "menu",
+        "path": "web-menu.png",
+        "sha256": "d35f39958d50f142f13e64279b2d0d47a385231c76a106f48c22de5c7e3a0b66",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Menu sheet entries and close control readable; final explanatory row visible."
+      },
+      {
+        "key": "layers",
+        "path": "web-layers.png",
+        "sha256": "9cb5088dc7fc47b29bbdca87074894eae746608990b66ea69295eb5ead165a87",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Layers top selectors render; content continues below viewport as expected."
+      },
+      {
+        "key": "layers-part2",
+        "path": "web-layers-part2.png",
+        "sha256": "f9731ef2780f0d85e95ee90e962e2a2ac531adb1b6e173ad451bc7bb2e8d61d2",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Layers continuation shows transport and display toggles; bottom continuation completed in part3."
+      },
+      {
+        "key": "layers-part3",
+        "path": "web-layers-part3.png",
+        "sha256": "bbd8b8152b52da007405c361701a6ad3246c99594933cf6162b3ea67f6ce2025",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Final layers controls, including murmurs toggle, are visible."
+      },
+      {
+        "key": "record-start",
+        "path": "web-record-start.png",
+        "sha256": "f911797aa34ceb3cc968a980c6a267d102ffb201353b2bbe2f52ebc41cf14d74",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Recording onboarding sheet and start/demo actions visible; large footprint illustration intentional."
+      },
+      {
+        "key": "record-paused",
+        "path": "web-record-paused.png",
+        "sha256": "f892fd84ac2137a4d2b84078822fc036577de1a11c6653964c3b0d0276540666",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Paused recording sheet includes save/end, resume, murmur and discard actions."
+      },
+      {
+        "key": "record-discard",
+        "path": "web-record-discard.png",
+        "sha256": "e877f22c761a8e43f6b63172d2f6dba238ff18c69249498b745f1585ccce84e0",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Discard confirmation and back action fully visible."
+      },
+      {
+        "key": "record-recovery",
+        "path": "web-record-recovery.png",
+        "sha256": "e761220b6085b9104b7d3e51636efddbcc5e42932c9c0830a7c97d7eccee8020",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Recovered checkpoint explanation and resume/save/discard controls visible."
+      },
+      {
+        "key": "records",
+        "path": "web-records.png",
+        "sha256": "c906fec5585cd7b393c4d9686b6991cda1fc780047bc4f15201fd0b1c497c8eb",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Records summary, calendar, review links and walk card render with fixed tabs."
+      },
+      {
+        "key": "records-part2",
+        "path": "web-records-part2.png",
+        "sha256": "5019b171eebba43654adfe7893afb17981a265defa9f7c88ab5b77cea5d9eb84",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Scrolled records final card/progress bar remains above fixed tab bar; no control obscured."
+      },
+      {
+        "key": "records-empty",
+        "path": "web-records-empty.png",
+        "sha256": "e2f5abdddbcfb7d60352eee44c44d45dde402875be0983a70d4fc6395cde0f0f",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Intentional empty records summary; lower empty-state text continues in part2."
+      },
+      {
+        "key": "records-empty-part2",
+        "path": "web-records-empty-part2.png",
+        "sha256": "57049ed26dcb757b71a72eca54773c8bcf6d1a3ea257a27a55e69b3d3deaaa4f",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Empty records final explanation visible above fixed tabs."
+      },
+      {
+        "key": "record-day",
+        "path": "web-record-day.png",
+        "sha256": "b23b4c3ab180bd2e8d140fe0e5f8c2f5d378e0af9195e43ccf253f5d64fd2d1e",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Selected-day sheet shows route card and day notebook action."
+      },
+      {
+        "key": "record-week",
+        "path": "web-record-week.png",
+        "sha256": "0940fb8c14866b9020c64abb2ddc9d14001ad7058e6f3beb3e9f229b52ba2aa3",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Weekly summary shows totals, walk card and notebook action."
+      },
+      {
+        "key": "statistics",
+        "path": "web-statistics.png",
+        "sha256": "635ab3d4317b7de19cc64cc1ebc1496f626e4afed0ce3a834296346ea2e6f718",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Statistics chart, level card and start of longest-walk list render; continuation follows."
+      },
+      {
+        "key": "statistics-part2",
+        "path": "web-statistics-part2.png",
+        "sha256": "4dc22f85351ba257bd6fa8f2f4604e78e0aa500762b448e14c725724d1a9f5fa",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Statistics continuation exposes longest-walk card and steps/goal link."
+      },
+      {
+        "key": "steps",
+        "path": "web-steps.png",
+        "sha256": "078f058fa512adb1407ba87a3a080fad38a12f039a9cf741587bbedb4202d340",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Steps/goal fields, explanatory browser limitation, save button and progress visible."
+      },
+      {
+        "key": "walk-detail",
+        "path": "web-walk-detail.png",
+        "sha256": "5211fded5c574055073b0d6635e38cfa49331a1e6c79a712ce9e14af4768b760",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Walk detail route preview, totals, editable name/caption and save button visible; continuation below."
+      },
+      {
+        "key": "walk-detail-part2",
+        "path": "web-walk-detail-part2.png",
+        "sha256": "4001a86571218f51e17328c3e69e0ea3d767448e9261aac56f83b81101132764",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Walk detail continuation exposes all map/replay/card/GPX/edit/delete actions."
+      },
+      {
+        "key": "walk-delete",
+        "path": "web-walk-delete.png",
+        "sha256": "4a370a04163a4d44a9d0ac7e459cd430bb8615e863c0375faa7833c25ade25ac",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Walk delete confirmation includes consequences and cancel action."
+      },
+      {
+        "key": "walk-map",
+        "path": "web-walk-map.png",
+        "sha256": "4b9e3c2e9f70d91e4ed131b0bd99ba3102880b044c62fdd03e7d5fd1fa1e1a1f",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Filtered walk map shows route and readable overlay notice; map controls remain visible."
+      },
+      {
+        "key": "walk-editor",
+        "path": "web-walk-editor.png",
+        "sha256": "bc61bb8398723fd35982be496a49b47200d94f23b034b13ee227effd4055181e",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Track editor shows point handles and cancel/undo/save toolbar; hint readable."
+      },
+      {
+        "key": "walk-editor-point",
+        "path": "web-walk-editor-point.png",
+        "sha256": "843781026bc95fbb938ff5686f1a25545653d6fd4b89e815a2e703e34f1b2e28",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Point-edit sheet shows split/delete actions and point index."
+      },
+      {
+        "key": "replay-all",
+        "path": "web-replay-all.png",
+        "sha256": "0b3c127044437c82ccf94b3a9b185944df3321ebbd709c40ec67d00f0afb6ec0",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Intentional replay start at0/4: empty canvas before progress, with slider/play/export controls."
+      },
+      {
+        "key": "replay-walk",
+        "path": "web-replay-walk.png",
+        "sha256": "0b3c127044437c82ccf94b3a9b185944df3321ebbd709c40ec67d00f0afb6ec0",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Intentional per-walk replay start at0/4; same complete controls, no loading indicator."
+      },
+      {
+        "key": "share-card",
+        "path": "web-share-card.png",
+        "sha256": "508fee6237e0dca97b68912ca899591deabbf97771523467b6652e03f9f90aec",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Share card preview includes full synthetic route, size selector and image-save action."
+      },
+      {
+        "key": "profile",
+        "path": "web-profile.png",
+        "sha256": "07bfddc4f774fd10e5148f20bc0145a6d718f3a1ab656be0ebd785902ff4b12d",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Profile header, totals and collection links readable; lower entries continue."
+      },
+      {
+        "key": "profile-part2",
+        "path": "web-profile-part2.png",
+        "sha256": "a022cd063cec632d6d4addd4138b4d6dfd5d07b556d90c45e3f47b3596c9392d",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Profile continuation includes notebook, layers/settings/import/backup/about and final disclosure above tabs."
+      },
+      {
+        "key": "spots",
+        "path": "web-spots.png",
+        "sha256": "92eff83b94fdad4043aafca71e9b64cd6fc0c0bc3b5cbdecfc008666274b82ff",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Two intentional synthetic photo/video thumbnail cards and capture action visible."
+      },
+      {
+        "key": "spots-empty",
+        "path": "web-spots-empty.png",
+        "sha256": "96497e292dcba9569395ef74138f2435e0cbcbe51e18ea47fbe36d246871eaed",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Intentional spots empty state with camera icon and complete explanation."
+      },
+      {
+        "key": "stickers",
+        "path": "web-stickers.png",
+        "sha256": "1c26f90da41f4816a621aaf7e525f168e324808b7b5312cbacbc6fe0daf49170",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Sticker collection shows exchange card and synthetic sticker thumbnail/date."
+      },
+      {
+        "key": "stickers-empty",
+        "path": "web-stickers-empty.png",
+        "sha256": "8750addef1f66e1283a590e5d5328e2ffd7becb8e6c27bd1cc92c10e2ea55f2f",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Intentional empty sticker guidance with exchange action."
+      },
+      {
+        "key": "badges",
+        "path": "web-badges.png",
+        "sha256": "9c2c396a659780ce058ca2f8610e5680619d5ccc9ae52bb7d098ca294b0e61e2",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Populated badge list shows counts, filter, finishes, region card and source disclosure."
+      },
+      {
+        "key": "badges-empty",
+        "path": "web-badges-empty.png",
+        "sha256": "e44c440ea869cab7c7df9af9a2647f5e3b21767454be81dc2c4a286286f7165c",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Intentional empty badge state, explanation and fixed profile tab."
+      },
+      {
+        "key": "doodles",
+        "path": "web-doodles.png",
+        "sha256": "76ae01f8d9555db04aa6abd79ac88f9594fbc953fc5173b587e4b4a502e43568",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Doodle guide/action and populated synthetic draft card visible."
+      },
+      {
+        "key": "doodles-empty",
+        "path": "web-doodles-empty.png",
+        "sha256": "91bbff750580661618a8fbd0c8c80b1c59638edd2ffef4801764ff606b249f81",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Intentional empty doodle list retains complete creation guide and action."
+      },
+      {
+        "key": "shared",
+        "path": "web-shared.png",
+        "sha256": "0ab4cfd95e3e3397e9424a8ad3839b98f08cb710f7366c9f40cd877b462c0d7e",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Shared-map synthetic card, create-paper action and manual-file-sharing limitations visible."
+      },
+      {
+        "key": "shared-empty",
+        "path": "web-shared-empty.png",
+        "sha256": "0fa639bb6bef253be4f4bee3d817f69d74aacb04e7beea3e56f638ebae3f777a",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Intentional empty shared map explanation and creation action visible."
+      },
+      {
+        "key": "bookmarks",
+        "path": "web-bookmarks.png",
+        "sha256": "f4ba7a60aca7d0890ec81a07e57b3bd1cd2729b6682d4bc978ce3cabe3d45018",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Populated bookmark row/back and fixed tabs visible."
+      },
+      {
+        "key": "bookmarks-empty",
+        "path": "web-bookmarks-empty.png",
+        "sha256": "4da157857f7183edc8cd3b658d2fd46d3692cf56dad4993e370f94acec18963d",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Intentional empty-bookmark guidance fully visible."
+      },
+      {
+        "key": "flags",
+        "path": "web-flags.png",
+        "sha256": "d61023d52be2472d20f337e0b6ec1478f40973f4fdad12e5c3846399d0a43193",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Flag sheet includes ordered synthetic flag, removal/reorder affordances and create action."
+      },
+      {
+        "key": "flags-empty",
+        "path": "web-flags-empty.png",
+        "sha256": "e2af31bf656ad0a0617b719634f80799c30c7fd5b1bec79a309945b428570306",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Intentional no-flags state still exposes create action and explanation."
+      },
+      {
+        "key": "badge-detail",
+        "path": "web-badge-detail.png",
+        "sha256": "56f375147ae5ee428647f9f8a3edde3b88d1137d9cdae560ddc650549dfaa4df",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Badge detail renders outlined region, synthetic local-road cell, dates/totals/map action and estimation disclaimer."
+      },
+      {
+        "key": "photo-detail",
+        "path": "web-photo-detail.png",
+        "sha256": "3fad5f5afae2a28bf8fa14a8c3b064881db0dfaa44c7b7c90c26073d1088904f",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Photo detail renders intentional synthetic image/caption/time/coordinates and map/save/delete actions."
+      },
+      {
+        "key": "video-detail",
+        "path": "web-video-detail.png",
+        "sha256": "3d35b1f3fdc9e034dd6fca9b1365d2c8418341a2028dc8e0a9d2deda3329b5f6",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Synthetic two-second video player is loaded at0:00/0:02 with native controls; map/photo/video-save/delete actions visible."
+      },
+      {
+        "key": "photo-delete",
+        "path": "web-photo-delete.png",
+        "sha256": "780e666b9f266547866d371414c5be34a8c3b10d9eb862e0de25993b206821d6",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Photo-pin deletion confirmation includes consequences, delete and cancel controls."
+      },
+      {
+        "key": "sticker-detail",
+        "path": "web-sticker-detail.png",
+        "sha256": "d3b584dd73b374ba33858adec86ed989c356ad2312646351fb02461c2e775f04",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Synthetic sticker preview and image-share/notebook actions visible."
+      },
+      {
+        "key": "sticker-exchange",
+        "path": "web-sticker-exchange.png",
+        "sha256": "5799a858a6e9b5e1ca293a3d0684642733ad7abce49f44a0a0c8ba227aa4f49c",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Sticker sharing instructions readable; unavailable proximity exchange explicitly explained."
+      },
+      {
+        "key": "bookmark-detail",
+        "path": "web-bookmark-detail.png",
+        "sha256": "39779a93ddf16a33da1517ebc21cf1c9f5e474ae0f975cb3a0e7ddfca0257ea4",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Bookmark coordinates and navigate/map/remove actions visible."
+      },
+      {
+        "key": "doodle-detail",
+        "path": "web-doodle-detail.png",
+        "sha256": "2aeba2cbfe4f1969dcbe2baf98396b3e02d75a6f3491fd611f9be64cb509bd82",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Doodle preview and map/delete actions visible."
+      },
+      {
+        "key": "doodle-editor",
+        "path": "web-doodle-editor.png",
+        "sha256": "d4e54d2c9b51bb1ef641b8901c445f1760a693064f4cc1f032a5947fcf682ebb",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Doodle map tiles loaded; cancel/undo/done toolbar and one-finger drawing hint visible."
+      },
+      {
+        "key": "shared-create",
+        "path": "web-shared-create.png",
+        "sha256": "c13d85e29fb03d61dca0c5d3d59342f69af7b65254dd64ccf9d3127a33c97b02",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Shared-paper creation includes name, walk selection checkbox and create action."
+      },
+      {
+        "key": "shared-detail",
+        "path": "web-shared-detail.png",
+        "sha256": "669b40fa3c5613dd4e2d74dbf38de0b6d21904c87c4c74b99cbd1192511003f0",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Shared-paper details show route count, export and delete actions."
+      },
+      {
+        "key": "flag-detail",
+        "path": "web-flag-detail.png",
+        "sha256": "f7f5715e5abb9e955709bf06399ac95b41b1e8a022fff8841c5055d09ebfd7a9",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Flag details show coordinates and map/share/delete actions."
+      },
+      {
+        "key": "flag-create",
+        "path": "web-flag-create.png",
+        "sha256": "1f1ebf3833e37099a2d956a5df0f00f7aded03a987bfffddde35aa4172faab79",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Flag creation includes name, latitude/longitude, coordinate placement and choose-on-map actions."
+      },
+      {
+        "key": "bookmark-create",
+        "path": "web-bookmark-create.png",
+        "sha256": "d92b8f4431e47a1b005669cdb4019bf3e8cf5cee96fca68e2d2c8c6ac29fc197",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "名称入力と保存ボタンが全幅内に収まり、背景地図はモーダル背後のぼかし。"
+      },
+      {
+        "key": "photo-import",
+        "path": "web-photo-import.png",
+        "sha256": "4490b1f97e0a6bd24ccee49eff2491b7542d446f823ea351fa0b34fec457c635",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "写真取込・地図から場所選択・現在地で残すの3操作が表示。空のカメラ記号は未選択状態。"
+      },
+      {
+        "key": "photo-capture",
+        "path": "web-photo-capture.png",
+        "sha256": "b3921d019aa6677eddfe4b1283bb40d46140b04c59dfc0ae448fc900208cc9cb",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "写真モード、未選択プレビュー、フィルム4種、ひとことが表示。下端の分類は次のスクロール画像で確認。"
+      },
+      {
+        "key": "photo-capture-part2",
+        "path": "web-photo-capture-part2.png",
+        "sha256": "430e9563f073b4c797a08621f7cbd7d709b30a46ba42e35d9c3a57af930e1504",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "写真フォーム下部の分類7種と保存ボタンを確認。固定見出しの下へスクロールする正常状態。"
+      },
+      {
+        "key": "video-capture",
+        "path": "web-video-capture.png",
+        "sha256": "c9e5a059529eaf8a8e5e0079696c56420c76094cf7aa389285196c26965cf846",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "動画モードで音声スイッチ、カメラを開く、未撮影の録画無効表示。写真専用フィルムの非対応説明が明示。"
+      },
+      {
+        "key": "note",
+        "path": "web-note.png",
+        "sha256": "f5a926ec5924934fdc311b1f26eaf678d4ce04aa53db30cf0d3e6e9c84d2fae3",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "同日2ページの1枚目。日付・ページ選択・22px追加アイコン・編集操作・ノート上端が表示。巨大アイコン再発なし。"
+      },
+      {
+        "key": "note-part2",
+        "path": "web-note-part2.png",
+        "sha256": "4cae04a13d79f7389f90b34497cd868cb77b1958fd39b179982d9d53c1e18fef",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "ノートの写真とステッカー、紙/書体、保存・画像出力を表示。上部が画面外なのはスクロール位置による。"
+      },
+      {
+        "key": "note-part3",
+        "path": "web-note-part3.png",
+        "sha256": "558abb309f90ac01cdc9beef4d54c3e4a368faeeffc5e85c89a48037c6a06a8f",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "ノート最下部のページ削除まで表示。保存・共有・削除が重ならず収まる。"
+      },
+      {
+        "key": "note-library",
+        "path": "web-note-library.png",
+        "sha256": "3aa9e62236239f0ae34e96a0550ff1d4fa5f4c4fcad62c6b403b210746ec442e",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "新ノート一覧の同日2行、コンパクトな新規ボタン、固定下部タブを確認。空白余白は2件のみの内容量による。"
+      },
+      {
+        "key": "note-empty",
+        "path": "web-note-empty.png",
+        "sha256": "3ed642127471d00e99665496ceef033a13782be45621a718fb9df540e4ef2995",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "空ノートは1/1ページとプレースホルダ、白紙を表示。未記入状態で本文が空なのは意図した状態。"
+      },
+      {
+        "key": "note-empty-part2",
+        "path": "web-note-empty-part2.png",
+        "sha256": "4b1c12a9ab2d048505363242c766920454e24c8efcbdc9293fa3b1ed013cc561",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "空の白紙と紙・書体、保存・画像出力を確認。白紙は未記入ノートの正常状態。"
+      },
+      {
+        "key": "note-empty-part3",
+        "path": "web-note-empty-part3.png",
+        "sha256": "a78965d011d93d9839a374755d5f6203f345dcbcf0fd191a49ecbce7fef978ff",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "空ノートの最下部削除ボタンまで表示。文字の重なりや水平はみ出しなし。"
+      },
+      {
+        "key": "note-second-page",
+        "path": "web-note-second-page.png",
+        "sha256": "06cce0ce5fce2ea4285a8a4ce0c83f32e5d83b9abb584d43b4a7c327a39e1c07",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "2/2ページ選択と2枚目固有の文章・罫線紙を確認。追加アイコン22pxで正常。"
+      },
+      {
+        "key": "note-second-page-part2",
+        "path": "web-note-second-page-part2.png",
+        "sha256": "459a7f95ae7c427042941b90da3d8b0fa419e66da6363e9df7ff7db2e2ed7337",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "2枚目の罫線紙下部、紙・書体と保存操作を表示。本文上端はスクロール範囲外。"
+      },
+      {
+        "key": "note-second-page-part3",
+        "path": "web-note-second-page-part3.png",
+        "sha256": "35846d44f4b97a8a935181d153f7aee3589a6388d247144aee9245ea7622d556",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "2枚目のページ削除操作まで確認。兄弟ページの存在を選択欄で確認済み。"
+      },
+      {
+        "key": "note-delete-confirm",
+        "path": "web-note-delete-confirm.png",
+        "sha256": "68431c9086c5f7c89d0b814094e27b8777d61463dc290400e2641a41f6b2a2c7",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "ページ削除の確認説明と削除・キャンセルを表示。ほかのページと歩数を残す説明が読める。"
+      },
+      {
+        "key": "note-photo-picker",
+        "path": "web-note-photo-picker.png",
+        "sha256": "f5dfe4c9ccb160375d47cec8a17d51740f7e8115e428dfa0b02e19f26aff4ad2",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "写真ファイル入力と2件の合成写真、ノートに戻るを表示。英語のChoose FileはLinuxブラウザ標準入力でiPhone実機UIではない。"
+      },
+      {
+        "key": "note-sticker-picker",
+        "path": "web-note-sticker-picker.png",
+        "sha256": "8f1cecc52a299b88dc96f86dcb74a4d0fce58a3bd1f9f629909076f39cab7ee5",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "切り抜き用の写真選択画面。写真2件と戻る操作に重なりなし。標準ファイル入力の英語はブラウザOS由来。"
+      },
+      {
+        "key": "note-cutout",
+        "path": "web-note-cutout.png",
+        "sha256": "994fbdcef2d5393c7d07e6210b31ff1a4233c9af551768e34cf342654bf23dd1",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "切り抜き素材、囲み操作の説明、切り抜く・戻す・ノートに戻るを表示。囲み点未配置の初期状態。"
+      },
+      {
+        "key": "note-item-controls",
+        "path": "web-note-item-controls.png",
+        "sha256": "f5a926ec5924934fdc311b1f26eaf678d4ce04aa53db30cf0d3e6e9c84d2fae3",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "素材選択済みノートの上部。日付・ページ欄と本文・素材操作は表示。対象素材と調整操作は後続スクロール画像で確認。"
+      },
+      {
+        "key": "note-item-controls-part2",
+        "path": "web-note-item-controls-part2.png",
+        "sha256": "0b2cf1a0ff4f0cd4ad1100cdc66cdfeeade656ff91424d59da5eafb525f67990",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "選択写真の点線枠、大きさ・回転スライダ、仕上げ・手前へ・取り除くを表示。素材画像が空白ではない。"
+      },
+      {
+        "key": "note-item-controls-part3",
+        "path": "web-note-item-controls-part3.png",
+        "sha256": "e76e02079d5f0219e9c25c6ae1d2c056463eb00e24ccb82f49d12492a4fe0380",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "素材調整と紙/書体、保存・画像出力・削除まで表示。固定見出し以外の切れはスクロールによる。"
+      },
+      {
+        "key": "settings",
+        "path": "web-settings.png",
+        "sha256": "6b376428d38cc18e40c999f66f1af081012a4f544a5448b0699c5c8e43b31c7b",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "設定上部の移動方針・登録場所・滞在場所と下部タブを確認。Web未対応の背景検知を本文で明示。"
+      },
+      {
+        "key": "settings-part2",
+        "path": "web-settings-part2.png",
+        "sha256": "0f69b5d03bf1006c59e5ce960ed6f1285d87f0e4a67e9c2b58812c69221630fd",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "設定の外観・単位・歩数・LUT・通知開始を表示。時刻07:45 AMと時計アイコンが横枠内に収まる。"
+      },
+      {
+        "key": "settings-part3",
+        "path": "web-settings-part3.png",
+        "sha256": "b821a1ab88e834ca122f0bf9b1a6542500098cf5fe74e8670b1d226189493180",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "通知後半、ヘルスケア、取込・GPX書出しを表示。上端の途中行は前画像からのスクロール継続。"
+      },
+      {
+        "key": "settings-part4",
+        "path": "web-settings-part4.png",
+        "sha256": "32f002af900f91be8cc139c68880ba09f6dac5078c46282bf1dda1ece5bcc543",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "設定のバックアップ・アプリ情報・beta開始を表示。説明文が折り返され、固定下部タブと操作が重ならない。"
+      },
+      {
+        "key": "settings-part5",
+        "path": "web-settings-part5.png",
+        "sha256": "96cce131daec3025673224614cb2ccfc110f1c2b055f693a6b9aaa208c24fb1a",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "設定最下部のbeta・開発者モード・実機検証ログ・リセットを表示。削除操作は赤で区別される。"
+      },
+      {
+        "key": "lut",
+        "path": "web-lut.png",
+        "sha256": "426f7d1d2d34d17fa0133b9d2eccb966a2e7a12927191aec890eb597fb902ba2",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "LUTなしの明示的な空状態と取込手順説明を表示。LUT一覧が空白なのは未登録データによる。"
+      },
+      {
+        "key": "health",
+        "path": "web-health.png",
+        "sha256": "79107029588f6ee9d57ae84dfbad32f3634ebb03342c2a35dcc567145156d207",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "ヘルスケアのワークアウトをWebで直接読めない説明と了承ボタン。ネイティブ機能が動作した証拠ではない。"
+      },
+      {
+        "key": "home-place",
+        "path": "web-home-place.png",
+        "sha256": "91c6dfe9ee9a6115d6ae3a734df93fb55be4ebb5959250c605479f071f691b41",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "自宅監視未実装の説明と了承ボタンを表示。手動記録の代替案が読める。"
+      },
+      {
+        "key": "work-place",
+        "path": "web-work-place.png",
+        "sha256": "15ff4d5104db32637d362433c2a7797e68f162cf75b8cb4843ae33ee549890cf",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "職場の移動監視未実装を説明するシート。本文と了承ボタンが収まり、実装済みとして装っていない。"
+      },
+      {
+        "key": "add-place",
+        "path": "web-add-place.png",
+        "sha256": "d08d165c23eb944e0646c1f467b7f91b17cb99ef6e5845104567a010d1dd52f4",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "よく行く場所の移動監視未実装を説明。空白領域は短いシートの背景で、ロード失敗ではない。"
+      },
+      {
+        "key": "movement-policy",
+        "path": "web-movement-policy.png",
+        "sha256": "caff17d8634e13da5774325c465f9e5f910a523a842c6bf1693271061c8d6b64",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "動き出し検知をWebでは画面を閉じた間にできない説明。手動記録の案内と了承を表示。"
+      },
+      {
+        "key": "about",
+        "path": "web-about.png",
+        "sha256": "b1eab4437712128c7c7d22d0e4474b0ab67f2375ebd1ca00fd4ca9100d28dbfb",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "一次資料4件、非公式・無料・プライバシーの説明が表示。調査日10/29は掲載4資料の旧調査日であり、11/10追調査は別ドキュメントに記録。日付更新は非阻害の注記として親に報告済み。"
+      },
+      {
+        "key": "limitations",
+        "path": "web-limitations.png",
+        "sha256": "b0ba215430f53475a004b7b626c49252dfa83007364ab881eb74016c8154b85c",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "対応範囲の利用可能機能とネイティブ差を表示。実機未検証と明記され、完全一致をうたっていない。"
+      },
+      {
+        "key": "limitations-part2",
+        "path": "web-limitations-part2.png",
+        "sha256": "1d2bad73bd7c8a711617232846a4a4a2a74dca102ea24164b3467d869e2f7e97",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "未実装一覧とiPhoneホーム画面追加の案内を表示。画面上端の切れはスクロール継続で、文書全体は前画像とつながる。"
+      },
+      {
+        "key": "diagnostics",
+        "path": "web-diagnostics.png",
+        "sha256": "7091d774bd1b1d3325da54c480dfc8cc222c3d6c327cc1caafb903883f24f1fb",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "記録診断でIndexedDB、記録数・4点、未取得GPS、通常状態を表示。合成データで実GPS精度の証拠にはしない。"
+      },
+      {
+        "key": "storage",
+        "path": "web-storage.png",
+        "sha256": "327142793373107e8875317a5951e113a166c725c4085d255cae8a449fda5f2c",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "保存領域推定値、保持リクエスト、バックアップ出力を表示。推定容量である注記が読める。"
+      },
+      {
+        "key": "developer",
+        "path": "web-developer.png",
+        "sha256": "1bd1a97b88b80cee0cd75fb387993fa3b1351451472ee09f86f5b16398fe2cf3",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "開発者画面の実行環境Web/PWA、393×852と停止状態、4検証ボタン、権限一覧を表示。モック/ブラウザの状態で実機検証済みではない。"
+      },
+      {
+        "key": "developer-part2",
+        "path": "web-developer-part2.png",
+        "sha256": "9344d1865290ce4af55db812da428e5387bfa95bd50fe2d9777292a092c77939",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "開発者権限・環境の続き、表示検証スイッチ、端末確認項目を表示。未確認項目が未確認のまま示される。"
+      },
+      {
+        "key": "developer-part3",
+        "path": "web-developer-part3.png",
+        "sha256": "40a3c27957c141025449358a25d8643e76d40c87952741e8d85dd6afd161f5fd",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "端末チェック一覧、未確認状態と記録ログ、消去ボタン、ログのプライバシー説明まで確認。最上段の欠けはスクロール位置。"
+      },
+      {
+        "key": "developer-storage-test",
+        "path": "web-developer-storage-test.png",
+        "sha256": "1bd1a97b88b80cee0cd75fb387993fa3b1351451472ee09f86f5b16398fe2cf3",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "保存往復テスト後の開発者画面上部。成功結果は後続スクロール位置にあるため、この画像だけで成功を判断しない。"
+      },
+      {
+        "key": "developer-storage-test-part2",
+        "path": "web-developer-storage-test-part2.png",
+        "sha256": "958cd086e4219efc5228a7eb8a36b7c1f56d8ce5eacba316ab92a9082aec72a9",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "保存の往復：成功・3msの結果カードを実際に確認。ブラウザ保存テストで、物理iPhoneの証拠ではない。"
+      },
+      {
+        "key": "developer-storage-test-part3",
+        "path": "web-developer-storage-test-part3.png",
+        "sha256": "52c0dc31440e10aba652de1aa0809fdd6a87b2ec40d2c6615eb3160b83243aed",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "storageProbe status=ok durationMs=3のログとチェック一覧を表示。縦スクロールで一部前後の文章が画面外になる正常状態。"
+      },
+      {
+        "key": "developer-storage-test-part4",
+        "path": "web-developer-storage-test-part4.png",
+        "sha256": "7829024ccc538e9c06e187c478e9127c10ea570426eadac43d8da50e04ff30d3",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "保存テストログ、消去ボタンと端末外へ自動送信しない説明の最下部まで表示。重なりなし。"
+      },
+      {
+        "key": "reset-confirm",
+        "path": "web-reset-confirm.png",
+        "sha256": "fbf05675ccb821b8cee1b416a6c24dafc94de73923ce5ddc90d33b7b4e5673cf",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "リセット確認のバックアップ・全削除ボタンを表示。データ削除の対象と事前バックアップ案内が読める。"
+      },
+      {
+        "key": "demo",
+        "path": "web-demo.png",
+        "sha256": "7b0f49a2b7e6e105e7ce6b825c6b30a92dba9fc8883df89ca6387c30c056a8fb",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "体験モードの操作説明・現在地ドット・距離/歩数・録画/地図ボタン・固定タブを表示。未タップのデモで白地図が空なのは正常。"
+      },
+      {
+        "key": "track-import",
+        "path": "web-track-import.png",
+        "sha256": "bd3c082c4d16b839d8eb678e11864f6f1da82659d1796fb5980bd111ff9b03ab",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "GPX取込の軌跡プレビュー、距離0.24km・4点、確定ボタンを表示。合成経路が描画されている。"
+      },
+      {
+        "key": "backup-import",
+        "path": "web-backup-import.png",
+        "sha256": "0dd68e9311957010a35d64330e66099babe2777ac749163ade3b63877fdfc018",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "バックアップ取込確認でさんぽ/ピン/旗件数と同日ノートの別ページ保存の説明を表示。操作ボタンが全幅内。"
+      },
+      {
+        "key": "note-route",
+        "path": "web-note-route.png",
+        "sha256": "f5a926ec5924934fdc311b1f26eaf678d4ce04aa53db30cf0d3e6e9c84d2fae3",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "道を貼り付けたノート上部。本文・2ページ選択・素材操作を確認。追加軌跡の位置は後続画像で確認。"
+      },
+      {
+        "key": "note-route-part2",
+        "path": "web-note-route-part2.png",
+        "sha256": "806ecba4d3317e2c1a2105ebaea67f9ecc2a2efa8d5a2af0a21b155d7edbfd6f",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "道素材が写真の手前に描画され、点線選択枠と調整スライダが表示。選択軌跡が白紙化していない。"
+      },
+      {
+        "key": "note-route-part3",
+        "path": "web-note-route-part3.png",
+        "sha256": "1c1a8ce3a0cd6aeb7d717695b77089d8220da6c73eced3ee7f2626db7853526e",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "道素材の大きさ・回転・仕上げと保存、画像出力、削除まで確認。スクロール画像として全操作を補完。"
+      },
+      {
+        "key": "photo-selected",
+        "path": "web-photo-selected.png",
+        "sha256": "3b4e0ec66e78b7e58bb2c71ac826918ac36e4935e9d99c719ebf5d50e194c579",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "合成写真を選択したプレビューが表示され、フィルム4種とひとこと欄が読める。実写真やカメラ実機の証拠ではない。"
+      },
+      {
+        "key": "photo-selected-part2",
+        "path": "web-photo-selected-part2.png",
+        "sha256": "f60224ba3733821733fa41a8d38922ac57c894d6dceb14893d70eb667e38fe2b",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "選択写真フォーム下部の分類、撮影時刻未確定時の注記、場所に残すボタンを表示。写真は選択した場所に配置する説明。"
+      },
+      {
+        "key": "photo-lut-import",
+        "path": "web-photo-lut-import.png",
+        "sha256": "37ff576ec0c363869349712e7aee9cbf14a48b4dff1e9abef7dbec898c684025",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "LUT取込の折りたたみ展開で.cubeファイル入力とサイズ2〜33の対応説明を表示。ファイル未選択でプレビューが空なのは正常。"
+      },
+      {
+        "key": "photo-lut-import-part2",
+        "path": "web-photo-lut-import-part2.png",
+        "sha256": "03bd54042dd3eef19b1ac9e38cd9823a7e5857d1df668b492101fca080338bee",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "LUT取込下部、ひとこと・分類・保存操作まで表示。標準ファイル入力の英語はLinuxブラウザ由来。"
+      },
+      {
+        "key": "video-selected",
+        "path": "web-video-selected.png",
+        "sha256": "e0e015944ec072c9bcc026fe7614ef327098125a5bdc3dfeeb4ea2d21a9043a4",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "選択動画は0:00/0:02のプレイヤーと緑色の合成フレームを表示。ロードエラーではないが静止画像だけでは再生・音声の動作証明にはしない。"
+      },
+      {
+        "key": "video-selected-part2",
+        "path": "web-video-selected-part2.png",
+        "sha256": "be69868748ca9d4f39ab63567d23dc57f4c0375d801658f3aefa3c08cd3b86e1",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "選択動画下部の音声スイッチ・写真用フィルム非対応説明・分類・保存を表示。未起動カメラの録画ボタン無効は正常。"
+      },
+      {
+        "key": "record-too-short",
+        "path": "web-record-too-short.png",
+        "sha256": "4134c3f0c4210bd839de9a1766aa740b534d44fdb688f1f88921df1f085f33c1",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "短すぎる記録の案内と記録続行・破棄の2操作を表示。位置未取得/移動不足の意図した分岐。"
+      },
+      {
+        "key": "badges-load-error",
+        "path": "web-badges-load-error.png",
+        "sha256": "9e0d38a507edfdca67f5ed6f282f9880fd1e30607c4d07e8d4cf02a9cee251ce",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "PASS",
+        "notes": "境界取得を意図的に失敗させたエラー状態で保存データ保持の説明と再試行ボタンを表示。無限ローディングや無説明の空白ではない。"
+      }
+    ],
+    "captureScriptSha256": "834783cc6ed1b4732347065255b8181e565df20604a5c65316147e64b1f4c6cb",
+    "runtimeBlobsMatched": 27
+  },
+  "native": {
+    "imageCount": 87,
+    "individuallyReviewed": true,
+    "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+    "sourceManifestSha256": "7fa66accb5d2151d88a95d513f0ed764bafc210888c2276d0581c06d6b860853",
+    "screens": [
+      {
+        "key": "baseline-map",
+        "path": "baseline/ios-native-map.png",
+        "sha256": "df834a7e0aeb28fb06dfe08098a157fb247d7eac24af11c847b7252da2576fdb",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Expected empty white-map state with first-route guidance, zero distances, unavailable steps and recording/layers/location controls intact."
+      },
+      {
+        "key": "baseline-settings",
+        "path": "baseline/ios-native-settings.png",
+        "sha256": "fe54ec6d28c79029e8825214be675d532c3db783975ed0c933cf36003eafedb9",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Back/title, movement behavior, place entries, appearance picker and unit row visible. Unit row continues beneath viewport/tab bar as scrolling content, no overlap defect established."
+      },
+      {
+        "key": "baseline-records",
+        "path": "baseline/ios-native-records.png",
+        "sha256": "a07d1375788d8748a82c2ed91ce9978d697da43ff03a3a2f81a1c35d6986f3a6",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Empty weekly statistics/calendar, week review, replay and walking-record actions visible with tabs."
+      },
+      {
+        "key": "baseline-profile",
+        "path": "baseline/ios-native-profile.png",
+        "sha256": "681174bb25169a871ed5721f29a95b5aa271101b9f88932edd615fdd50b498bc",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Empty statistics, collection navigation, walking records row and tabs visible. No overlap."
+      },
+      {
+        "key": "baseline-layers",
+        "path": "baseline/ios-native-layers.png",
+        "sha256": "d3eb03a152321204ad8f2a60b8af941ef28bb2dd6be624aa7e23d379cfb651c0",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Palette, line, photo-pin and current-position options show selection rings, plus boundary toggle. Close visible, explanatory text continues below viewport."
+      },
+      {
+        "key": "baseline-answer",
+        "path": "baseline/ios-native-answer.png",
+        "sha256": "878591da295f1d5a42372c5519bb501ab1fc948220f8322d5796a696ec7b6f77",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Loaded country-scale MapKit map, Close, layers, location, destination and doodle actions visible."
+      },
+      {
+        "key": "baseline-spots",
+        "path": "baseline/ios-native-spots.png",
+        "sha256": "ea003bb1f6f58a8298cd1cc15298dc845a64c8f17a2035ade41b94902f69214d",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Expected empty collection with camera icon, message and explanation; back/title/tabs intact."
+      },
+      {
+        "key": "baseline-doodles",
+        "path": "baseline/ios-native-doodles.png",
+        "sha256": "30c68cc44b0d9c10d3f0cbe9c2aceb23af8c7b1a7f5b9f3d33f9186d66e330a0",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Empty doodles view with explanation and create action, no missing content."
+      },
+      {
+        "key": "baseline-menu",
+        "path": "baseline/ios-native-menu.png",
+        "sha256": "4fb02dc175df8db8db03f2072468c68db9b2e30c10d35571c30630bc7c5449c5",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Menu title/Close and route/collection/settings entries visible; list continues below viewport."
+      },
+      {
+        "key": "baseline-stepGoal",
+        "path": "baseline/ios-native-stepGoal.png",
+        "sha256": "2e159d9fb57f671acc7a0faa6e5e86719b7d10802a9ef7794476e21a520b1f59",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Cancel/Save, unavailable steps explanation, enable toggle, 5000 goal, slider, stepper and preset action visible. Refresh row at viewport bottom is normal scroll continuation."
+      },
+      {
+        "key": "baseline-lut",
+        "path": "baseline/ios-native-lut.png",
+        "sha256": "cfeb5462fd1b04b0bb826bea9368bffd9a4e7f059de34f08d9eb2ea527315bc4",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "limited",
+        "notes": "Apple Intelligence OS notification obscures top title/navigation. Visible content includes generated color preview, photo action, compare toggle, film selector, strength slider and cube import. Header cannot be reviewed from this capture; no app defect established."
+      },
+      {
+        "key": "baseline-spot",
+        "path": "baseline/ios-native-spot.png",
+        "sha256": "0cc840104666e1bcb5b2e31cb63e606a203941f820e72f306762e196905df991",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Empty media placeholder, Cancel, disabled Save, camera/photo picker actions, film/note/marker controls and missing-location explanation visible. Physical camera/location behavior not tested."
+      },
+      {
+        "key": "baseline-noteEditor",
+        "path": "baseline/ios-native-noteEditor.png",
+        "sha256": "48b213fa3b1217502ccb5d566cc5af2f549462e6912cbb6bd6c3d6041309eb15",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Empty new note page, Close/Save, date/page picker, text field, paper/font selectors and large blank paper preview. Blank content expected for new note."
+      },
+      {
+        "key": "baseline-developer",
+        "path": "baseline/ios-native-developer.png",
+        "sha256": "fa3f53d173c539493699bf90415435405f175f150f3749424d415806106947f3",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Simulator status and permission rows show expected unavailable GPS/undetermined values; header Close and refresh visible. Scroll continuation below viewport is expected."
+      },
+      {
+        "key": "spotsData",
+        "path": "collections/ios-spotsData.png",
+        "sha256": "b9e10d347f631ad99afb37d279d0311c283f01df3176186e028fbf47a5bfa4d6",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Single fixture photo card with tree illustration, wrapped caption and timestamp; back and tab navigation visible. Illustration watermark is cropped by thumbnail aspect-fill, main caption intact."
+      },
+      {
+        "key": "stickersData",
+        "path": "collections/ios-stickersData.png",
+        "sha256": "3b92d1166cbf6dcd551531bee51ec656727b1fa3707388d0b0962ac19c10d69e",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Exchange/give row, explanatory subtitle, one cutout tree sticker and date; header/back/tab navigation intact."
+      },
+      {
+        "key": "badgesData",
+        "path": "collections/ios-badgesData.png",
+        "sha256": "e3ce69929437b6c7489ea58b94b5f36810eea14535a310fa05e96abe86b607db",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Two district cards with silhouettes and distance labels; neither card clipped. Header/back/tab navigation visible."
+      },
+      {
+        "key": "doodlesData",
+        "path": "collections/ios-doodlesData.png",
+        "sha256": "b3c690b5f14ffcdc9eda1214469f545b24a1cd0ef71272ca01a286422c6074a0",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Instruction card, create-doodle action and saved curve row all visible with no overlap."
+      },
+      {
+        "key": "sharedMapsData",
+        "path": "collections/ios-sharedMapsData.png",
+        "sha256": "7235bbe1ec5f934c56f121c4f3ad3d61a0829fecec7cd3edc6b80a6387feaf1b",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Shared-paper row, create-paper action and explanatory copy visible. No clipping."
+      },
+      {
+        "key": "bookmarksData",
+        "path": "collections/ios-bookmarksData.png",
+        "sha256": "d564106af7c7e1a4fc85db96eddff131e6c0b9631abe8104570b17fed6ca9d5c",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Bookmark row and map-search action visible, with intact header/back/tab navigation."
+      },
+      {
+        "key": "notesData",
+        "path": "collections/ios-notesData.png",
+        "sha256": "24d92ae221d251a16a19b4112492ceb18b31867e8b14b840448851848efa8e3a",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Dated two-page list shows 1st page with four attachments, 2nd page and add-page action. No missing content or overlap."
+      },
+      {
+        "key": "spotDetail",
+        "path": "collections/ios-spotDetail.png",
+        "sha256": "22b8e627ba08e84fc2280aed1db053f22af7b048304c52fa2fbef17907301464",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Tree illustration, caption/date, share, make-sticker and delete actions all visible. Sheet has no visible Close, consistent swipe-dismiss modal, not established defect."
+      },
+      {
+        "key": "stickerPicker",
+        "path": "collections/ios-stickerPicker.png",
+        "sha256": "03e928fee2b64e1114226ef745909402b8ffa5dfbc3065425064368d73cff732",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Give-sticker sheet shows Close, explanation and one tree sticker with date. Expected whitespace below single fixture."
+      },
+      {
+        "key": "bookmarkDetail",
+        "path": "collections/ios-bookmarkDetail.png",
+        "sha256": "b1ffb2f32b184460eae6c8b89d1012065b61645e65c37643b8f9eddf957f4207",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Bookmark name, icon, go-here and remove-bookmark actions visible. No clipping; large whitespace in centered layout is intentional."
+      },
+      {
+        "key": "paperEditor",
+        "path": "collections/ios-paperEditor.png",
+        "sha256": "b2d275b52f276fbd3fed9f1a4befe09362421d748685514d4257fa34ff0ea51c",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Cancel/Create, name field, two walk toggles and explanatory copy visible; no overlap."
+      },
+      {
+        "key": "paperDetail",
+        "path": "collections/ios-paperDetail.png",
+        "sha256": "0caa7f6d7d184927a8c051eb8e3f7c836aa3f439674e453ba0a32ed44b9fc042",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Two route loops, count, file-share button, explanation and delete action visible without clipping."
+      },
+      {
+        "key": "doodleEditor",
+        "path": "creation/ios-doodleEditor.png",
+        "sha256": "1042dbed8164ff669bc28bbba238ae8caf90d3c2750f423ccdde33060491bf68",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Loaded map with draw/move mode switch, name field, instructions, Cancel and disabled Save/undo before new drawing. No unexpected blank/loading."
+      },
+      {
+        "key": "doodleDetail",
+        "path": "creation/ios-doodleDetail.png",
+        "sha256": "228b07d80ab0c3418d119ae41e568f2ed0ed9c506353e4f6a8adcea26cb48e8e",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Saved dotted curve overlays loaded street map, with title, explanatory footer and delete action visible."
+      },
+      {
+        "key": "badgeDetail",
+        "path": "creation/ios-badgeDetail.png",
+        "sha256": "38a9086aedb6aa418a5734ee757faedfe0f56f81d2875925d72f2530c8a2eb0e",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "District silhouette, visited-area marks, name, region, distance/count and explanatory copy fully visible."
+      },
+      {
+        "key": "noteEditorData",
+        "path": "creation/ios-noteEditorData.png",
+        "sha256": "d9d9b86777aded70a75368b2e7de48742db1d8c94002f2f1e40439faa2b57e01",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Page 1/2 editor contains text plus grid-paper preview with photo, route, tree sticker and star; Close/Save and paper/font selectors visible. Bottom preview continues below viewport."
+      },
+      {
+        "key": "noteControls",
+        "path": "creation/ios-noteControls.png",
+        "sha256": "4228f2dcd5c09dcd80b8376ed3e764767a8842734f5635d7571a1b64f435ee29",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Scrolled note editor shows attachment instruction, add action, horizontally scrolling attachment chips, five adjustment sliders, front/remove and image-share actions. Fourth chip is partially offscreen as expected horizontal scrolling. Close/Save remain visible."
+      },
+      {
+        "key": "noteSecondPage",
+        "path": "creation/ios-noteSecondPage.png",
+        "sha256": "211ab330027946c4c415a6aa9945e731c27b3a694c9f5225a90872e2653616c2",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Page 2/2 clearly selected, unique second-page text and leaf emoji shown on ruled paper with simple font. Close/Save and selectors visible; no overlap."
+      },
+      {
+        "key": "photoSelected",
+        "path": "creation/ios-photoSelected.png",
+        "sha256": "96054a4aa653612bc3ef467b975daf877c04beea6ea56f15d71baaa420a466d1",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Selected synthetic tree illustration, caption, camera/picker actions, film/marker controls visible. Save disabled until location is available; lower explanation continues below viewport."
+      },
+      {
+        "key": "photoLocation",
+        "path": "creation/ios-photoLocation.png",
+        "sha256": "4f94e7febc79728f36c8ec26273d0cbf0abda5ccf9aa2b04a6db838589b3ac6a",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Scrolled selected-photo form shows date/location-metadata explanations and disabled place-at-current-location action. Header/Cancel and disabled Save intact; no unexpected missing action."
+      },
+      {
+        "key": "replayAll",
+        "path": "creation/ios-replayAll.png",
+        "sha256": "6c383315f0bf62cfabc0f91519e15bfdc8c88bdc6ff2358ffa757a1ef1dfa089",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Two routes fit inside preview with progress slider, labeled Play action, video-share and Close visible. No clipping."
+      },
+      {
+        "key": "replayWalk",
+        "path": "creation/ios-replayWalk.png",
+        "sha256": "e583aff88faffb1104870fe60e9d6c0cabf9ce68d7be4912b8f3d2060fa95946",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Single route fits preview, slider, Play, video-share and Close visible. Reopened individually to confirm white triangle and 再生 label; pixel check found 2480 white interior pixels in x500..699/y2110..2179, so initial blank-label impression is not an app defect."
+      },
+      {
+        "key": "lutSelected",
+        "path": "creation/ios-lutSelected.png",
+        "sha256": "840a590674352e637caf6e8bb3889fecae25c70b9c2aa80a075a911840990d2f",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Warm-toned synthetic tree preview, Close, photo/compare controls, warm film selection and 80% slider visible; cube import begins below viewport. No banner/header obstruction."
+      },
+      {
+        "key": "layers-palette",
+        "path": "layers-developer/ios-layers-palette.png",
+        "sha256": "0d452780f00e3b48634a7a309d1824cb48c1ca8f5ff34e42e18ef44d9914093b",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Palette, line styles, photo pins, location marks and boundary toggle render with readable selector labels."
+      },
+      {
+        "key": "layers-line",
+        "path": "layers-developer/ios-layers-line.png",
+        "sha256": "a14eb3347cba04fe67c86dbce0fa48f67ea33ed2deaffdb9ec790edcd91957c9",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Line styles, photo/location selectors, boundary control/attribution and fade control visible; lower text continues normally."
+      },
+      {
+        "key": "layers-photoPins",
+        "path": "layers-developer/ios-layers-photoPins.png",
+        "sha256": "51dd3d62f29cae9f04bb5db523b9be04131d3212a16efb735217888169b65844",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Photo pins, location marks and boundary/fade controls with explanations render; transport group begins below."
+      },
+      {
+        "key": "layers-currentLocation",
+        "path": "layers-developer/ios-layers-currentLocation.png",
+        "sha256": "a7872c8e27e529adf3adbbcd1485e020b347d43d145cf523c969fc6d9dff2475",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Location mark choices, boundary/fade controls and all four transport rows visible without label overlap."
+      },
+      {
+        "key": "layers-boundary",
+        "path": "layers-developer/ios-layers-boundary.png",
+        "sha256": "dc07573595cdbb12f1f18f611b3cac04d98e8692f39153fa132eb4a11ce70364",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Boundary toggle and attribution, fade option, complete transport group and start of display options readable."
+      },
+      {
+        "key": "layers-fade",
+        "path": "layers-developer/ios-layers-fade.png",
+        "sha256": "d00dd756bace8b8ea2863f9c7391d2dcf682e55b8a1031984ebdafd2e42c87e4",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Fade control, transport switches and display options render; final continuation captured separately."
+      },
+      {
+        "key": "layers-transport",
+        "path": "layers-developer/ios-layers-transport.png",
+        "sha256": "3039854de939624ba531829bbc7b10d67741b193a5c9d21766a69b4c8c8652e6",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Complete transport controls and final display toggles, including murmurs, fully visible in final scroll region."
+      },
+      {
+        "key": "layers-display",
+        "path": "layers-developer/ios-layers-display.png",
+        "sha256": "088c9cdc2fc725bbe7d2d67ebba1b2c24b3b52973aefb48ce865cbba98c92e19",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Final display section completely visible with labels and switches; fixed layers header/close remain readable."
+      },
+      {
+        "key": "developer-status",
+        "path": "layers-developer/ios-developer-status.png",
+        "sha256": "3982e1ed2e3f53165a7a27f50d453cb2d59a973a3fc73d99c9b51c0c2f78030f",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Runtime/OS/device/recording/point/GPS status and refresh action visible; permissions table readable. Unrequested simulator permissions are intentional."
+      },
+      {
+        "key": "developer-permissions",
+        "path": "layers-developer/ios-developer-permissions.png",
+        "sha256": "768553a9916aa00e8fffc2fb7a945f73ad50596111d89956769275aa002cebcd",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Permission values and all storage/recovery/compatibility test actions visible; checklist begins below. Not-executed status is intentional."
+      },
+      {
+        "key": "developer-storage",
+        "path": "layers-developer/ios-developer-storage.png",
+        "sha256": "7c7eb14be5f2d098dcc922270995140df4a0886df6bd6e1c9b6c77e332ce5f98",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Storage test actions and independently unconfirmed real-device checklist rows readable. No automatic-success claim or loading state."
+      },
+      {
+        "key": "developer-checklist",
+        "path": "layers-developer/ios-developer-checklist.png",
+        "sha256": "ea495bf3c60985398d23c4e1285ba966cbb01899b464bde79fdd05e9b13c1296",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Complete manual checklist plus diagnostics share/delete actions and privacy explanation visible."
+      },
+      {
+        "key": "developer-logs",
+        "path": "layers-developer/ios-developer-logs.png",
+        "sha256": "237a19129b062078d55a914371a79c2e6aa786677ddf28072dae172f97b32b49",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Final diagnostics section fully visible, including share/delete-log actions and complete privacy explanation; fixed header readable."
+      },
+      {
+        "key": "answerData",
+        "path": "maps/ios-answerData.png",
+        "sha256": "97cb98cae3b386209d8d25285aa4a49bedca0c23f200a4f2753a137313107a0d",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Loaded street map, synthetic route loops and destination flag. Title, Close, layers, location and both bottom actions visible; no clipping."
+      },
+      {
+        "key": "answerSearch",
+        "path": "maps/ios-answerSearch.png",
+        "sha256": "b75ade1b350c077248d8528176fd3e8e4f993a24cdc4077253f94f9ecd6639f4",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Search sheet shows Tokyo Station query, one clearly marked synthetic result and Close. No clipping; empty result area is expected for single fixture."
+      },
+      {
+        "key": "answerSelection",
+        "path": "maps/ios-answerSelection.png",
+        "sha256": "37e3391b0f10be06487cddb0e801319f6f11d72f06ab977213f9b34a8b4dac55",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Selected location card, go-here and bookmark actions visible; route and both destination flags visible. No actionable clipping."
+      },
+      {
+        "key": "answerSatellite",
+        "path": "maps/ios-answerSatellite.png",
+        "sha256": "3a08ff0693b2d193dd963d0fb3c8037126e0d8e23486f86bc61b37fd9964c858",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Loaded satellite map, Close, layers, location and both bottom actions visible. Individually reopened to verify white flag and 目的地を決める label are fully present; initial missing-label impression was retracted. No actionable defect."
+      },
+      {
+        "key": "answer3D",
+        "path": "maps/ios-answer3D.png",
+        "sha256": "fdc77b17ccbd786972d9e22a782114992a6be7f15cfeb622c1bb35d606e777b1",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Loaded 3D buildings, route and flag. Title, Close, layers, location and labeled bottom actions visible. No clipping."
+      },
+      {
+        "key": "mapSpot",
+        "path": "maps/ios-mapSpot.png",
+        "sha256": "15c8771bf7699f7afa9d0759317c6a0c0713045e8515bcbe3f57e83aba0a9007",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Synthetic tree illustration, title, Close, photo-share action, caption and timestamp visible without clipping."
+      },
+      {
+        "key": "mapFlag",
+        "path": "maps/ios-mapFlag.png",
+        "sha256": "a7d2788ff615b6d9740bed3e8184b2ada01e021b865f7f0ef60c381c3fcd7018",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Destination sheet has title, Close, flag, destination name, share and remove-flag actions. Dimmed white-map route behind sheet is intentional."
+      },
+      {
+        "key": "health",
+        "path": "maps/ios-health.png",
+        "sha256": "f354ea1837daaf0ea99654624db31cc71427cfba01d134dc36f9d328cf4f8ae2",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Expected disconnected fixture: clear unavailable-route message and explanation, with Close visible. No blank/loading state or overlap."
+      },
+      {
+        "key": "mapData",
+        "path": "records/ios-mapData.png",
+        "sha256": "fb8082aa69d872c3d33d6cbf44b911786061e6171ab1c74ffe847b096afcc671",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "White-map fixture shows two route loops, tree-photo pin, destination flag, 1.55/3.19 km statistics and navigation/recording controls. No clipping."
+      },
+      {
+        "key": "recordsData",
+        "path": "records/ios-recordsData.png",
+        "sha256": "198d81af9deca7570332b709d382328556724b179ff33d59d6064b1fcd9af4e3",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Weekly totals, two active calendar days, review/replay/stats actions and tabs visible. Walk list starts below current viewport."
+      },
+      {
+        "key": "profileData",
+        "path": "records/ios-profileData.png",
+        "sha256": "e78993f1b02267ae477639a3413b37bad3d98df31590ca161f0c63f8d87435ba",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Two walks/two days/3.19 km statistics and collection navigation intact, no overlap."
+      },
+      {
+        "key": "stats",
+        "path": "records/ios-stats.png",
+        "sha256": "5446772f9f9151eba47ed59420fd8eb4c80ca441cf1f5846e0e38d81a4cccbb4",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Walking totals and two recent-walk rows visible with Close; no clipping."
+      },
+      {
+        "key": "walk",
+        "path": "records/ios-walk.png",
+        "sha256": "deef2350a94e1641cb8ebeea13a2d9b84e3f0b01cefc73c9e4d6ade95341b48a",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Named walk route, time, three statistics and replay/GPX/map/manual-edit actions visible with back/overflow. Synthetic-data message present."
+      },
+      {
+        "key": "profileBottom",
+        "path": "records/ios-profileBottom.png",
+        "sha256": "b7b8cc9f8a6d0e22025a6ded3642f63723b1e6f80b2e46908fb5f1636c3f112a",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Scrolled profile shows collections, walking records, layers, settings, photo/file import and backup export; tabs intact. Blur behind sticky header is expected."
+      },
+      {
+        "key": "recordsBottom",
+        "path": "records/ios-recordsBottom.png",
+        "sha256": "0ee303747e8206ba90c302ea3255856a025c386fad929c0c8face041d236658b",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Scrolled records view shows both dated walk cards fully visible, no obstruction by tabs."
+      },
+      {
+        "key": "walkPhotos",
+        "path": "records/ios-walkPhotos.png",
+        "sha256": "440f995f0b86eb21b15440c5c75880967a6f5f79d56517b5e0ec6499796ca9fe",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Scrolled walk detail shows route partially above viewport, stats/actions, synthetic-data explanation and a tree-photo thumbnail. Expected thumbnail aspect-fill crops illustration watermark."
+      },
+      {
+        "key": "walkRename",
+        "path": "records/ios-walkRename.png",
+        "sha256": "2c7bb56c2ff86d2118aea12219c91cdffbe3096ff0c65866cea259b3b9c673e9",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Rename sheet has Cancel/Save, populated name and multiline note fields visible without clipping. Background blur is modal material."
+      },
+      {
+        "key": "trackEditor",
+        "path": "records/ios-trackEditor.png",
+        "sha256": "fbb403b3282b3b2d6687ebc04e5bb45e3a132b8487104533096eff501a9b4d31",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Loaded map/route with instruction panel, Cancel, disabled Save/undo before edits, fit and select-first-point actions. No loading/overlap defect."
+      },
+      {
+        "key": "day",
+        "path": "records/ios-day.png",
+        "sha256": "b02e97ca2b1ad2ab72844d61e39e3beacba0b66775af6034a191e5db395002c1",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Day sheet with date, Close and one dated walk card visible. Expected translucent background."
+      },
+      {
+        "key": "week",
+        "path": "records/ios-week.png",
+        "sha256": "01175fbfcd30c325e40b67f75214305c50fbc5313552d60d4784e48936b2b657",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Week recap shows totals and two walk cards, Close visible. No clipping."
+      },
+      {
+        "key": "walkPhoto",
+        "path": "records/ios-walkPhoto.png",
+        "sha256": "978a9c36c55e8e89aa6ff0d9617f5f0172de3775a05b085fe9659a4c9bda5c28",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Full tree illustration, caption and timestamp with Close visible; no clipping."
+      },
+      {
+        "key": "settings-motion",
+        "path": "settings-a/ios-settings-motion.png",
+        "sha256": "b6feeec7d91dae012ce981f77520d081f2f50976d53c6ceb501f4715f115e4eb",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Motion options, current checkmark, place rows and appearance/units remain readable above fixed tab bar. Partial lower section is normal scroll continuation."
+      },
+      {
+        "key": "settings-places",
+        "path": "settings-a/ios-settings-places.png",
+        "sha256": "b8029c7bf0dfa9b24e8e419ed6776b9cd5c8b2b4d349be186abd6b6b9fe81969",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Places block, appearance/units, step goal and camera rows render without overlap; fixed tabs visible."
+      },
+      {
+        "key": "settings-appearance",
+        "path": "settings-a/ios-settings-appearance.png",
+        "sha256": "b51c80e95234b13c9b6a932b45d02bc9b7c580dedc43b11e673d13f15a07eb9c",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Appearance/units selectors and complete notification controls visible; lower explanatory paragraph continues below viewport."
+      },
+      {
+        "key": "settings-units",
+        "path": "settings-a/ios-settings-units.png",
+        "sha256": "dd84dca45a99a16051f54f66dcac626f2f6c6d9a6ee5016a50354047ee645ef2",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Units selector, step/camera rows and notification time/toggles readable; health block begins at bottom as normal continuation."
+      },
+      {
+        "key": "settings-steps",
+        "path": "settings-a/ios-settings-steps.png",
+        "sha256": "044dabf46c515724e3a6093e2680f57d84c53c3144ddaf4ee76c6bf4ea557732",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Step-goal and camera rows plus notification/health controls visible; scroll continuation above fixed tabs."
+      },
+      {
+        "key": "settings-camera",
+        "path": "settings-a/ios-settings-camera.png",
+        "sha256": "6056ab9aedb7870dd0a7a2946d987a84193ccb5696a7a4895f40e9372168ed65",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Camera LUT row, notification time/toggles and health actions/explanation visible, with no loading state."
+      },
+      {
+        "key": "settings-notifications",
+        "path": "settings-a/ios-settings-notifications.png",
+        "sha256": "2346dadcaf9f46ed4f4f72bd33e3ed8d12ebf4af4546062e1315ad848f3a05e0",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Notification group, health group and file-import action render; bottom export heading is normal continuation."
+      },
+      {
+        "key": "settings-health",
+        "path": "settings-a/ios-settings-health.png",
+        "sha256": "c7dcee6f178406fafdf774a3327cf58963f0dea82a28898c103385866ac96ad4",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Health options, file-import, GPX export and backup actions/readable explanatory text visible."
+      },
+      {
+        "key": "settings-import",
+        "path": "settings-b/ios-settings-import.png",
+        "sha256": "8ce4396df8f47c6315c7e478bc307d156ff2312db76c4fa51108bd3475ab4afc",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Import, GPX export, backup and about rows render with labels/icons; beta controls continue below viewport."
+      },
+      {
+        "key": "settings-export",
+        "path": "settings-b/ios-settings-export.png",
+        "sha256": "d962a91244399c9cdfe563dd7610a0e1fa026a75d9a9d02c0b96dac3fe1be532",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "GPX export, backup/about and expanded beta switches are readable, with fixed tabs."
+      },
+      {
+        "key": "settings-backup",
+        "path": "settings-b/ios-settings-backup.png",
+        "sha256": "f728d89f0da4a0c3c6efe707aa59a1afc423125aa206495a91fd47ba32ceb67e",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Backup export/import, about, beta and reset controls visible; developer section continues below."
+      },
+      {
+        "key": "settings-about",
+        "path": "settings-b/ios-settings-about.png",
+        "sha256": "d3281142dc41c1e840c03251a552a6e4bf9f3c41f5e570aabadd1dccf901c52a",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "About, beta, destructive reset and developer diagnostics rows visible; header fixed without interactive-row overlap."
+      },
+      {
+        "key": "settings-beta",
+        "path": "settings-b/ios-settings-beta.png",
+        "sha256": "c24ecdea0145753d3e4e1a2429d1061582d0482ac00fc99b77168f4d34eefc6c",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Final settings region exposes beta, reset, developer mode and diagnostic-log action plus full privacy explanation."
+      },
+      {
+        "key": "settings-reset",
+        "path": "settings-b/ios-settings-reset.png",
+        "sha256": "c24ecdea0145753d3e4e1a2429d1061582d0482ac00fc99b77168f4d34eefc6c",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Reset row is fully visible above developer group and fixed tabs; no clipped action."
+      },
+      {
+        "key": "settings-developer",
+        "path": "settings-b/ios-settings-developer.png",
+        "sha256": "c24ecdea0145753d3e4e1a2429d1061582d0482ac00fc99b77168f4d34eefc6c",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "Developer mode and diagnostics/log entry visible with explanatory text, without loading or unintended blank."
+      },
+      {
+        "key": "resetDialog",
+        "path": "settings-b/ios-resetDialog.png",
+        "sha256": "ac5c2926bf2a2ad98eac71812579a3da15c8f94596308d5494a63971306bd057",
+        "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df",
+        "individuallyOpened": true,
+        "verdict": "pass",
+        "notes": "System-native reset confirmation popover renders full warning and destructive action; background dimming is intentional. Popover placement differs from ordinary sheets but no visible action clipping."
+      }
+    ],
+    "limitedScreens": [
+      {
+        "key": "baseline-lut",
+        "path": "baseline/ios-native-lut.png",
+        "notes": "Apple Intelligence OS notification obscures top title/navigation. Visible content includes generated color preview, photo action, compare toggle, film selector, strength slider and cube import. Header cannot be reviewed from this capture; no app defect established."
+      }
+    ],
+    "satelliteLabelReinspection": {
+      "image": "/workspace/sites/plainwalk/artifacts/previews/native-all/maps/ios-answerSatellite.png",
+      "sha256": "3a08ff0693b2d193dd963d0fb3c8037126e0d8e23486f86bc61b37fd9964c858",
+      "size": [
+        1206,
+        2622
+      ],
+      "blackPillInteriorRect": [
+        230,
+        2390,
+        600,
+        2450
+      ],
+      "whitePixelsInInterior": 4051,
+      "rootSingleImageView": "White flag and full Japanese destination label visibly present; no blank-button defect."
+    }
+  },
+  "limitations": [
+    "Original notebook page-selection UI, font family, five exact aspect sizes and full-operation video remain unverified.",
+    "Physical iPhone GPS/background behavior, system permissions, AirDrop and multiple-finger gestures remain unverified.",
+    "Web screenshots are Chromium mobile emulation; WebKit tests run on Linux.",
+    "The About screen retains its October29 date for the older source list; November10 research is documented separately.",
+    "A reported empty destination pill was retracted after exact-image reinspection and white-pixel verification; no false corrective edit was applied."
+  ]
+}
