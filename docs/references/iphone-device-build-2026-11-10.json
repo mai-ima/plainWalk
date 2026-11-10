@@ -1,0 +1,43 @@
+{
+  "status": "passed",
+  "sourceCommit": "446d109160ef6e1c767b80dfd1949f0fededcb02",
+  "artifactDigest": "sha256:fc7a9c6150ce243ccad79c0f8cd497e00cae4a23f64bc2bb8c666819f5f02a0e",
+  "filename": "PlainWalk-iPhone-unsigned.ipa",
+  "bytes": 2819351,
+  "sha256": "de1bcb9704f37fc065b32c4995ada1c328f38208a282cb42a7ab0a63a42305a1",
+  "signing": "unsigned",
+  "installableAsDownloaded": false,
+  "realDeviceBinaries": [
+    {
+      "bundleID": "org.example.plainwalkweb",
+      "path": "Payload/PlainWalk.app/PlainWalk",
+      "binary": {
+        "cpu": "arm64",
+        "filetype": "MH_EXECUTE",
+        "buildCommands": [
+          {
+            "platform": 2,
+            "minimumOS": "17.0.0",
+            "sdk": "26.5.0"
+          }
+        ]
+      }
+    },
+    {
+      "bundleID": "org.example.plainwalkweb.Live",
+      "path": "Payload/PlainWalk.app/PlugIns/PlainWalkLive.appex/PlainWalkLive",
+      "binary": {
+        "cpu": "arm64",
+        "filetype": "MH_EXECUTE",
+        "buildCommands": [
+          {
+            "platform": 2,
+            "minimumOS": "17.0.0",
+            "sdk": "26.5.0"
+          }
+        ]
+      }
+    }
+  ],
+  "zipCRC": true
+}

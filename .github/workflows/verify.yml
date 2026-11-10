@@ -37,7 +37,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: npm run build
+      - run: node scripts/build.mjs --native
       - name: Compile iOS app and Live Activity extension
         run: >-
           xcodebuild -project ios/PlainWalk.xcodeproj -scheme PlainWalk

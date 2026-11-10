@@ -1,4 +1,4 @@
-const CACHE = "plainwalk-v8";
+const CACHE = "plainwalk-v9";
 const FILES = [
   "./",
   "./index.html",
@@ -45,9 +45,13 @@ self.addEventListener("activate", (e) =>
   ),
 );
 self.addEventListener("fetch", (e) => {
+  const requestURL = new URL(e.request.url);
+  const downloadsPath = new URL("downloads/", self.registration.scope).pathname;
   if (
     e.request.method !== "GET" ||
-    new URL(e.request.url).origin !== self.location.origin
+    requestURL.origin !== self.location.origin ||
+    requestURL.pathname === downloadsPath.slice(0, -1) ||
+    requestURL.pathname.startsWith(downloadsPath)
   )
     return;
   e.respondWith(

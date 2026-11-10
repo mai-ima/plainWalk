@@ -28,7 +28,7 @@ jobs:
         with:
           node-version: '22'
       - name: Build bundled Web resources
-        run: npm run build
+        run: node scripts/build.mjs --native
       - name: Generate current native project
         run: python3 ios/generate_project.py
       - name: Compile real iPhoneOS app and Live Activity extension without signing

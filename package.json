@@ -9,7 +9,7 @@
     "start": "python3 -m http.server 4173 --directory dist",
     "build": "node scripts/build.mjs",
     "test:browser": "node scripts/test-browser.mjs",
-    "playgrounds": "npm run build && python3 scripts/prepare-playgrounds.py"
+    "playgrounds": "node scripts/build.mjs --native && python3 scripts/prepare-playgrounds.py"
   },
   "devDependencies": {
     "playwright": "1.57.0"

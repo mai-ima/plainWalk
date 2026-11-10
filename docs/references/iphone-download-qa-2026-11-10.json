@@ -1,0 +1,44 @@
+{
+  "sourceCommit": "446d109160ef6e1c767b80dfd1949f0fededcb02",
+  "signing": "unsigned",
+  "installableAsDownloaded": false,
+  "engines": [
+    {
+      "name": "Chromium",
+      "files": [
+        {
+          "filename": "PlainWalk-iPhone-unsigned.ipa",
+          "bytes": 2819351,
+          "sha256": "de1bcb9704f37fc065b32c4995ada1c328f38208a282cb42a7ab0a63a42305a1"
+        },
+        {
+          "filename": "PlainWalk.swiftpm.zip",
+          "bytes": 1028717,
+          "sha256": "b32255e7f947c46f535fadb42cb5ba20667e785652d5f9a21f30b1a840e3f365"
+        }
+      ],
+      "activeServiceWorker": true,
+      "downloadFilesCached": 0,
+      "javascriptErrors": []
+    },
+    {
+      "name": "Linux WebKit",
+      "files": [
+        {
+          "filename": "PlainWalk-iPhone-unsigned.ipa",
+          "bytes": 2819351,
+          "sha256": "de1bcb9704f37fc065b32c4995ada1c328f38208a282cb42a7ab0a63a42305a1"
+        },
+        {
+          "filename": "PlainWalk.swiftpm.zip",
+          "bytes": 1028717,
+          "sha256": "b32255e7f947c46f535fadb42cb5ba20667e785652d5f9a21f30b1a840e3f365"
+        }
+      ],
+      "activeServiceWorker": true,
+      "downloadFilesCached": 0,
+      "javascriptErrors": []
+    }
+  ],
+  "status": "passed"
+}

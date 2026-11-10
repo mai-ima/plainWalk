@@ -1,0 +1,65 @@
+{
+  "filename": "PlainWalk-iPhone-unsigned.ipa",
+  "sourceCommit": "446d109160ef6e1c767b80dfd1949f0fededcb02",
+  "platform": "iPhoneOS",
+  "architecture": "arm64",
+  "minimumIOS": "17.0",
+  "signing": "unsigned",
+  "requiresSigning": true,
+  "installableAsDownloaded": false,
+  "sha256": "de1bcb9704f37fc065b32c4995ada1c328f38208a282cb42a7ab0a63a42305a1",
+  "bytes": 2819351,
+  "bundleIdentifier": "org.example.plainwalkweb",
+  "extensionBundleIdentifiers": [
+    "org.example.plainwalkweb.Live"
+  ],
+  "app": {
+    "bundleIdentifier": "org.example.plainwalkweb",
+    "executable": "PlainWalk",
+    "minimumIOS": "17.0",
+    "binary": {
+      "architectures": [
+        "arm64"
+      ],
+      "loadCommand": "LC_BUILD_VERSION",
+      "platform": "IOS",
+      "minimumOSVersions": [
+        "17.0"
+      ]
+    },
+    "codeSignature": "not-signed"
+  },
+  "extensions": [
+    {
+      "bundleIdentifier": "org.example.plainwalkweb.Live",
+      "executable": "PlainWalkLive",
+      "minimumIOS": "17.0",
+      "binary": {
+        "architectures": [
+          "arm64"
+        ],
+        "loadCommand": "LC_BUILD_VERSION",
+        "platform": "IOS",
+        "minimumOSVersions": [
+          "17.0"
+        ]
+      },
+      "codeSignature": "not-signed"
+    }
+  ],
+  "frameworks": [],
+  "verification": {
+    "deviceLoadCommands": true,
+    "noProvisioningProfile": true,
+    "noCertificateSigningAuthority": true,
+    "zipCRC": true,
+    "sha256": true
+  },
+  "available": true,
+  "playgrounds": {
+    "filename": "PlainWalk.swiftpm.zip",
+    "bytes": 1028717,
+    "sha256": "b32255e7f947c46f535fadb42cb5ba20667e785652d5f9a21f30b1a840e3f365",
+    "sourceCommit": "931f6121917c97326ce96ca4e3eeac523e9302df"
+  }
+}

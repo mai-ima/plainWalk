@@ -10,6 +10,8 @@ PlainWalk の公開情報・提供された画面・APK の静的な構造を参
 
 ## iPhone だけで使う
 
+[iPhone向けダウンロード](https://plainwalk-web-map.jinmai2000.chatgpt.site/downloads/)から、実機用arm64の未署名IPAを保存できます。**保存しただけではインストールできず、有効な署名と対応する配布準備が別途必要です。** iPad / Mac用の検証済みPlaygroundsプロジェクトも同じページにあります。[配布ファイル・作成元・検証](docs/iphone-downloads.md)を参照してください。
+
 PC や有料開発者登録を持たない現在の利用経路は、[確認用 Web](https://plainwalk-web-map.jinmai2000.chatgpt.site/)です。Safari で開き、共有メニューからホーム画面へ追加できます。[iPhone での使い方](https://plainwalk-web-map.jinmai2000.chatgpt.site/iphone/)と[画面一覧](https://plainwalk-web-map.jinmai2000.chatgpt.site/screens/)も、ブラウザで見られます。確認用サイトは本人限定です。
 
 Web の GPS は画面ロックやアプリ切り替えで更新が止まる場合があります。SwiftUI 版は継続開発していますが、署名済み IPA と TestFlight 配布はまだありません。Swift Playgrounds 用 ZIP は iPad / Mac 向けで、iPhone に直接インストールするものではありません。
