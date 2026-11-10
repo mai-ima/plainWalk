@@ -47,6 +47,8 @@ const assert = require("node:assert/strict");
   await page.getByRole("button", { name: "閉じる", exact: true }).click();
   await page.getByRole("button", { name: "戻る", exact: true }).click();
   await page.getByRole("button", { name: "ノート", exact: true }).click();
+  await page.getByRole("heading", { name: "ノート", exact: true }).waitFor();
+  await page.getByRole("button", { name: "今日のノートを書く", exact: true }).click();
   await page.locator("#dailyNote").fill("東京駅から、白地図の一歩。");
   await page.getByRole("button", { name: "道を貼る", exact: true }).click();
   await page.locator("#noteCanvas").waitFor();

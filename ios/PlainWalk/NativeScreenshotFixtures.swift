@@ -120,6 +120,11 @@ import UIKit
             "day": dayKey, "text": "検証用のノート\n写真・道・ステッカーの配置を確認します。",
             "paper": "grid", "font": "serif", "layout": layout, "stickers": "", "steps": 1360
         ]]
+        library["notePages"] = ["screen-note-second": [
+            "id": "screen-note-second", "day": dayKey,
+            "text": "同じ日の2枚目\nページごとに内容を保存します。",
+            "paper": "lined", "font": "sans", "layout": [[String: Any]](), "stickers": "🌿"
+        ]]
         return library
     }
 

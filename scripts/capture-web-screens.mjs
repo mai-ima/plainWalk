@@ -32,6 +32,7 @@ const library = {
     {id:"capture-note-photo",type:"photo",src:photo,x:230,y:460,width:230,ratio:1,rotation:-8},
     {id:"capture-sticker",type:"sticker",src:photo,x:490,y:610,width:170,ratio:1,rotation:12,finish:"plain"},
   ]}},
+  notePages:{"capture-note-second":{id:"capture-note-second",day,text:"同じ日の2枚目\nページごとに内容を保存します。",paper:"lined",font:"sans",layout:[],stickers:"🌿"}},
   bookmarks:[{id:"capture-bookmark",name:"検証用の気になる場所",lat:35.6812,lon:139.7612}],
   doodles:[{id:"capture-doodle",name:"検証用の下絵",created:start,points:points.map(p=>({...p}))}],
   sharedMaps:[{id:"capture-shared",name:"検証用の共有白地図",walks:[{id:walk.id,points:points.map(({lat,lon})=>({lat,lon}))}]}],
@@ -160,6 +161,8 @@ add("photo-capture","写真を残す","写真",async p=>{await action(p,"photoIm
 add("video-capture","短い動画を残す","写真",async p=>{await action(p,"photoImport");await action(p,"spotPick");await p.locator("#mapViewport").tap({position:{x:180,y:280}});await dispatch(p,{spotMode:"video"});},{scroll:true});
 A("note","ノート・配置済み","notes",{category:"ノート",scroll:true});
 A("note-empty","ノート・初期状態","notes",{category:"ノート",data:empty,state:"empty",scroll:true});
+add("note-second-page","同じ日の2枚目のノート","ノート",async p=>{await action(p,"notes");await p.locator("#notePage").selectOption("capture-note-second");await p.waitForFunction(()=>document.querySelector("#dailyNote")?.value.startsWith("同じ日の2枚目"));},{scroll:true,state:"synthetic additional page selected"});
+add("note-delete-confirm","ノートのページ削除・確認","ノート",async p=>{await action(p,"notes");await action(p,"noteDeletePage");},{state:"confirmation"});
 add("note-photo-picker","ノートの写真選択","ノート",async p=>{await action(p,"notes");await action(p,"notePhoto");},{scroll:true});
 add("note-sticker-picker","ノートの切り抜き素材選択","ノート",async p=>{await action(p,"notes");await action(p,"noteCutout");},{scroll:true});
 add("note-cutout","ノートの写真切り抜き","ノート",async p=>{await action(p,"notes");await action(p,"noteCutout");await p.locator('[data-note-photo="capture-photo"]').click();},{scroll:true});

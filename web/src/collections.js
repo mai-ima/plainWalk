@@ -1,4 +1,5 @@
 import { distance, validPoint, validateCollections } from "./core.js";
+import { notebookPages } from "./notebook-pages.js";
 
 // Collections use the same local library and backup as walks. No server receives them.
 export function createCollections(ctx) {
@@ -24,10 +25,10 @@ export function createCollections(ctx) {
     stroke = null;
   const library = () => state().data;
   const allStickers = () =>
-    Object.entries(library().notes).flatMap(([day, note]) =>
+    notebookPages(library()).flatMap(note =>
       (note.layout || [])
         .filter((i) => i.type === "sticker")
-        .map((i) => ({ ...i, day })),
+        .map((i) => ({ ...i, day: note.day, pageID: note.id })),
     );
   function page(title, html, options) {
     if ($("#contentPage").dataset.route === title) {
@@ -243,7 +244,7 @@ export function createCollections(ctx) {
       if (i)
         sheet(
           "ステッカー",
-          `<img class="sticker-preview" src="${esc(i.src)}" alt="切り抜いたステッカー"><button class="primary" data-sticker-export="${esc(i.id)}">画像を渡す</button><button class="secondary" data-day-note="${esc(i.day)}">ノートで見る</button>`,
+          `<img class="sticker-preview" src="${esc(i.src)}" alt="切り抜いたステッカー"><button class="primary" data-sticker-export="${esc(i.id)}">画像を渡す</button><button class="secondary" data-day-note="${esc(i.day)}" data-note-page="${esc(i.pageID)}">ノートで見る</button>`,
         );
       return true;
     }

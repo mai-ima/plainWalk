@@ -31,6 +31,10 @@ private func ncDate(_ ms: Double) -> String { Date(timeIntervalSince1970: ms / 1
     @State private var creatingPaper = false
     @State private var drawing = false
     @State private var editingDay: String?
+    @State private var editingPageID: String?
+    @State private var choosingNoteDay = false
+    @State private var noteDate = Date()
+    @State private var pendingNoteDay: String?
     @State private var sharingSticker = false
     private var title: String {
         switch collection { case .spots: return "ここいいな"; case .stickers: return "ステッカー"; case .badges: return "エリアバッジ"; case .doodles: return "らくがき"; case .sharedMaps: return "共有の白地図"; case .bookmarks: return "気になる場所"; case .notes: return "ノート" }
@@ -40,15 +44,32 @@ private func ncDate(_ ms: Double) -> String { Date(timeIntervalSince1970: ms / 1
             if standalone { NavigationStack { page } } else { page }
         }.sheet(isPresented: $creatingPaper) { NCPaperEditor(model: model) }
             .sheet(isPresented: $drawing) { NCDoodleEditor(model: model) }
-            .sheet(isPresented: Binding(get: { editingDay != nil }, set: { if !$0 { editingDay = nil } })) { if let day = editingDay { NCNoteEditor(model: model, day: day) } }
+            .sheet(isPresented: Binding(get: { editingDay != nil }, set: { if !$0 { editingDay = nil } })) { if let day = editingDay { NCNoteEditor(model: model, day: day, pageID: editingPageID) } }
             .sheet(isPresented: $sharingSticker) { NCStickerPicker(model: model) }
+            .sheet(isPresented: $choosingNoteDay, onDismiss: {
+                if let day = pendingNoteDay { pendingNoteDay = nil; openNewNote(day: day) }
+            }) {
+                NavigationStack {
+                    Form { DatePicker("ノートの日付", selection: $noteDate, displayedComponents: .date).datePickerStyle(.graphical) }
+                        .navigationTitle("日付を選ぶ").navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) { Button("キャンセル") { choosingNoteDay = false } }
+                            ToolbarItem(placement: .confirmationAction) { Button("ページを作る") { pendingNoteDay = ncDay(noteDate); choosingNoteDay = false } }
+                        }
+                }
+            }
     }
     private var page: some View {
             content.navigationTitle(title).navigationBarTitleDisplayMode(.inline)
                 .navigationBarBackButtonHidden()
                 .toolbar { ToolbarItem(placement: .topBarLeading) { Button { dismiss() } label: { Image(systemName: "chevron.left").font(.title3.weight(.medium)).frame(width: 44, height: 44) }.accessibilityLabel("戻る") }
                     if collection == .spots && model.isRecording { ToolbarItem(placement: .topBarTrailing) { Button { model.openSpotCapture() } label: { Image(systemName: "camera") }.accessibilityLabel("ここいいなを残す") } }
-                    if collection == .notes { ToolbarItem(placement: .topBarTrailing) { Button { editingDay = ncDay() } label: { Image(systemName: "square.and.pencil") }.accessibilityLabel("今日のノートを書く") } }
+                    if collection == .notes { ToolbarItem(placement: .topBarTrailing) {
+                        Menu {
+                            Button("今日の新しいページ", systemImage: "plus") { openNewNote(day: ncDay()) }
+                            Button("日付を選んで作る", systemImage: "calendar") { noteDate = Date(); choosingNoteDay = true }
+                        } label: { Image(systemName: "square.and.pencil") }.accessibilityLabel("新しいノートを書く")
+                    } }
                     if collection == .doodles { ToolbarItem(placement: .topBarTrailing) { Button { drawing = true } label: { Image(systemName: "pencil.tip") }.accessibilityLabel("らくがきを描く") } }
                 }
     }
@@ -144,12 +165,34 @@ private func ncDate(_ ms: Double) -> String { Date(timeIntervalSince1970: ms / 1
             Text("選んださんぽの線だけを白地図ファイルにして渡します。写真・メモ・日時は含めません。招待リンクによる共同編集・自動同期には対応していません。").font(.footnote).foregroundStyle(.secondary).lineSpacing(4).padding(.horizontal, 16)
         }.padding(16).padding(.top, 12) }.background(Color(uiColor: .systemGroupedBackground))
     }
+    private func openNewNote(day: String) {
+        let page = NativeNotebookPages.create(day: day)
+        do {
+            try model.saveNotebookPage(page, expected: nil)
+            editingPageID = page.id; editingDay = day
+        } catch { model.showError(error.localizedDescription) }
+    }
     private var notes: some View {
-        let values = model.library["notes"] as? [String: [String: Any]] ?? [:]
+        let pages = NativeNotebookPages.list(model.library)
+        let groups = Dictionary(grouping: pages, by: \.day)
+        let days = groups.keys.sorted().reversed()
         return ScrollView { LazyVStack(spacing: 16) {
-            if values.isEmpty { message("まだノートがありません", "今日のさんぽを、写真や道と一緒に紙の上に残します。右上のボタンから今日のノートを書けます。") }
-            ForEach(values.keys.sorted().reversed(), id: \.self) { day in
-                Button { editingDay = day } label: { VStack(alignment: .leading, spacing: 8) { Text(day).font(.headline); Text(values[day]?["text"] as? String ?? "今日のノート").font(.subheadline).foregroundStyle(.secondary).lineLimit(3); if let layout = values[day]?["layout"] as? [[String: Any]], !layout.isEmpty { Label("\(layout.count) 枚の貼りもの", systemImage: "photo.on.rectangle").font(.caption).foregroundStyle(.secondary) } }.frame(maxWidth: .infinity, alignment: .leading).padding(18).background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 20)) }.buttonStyle(.plain)
+            if pages.isEmpty { message("まだノートがありません", "写真や道を紙の上に残します。右上から、歩かなかった日にも新しいページを作れます。") }
+            ForEach(Array(days), id: \.self) { day in
+                let values = groups[day] ?? []
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack { Text(day).font(.headline); Spacer(); Text("\(values.count) ページ").font(.caption).foregroundStyle(.secondary) }
+                    ForEach(Array(values.enumerated()), id: \.element.id) { index, page in
+                        Button { editingPageID = page.id; editingDay = day } label: {
+                            VStack(alignment: .leading, spacing: 7) {
+                                Text("\(index + 1) 枚目").font(.caption).foregroundStyle(.secondary)
+                                Text((page.value["text"] as? String).flatMap { $0.isEmpty ? nil : $0 } ?? "今日のノート").font(.subheadline).lineLimit(3)
+                                if let layout = page.value["layout"] as? [[String:Any]], !layout.isEmpty { Label("\(layout.count) 枚の貼りもの", systemImage: "photo.on.rectangle").font(.caption).foregroundStyle(.secondary) }
+                            }.frame(maxWidth: .infinity, alignment: .leading).padding(16).background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18))
+                        }.buttonStyle(.plain).accessibilityLabel("\(day) の \(index + 1) 枚目のノート")
+                    }
+                    Button { openNewNote(day: day) } label: { Label("この日にページを追加", systemImage: "plus") }.font(.subheadline)
+                }.padding(.bottom, 8)
             }
         }.padding(16) }
     }
@@ -184,7 +227,7 @@ private struct NCLineThumbnail: View {
                 Text(ncDate(spot.point.t)).font(.subheadline).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading)
                 if let data = spot.photoData {
                     Button { model.shareData(data, name: "plainwalk-photo.jpg") } label: { Label("写真を共有", systemImage: "square.and.arrow.up").frame(maxWidth: .infinity).padding(13) }.buttonStyle(.bordered)
-                    Button { Task { await makeSticker(data) } } label: { Label(cutting ? "切り抜いています…" : "写真からステッカーを作る", systemImage: "wand.and.stars").frame(maxWidth: .infinity).padding(13) }.buttonStyle(.bordered).disabled(cutting)
+                    stickerMenu(data)
                 }
                 if let data = ncData(raw?["video"], prefix: "data:video/") { Button { model.shareData(data, name: (raw?["videoType"] as? String ?? "").contains("quicktime") ? "plainwalk-video.mov" : "plainwalk-video.mp4") } label: { Label("動画を共有", systemImage: "square.and.arrow.up") } }
                 Button(role: .destructive) { deleting = true } label: { Label("この「ここいいな」を削除", systemImage: "trash") }
@@ -195,15 +238,39 @@ private struct NCLineThumbnail: View {
         guard player == nil, let raw, let bytes = ncData(raw["video"], prefix: "data:video/") else { return }
         do { let folder = FileManager.default.temporaryDirectory.appendingPathComponent("plainwalk-video-" + UUID().uuidString, isDirectory: true); try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true); let url = folder.appendingPathComponent((raw["videoType"] as? String ?? "").contains("quicktime") ? "clip.mov" : "clip.mp4"); try bytes.write(to: url, options: .atomic); videoFolder = folder; player = AVPlayer(url: url) } catch { model.showError("動画を読み取れませんでした。") }
     }
-    private func makeSticker(_ data: Data) async {
-        cutting = true; defer { cutting = false }
-        do { let day = ncDay(); let existing = (model.library["notes"] as? [String: [String: Any]])?[day]?["layout"] as? [[String: Any]] ?? []; guard existing.count < 20 else { model.showError("今日のノートには 20 枚まで貼れます。"); return }; let png = try await CutoutService.cutout(data); guard png.count <= 3_500_000 else { model.showError("切り抜いた画像が大きすぎます。小さい写真でお試しください。"); return }; let image = UIImage(data: png); let ratio = (image?.size.width ?? 1) / max(1, image?.size.height ?? 1)
-            guard (((model.library["notes"] as? [String: [String: Any]])?[day]?["layout"] as? [[String: Any]])?.count ?? 0) < 20 else { model.showError("今日のノートには 20 枚まで貼れます。"); return }
-            try model.updateLibrary { library in
-                var notes = library["notes"] as? [String: [String: Any]] ?? [:]; var note = notes[day] ?? ["day": day, "text": "", "paper": "plain", "font": "serif"]; var layout = note["layout"] as? [[String: Any]] ?? []
-                guard layout.count < 20 else { return }
-                layout.append(["id": UUID().uuidString, "type": "sticker", "src": "data:image/png;base64," + png.base64EncodedString(), "x": 360.0, "y": 500.0, "width": 240.0, "ratio": ratio, "rotation": -5.0, "finish": "plain"]); note["layout"] = layout; notes[day] = note; library["notes"] = notes
+    private func stickerMenu(_ data: Data) -> some View {
+        let pages = NativeNotebookPages.list(model.library)
+        let groups = Dictionary(grouping: pages, by: \.day)
+        return Menu {
+            Button("今日の新しいページに貼る", systemImage: "plus") {
+                let target = NativeNotebookPages.create(day: ncDay())
+                Task { await makeSticker(data, target: target, creating: true) }
             }
+            ForEach(groups.keys.sorted().reversed(), id: \.self) { day in
+                Menu(day) {
+                    ForEach(Array((groups[day] ?? []).enumerated()), id: \.element.id) { index, page in
+                        Button("\(index + 1) 枚目に貼る") { Task { await makeSticker(data, target: page, creating: false) } }
+                    }
+                }
+            }
+        } label: { Label(cutting ? "切り抜いています…" : "写真からステッカーを作る", systemImage: "wand.and.stars").frame(maxWidth: .infinity).padding(13) }
+            .buttonStyle(.bordered).disabled(cutting).accessibilityLabel("ステッカーを貼るページを選ぶ")
+    }
+    private func makeSticker(_ data: Data, target: NativeNotebookPage, creating: Bool) async {
+        guard !cutting else { return }
+        cutting = true; defer { cutting = false }
+        do {
+            let png = try await CutoutService.cutout(data)
+            guard png.count <= 3_500_000 else { throw NativeError.message("切り抜いた画像が大きすぎます。小さい写真でお試しください。") }
+            let current = NativeNotebookPages.page(model.library, id: target.id, day: target.day)
+            guard creating || current != nil else { throw NativeError.message("貼り付け先のページは削除されました。別のページを選んでください。") }
+            var value = current?.value ?? target.value
+            var layout = value["layout"] as? [[String:Any]] ?? []
+            guard layout.count < 20 else { throw NativeError.message("このページには 20 点まで貼れます。別のページを選んでください。") }
+            let image = UIImage(data: png), ratio = (image?.size.width ?? 1) / max(1, image?.size.height ?? 1)
+            layout.append(["id": UUID().uuidString, "type": "sticker", "src": "data:image/png;base64," + png.base64EncodedString(), "x": 360.0, "y": 500.0, "width": 240.0, "ratio": ratio, "rotation": -5.0, "finish": "plain"])
+            value["layout"] = layout
+            try model.saveNotebookPage(NativeNotebookPage(id: target.id, day: target.day, value: value), expected: current?.value)
             model.shareData(png, name: "plainwalk-sticker.png")
         } catch { model.showError(error.localizedDescription) }
     }
@@ -211,8 +278,12 @@ private struct NCLineThumbnail: View {
 
 private struct NCSticker: Identifiable { let id: String; let day: String; let item: [String: Any]; var data: Data? { ncData(item["src"]) } }
 private func ncStickers(_ library: [String: Any]) -> [NCSticker] {
-    let notes = library["notes"] as? [String: [String: Any]] ?? [:]
-    return notes.keys.sorted().reversed().flatMap { day in (notes[day]?["layout"] as? [[String: Any]] ?? []).compactMap { item in guard item["type"] as? String == "sticker", let id = item["id"] as? String else { return nil }; return NCSticker(id: id, day: day, item: item) } }
+    NativeNotebookPages.list(library).flatMap { page in
+        (page.value["layout"] as? [[String:Any]] ?? []).compactMap { item in
+            guard item["type"] as? String == "sticker", let id = item["id"] as? String else { return nil }
+            return NCSticker(id: page.id + ":" + id, day: page.day, item: item)
+        }
+    }
 }
 @MainActor private struct NCStickerGrid: View {
     @ObservedObject var model: NativeAppModel
@@ -263,7 +334,8 @@ private func ncStickers(_ library: [String: Any]) -> [NCSticker] {
 @MainActor struct NativeNotebookEditor: View {
     @ObservedObject var model:NativeAppModel
     let day:String
-    var body:some View {NCNoteEditor(model:model,day:day)}
+    var pageID:String? = nil
+    var body:some View {NCNoteEditor(model:model,day:day,pageID:pageID)}
 }
 
 private struct NCNoteExport: Identifiable { let id=UUID(); let url:URL }
@@ -273,6 +345,16 @@ private struct NCNoteExport: Identifiable { let id=UUID(); let url:URL }
     @ObservedObject var model: NativeAppModel
     let day: String
     @Environment(\.dismiss) private var dismiss
+    @State private var currentPageID: String
+    @State private var loadedValue: [String:Any]?
+    @State private var pageValue: [String:Any] = [:]
+    @State private var pendingAction: PageAction?
+    @State private var confirmingDelete = false
+    private enum PageAction { case close, newPage, switchPage(String) }
+    init(model: NativeAppModel, day: String, pageID: String? = nil) {
+        self.model = model; self.day = day
+        _currentPageID = State(initialValue: pageID ?? NativeNotebookPages.legacyID(day))
+    }
     @State private var text = ""
     @State private var loaded = false
     @State private var paper = "plain"
@@ -286,15 +368,21 @@ private struct NCNoteExport: Identifiable { let id=UUID(); let url:URL }
     @State private var export: NCNoteExport?
     @State private var exportFolder: URL?
     private var draft: [String:Any] { ["text":text,"paper":paper,"font":font,"layout":layout,"stickers":stickers] }
-    private var hasChanges: Bool { loaded && !(draft as NSDictionary).isEqual(to:initialDraft) }
-    private var note: [String: Any] { (model.library["notes"] as? [String: [String: Any]])?[day] ?? [:] }
+    private var hasChanges: Bool { loaded && ((loadedValue == nil && currentPageID != NativeNotebookPages.legacyID(day)) || !(draft as NSDictionary).isEqual(to:initialDraft)) }
+    private var pages: [NativeNotebookPage] { NativeNotebookPages.list(model.library, day: day) }
+    private var pageNumber: Int { (pages.firstIndex(where: { $0.id == currentPageID }) ?? pages.count) + 1 }
+    private var pageCount: Int { pages.count + (pages.contains(where: { $0.id == currentPageID }) ? 0 : 1) }
     private var preview: some View { NCNotebookPreview(day: day, text: text, paper: paper, font: font, layout: layout, stickers: stickers) }
     var body: some View {
         NavigationStack {
             ScrollViewReader { captureProxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    Text(day).font(.subheadline).foregroundStyle(.secondary)
+                    HStack {
+                        Text(day).font(.subheadline).foregroundStyle(.secondary)
+                        Spacer()
+                        pageMenu
+                    }
                     TextEditor(text: $text).onChange(of: text) { _, value in if value.utf16.count > 5000 { text = ncText(value, utf16Limit: 5000) } }.frame(minHeight: 150).padding(10).background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 15))
                     Picker("紙", selection: $paper) { Text("白い紙").tag("plain"); Text("方眼").tag("grid"); Text("罫線").tag("lined"); Text("クラフト").tag("kraft") }
                     Picker("書体", selection: $font) { Text("セリフ").tag("serif"); Text("シンプル").tag("sans"); Text("等幅").tag("mono") }
@@ -325,20 +413,25 @@ private struct NCNoteExport: Identifiable { let id=UUID(); let url:URL }
                 #endif
             }
             }.navigationTitle("ノート").navigationBarTitleDisplayMode(.inline).toolbar {
-                ToolbarItem(placement: .topBarLeading) { Button("閉じる") { if hasChanges {confirmingClose=true} else {dismiss()} } }
+                ToolbarItem(placement: .topBarLeading) { Button("閉じる") { request(.close) } }
                 ToolbarItem(placement: .topBarTrailing) { Button("保存") { save() } }
             }.onAppear {
                 guard !loaded else { return }
-                text = note["text"] as? String ?? ""; paper = note["paper"] as? String ?? "plain"; font = note["font"] as? String ?? "serif"; layout = note["layout"] as? [[String: Any]] ?? []; stickers = note["stickers"] as? String ?? ""; initialDraft=draft; loaded = true
+                loadPage(currentPageID)
                 #if DEBUG
                 if NativeScreenshotFixtures.isEnabled && (ProcessInfo.processInfo.arguments.contains("-PlainWalkCaptureScroll=noteControls") || ProcessInfo.processInfo.arguments.contains("-PlainWalkCapture=noteControls")) { selectedID = layout.first?["id"] as? String }
                 #endif
             }
         }.interactiveDismissDisabled(hasChanges)
-            .confirmationDialog("変更を保存せずに閉じますか？",isPresented:$confirmingClose,titleVisibility:.visible) {
-                Button("変更を破棄",role:.destructive) { dismiss() }
-                Button("編集を続ける",role:.cancel) {}
+            .confirmationDialog("ページの変更を保存しますか？",isPresented:$confirmingClose,titleVisibility:.visible) {
+                Button("保存して続ける") { do { try storeDraft(); performPending() } catch { failure = error.localizedDescription; pendingAction = nil } }
+                Button("変更を破棄",role:.destructive) { performPending() }
+                Button("編集を続ける",role:.cancel) { pendingAction = nil }
             }
+            .confirmationDialog("このページを削除しますか？",isPresented:$confirmingDelete,titleVisibility:.visible) {
+                Button("このページを削除",role:.destructive) { deletePage() }
+                Button("キャンセル",role:.cancel) {}
+            } message: { Text("このページの内容と未保存の変更を削除します。同じ日のほかのページは残ります。") }
             .sheet(item:$export,onDismiss:cleanExport) { item in NativeShareView(url:item.url) }
             .modifier(NCEditorError(model: model, failure: $failure))
     }
@@ -408,9 +501,80 @@ private struct NCNoteExport: Identifiable { let id=UUID(); let url:URL }
             } catch {try? FileManager.default.removeItem(at:folder);throw error}
         } catch { failure = error.localizedDescription }
     }
+    private var pageMenu: some View {
+        Menu {
+            ForEach(Array(pages.enumerated()), id: \.element.id) { index, page in
+                Button { request(.switchPage(page.id)) } label: {
+                    Label("\(index + 1) 枚目", systemImage: page.id == currentPageID ? "checkmark" : "doc")
+                }
+            }
+            Divider()
+            Button("新しいページ", systemImage: "plus") { request(.newPage) }
+            Button("別のページとして保存", systemImage: "doc.on.doc") { saveAsNewPage() }
+            if loadedValue != nil {
+                Button("このページを削除", systemImage: "trash", role: .destructive) { confirmingDelete = true }
+            }
+        } label: { Label("\(pageNumber) / \(pageCount) ページ", systemImage: "doc.on.doc") }
+            .font(.subheadline).accessibilityLabel("ページを選ぶ、\(pageCount) 枚中 \(pageNumber) 枚目")
+    }
+    private func request(_ action: PageAction) {
+        if case .switchPage(let id) = action, id == currentPageID { return }
+        pendingAction = action
+        if hasChanges { confirmingClose = true } else { performPending() }
+    }
+    private func performPending() {
+        guard let action = pendingAction else { return }
+        pendingAction = nil
+        switch action {
+        case .close: dismiss()
+        case .newPage:
+            let page = NativeNotebookPages.create(day: day)
+            do {
+                try model.saveNotebookPage(page, expected: nil)
+                loadPage(page.id)
+            } catch { failure = error.localizedDescription }
+        case .switchPage(let id):
+            guard NativeNotebookPages.page(model.library, id: id, day: day) != nil else { failure = "このページは削除されました。下書きは残っています。"; return }
+            loadPage(id)
+        }
+    }
+    private func loadPage(_ id: String, seed: [String:Any]? = nil) {
+        let stored = NativeNotebookPages.page(model.library, id: id, day: day)
+        var value = stored?.value ?? seed ?? NativeNotebookPages.blank
+        if stored == nil && id != NativeNotebookPages.legacyID(day) {
+            value["id"] = id; value["day"] = day
+            if value["created"] == nil { value["created"] = Date().timeIntervalSince1970 * 1000 }
+        }
+        currentPageID = id; loadedValue = stored?.value; pageValue = value
+        text = value["text"] as? String ?? ""; paper = value["paper"] as? String ?? "plain"; font = value["font"] as? String ?? "serif"
+        layout = value["layout"] as? [[String:Any]] ?? []; stickers = value["stickers"] as? String ?? ""
+        selectedID = nil; undoLayouts = []; initialDraft = draft; loaded = true
+    }
     private func storeDraft() throws {
-        try model.updateLibrary { library in var notes = library["notes"] as? [String: [String: Any]] ?? [:]; var value = notes[day] ?? [:]; value["day"] = day; value["text"] = ncText(text, utf16Limit: 5000); value["paper"] = paper; value["font"] = font; value["layout"] = layout; value["stickers"] = stickers; notes[day] = value; library["notes"] = notes }
-        initialDraft=draft
+        var value = pageValue
+        for (key, item) in draft { value[key] = item }
+        value["text"] = ncText(text, utf16Limit: 5000)
+        try model.saveNotebookPage(NativeNotebookPage(id: currentPageID, day: day, value: value), expected: loadedValue)
+        loadedValue = NativeNotebookPages.page(model.library, id: currentPageID, day: day)?.value
+        pageValue = loadedValue ?? value; initialDraft = draft
+    }
+    private func saveAsNewPage() {
+        var value = pageValue
+        for (key, item) in draft { value[key] = item }
+        for key in ["id", "day", "steps", "pageDeleted", NativeNotebookPages.importSourceKey] { value.removeValue(forKey: key) }
+        let page = NativeNotebookPages.create(day: day)
+        value["id"] = page.id; value["day"] = day; value["created"] = page.value["created"]
+        do {
+            try model.saveNotebookPage(NativeNotebookPage(id: page.id, day: day, value: value), expected: nil)
+            loadPage(page.id)
+        } catch { failure = error.localizedDescription }
+    }
+    private func deletePage() {
+        guard let value = loadedValue else { return }
+        do {
+            try model.deleteNotebookPage(NativeNotebookPage(id: currentPageID, day: day, value: value))
+            if let next = pages.first { loadPage(next.id) } else { dismiss() }
+        } catch { failure = error.localizedDescription }
     }
     private func save() { do { try storeDraft(); dismiss() } catch { failure = error.localizedDescription } }
 }
@@ -665,6 +829,7 @@ private struct NCBadgeImage: View {
         if let spot = model.spots.first { NavigationStack { NCSpotDetail(model: model, spotID: spot.id) } }
         else { ContentUnavailableView("写真の確認データがありません", systemImage: "camera") }
     case "stickerPicker": NCStickerPicker(model: model)
+    case "noteSecondPage": NativeNotebookEditor(model: model, day: ncDay(), pageID: "screen-note-second")
     case "bookmarkDetail":
         if let id = ncItems(model.library["bookmarks"]).first?.id { NavigationStack { NCBookmarkDetail(model: model, itemID: id) } }
         else { ContentUnavailableView("しおりの確認データがありません", systemImage: "bookmark") }

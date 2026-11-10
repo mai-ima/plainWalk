@@ -1,0 +1,210 @@
+{
+  "retrieved_at_utc": "2026-11-10T07:59:13.133026+00:00",
+  "scope": "Read-only public reference review. No app source or proprietary code copied. Asset files retained only as research evidence.",
+  "official_sources": [
+    {
+      "url": "https://plainwalk.app/",
+      "access": "Web tool opened Nov10; direct urllib returned403",
+      "facts": [
+        "iOS17+/Android10+",
+        "12m-square exploration cells",
+        "frequency increases line width/darkness",
+        "iPhone-only shared map and Apple Watch according to current FAQ",
+        "background recording uses location while-in-use permission; auto-departure differs"
+      ]
+    },
+    {
+      "url": "https://note.com/plainwalk/n/nf160cabe8248",
+      "access": "Full public HTML fetched; two body images individually inspected",
+      "published": "2026-10-12",
+      "facts": [
+        "destination flags show direction and straight-line remaining distance rather than routed navigation",
+        "notebook combines daily paper, routes, photos, stickers and writing; can share images/short videos"
+      ]
+    },
+    {
+      "url": "https://note.com/plainwalk",
+      "access": "Full public HTML fetched",
+      "current_article_slugs": [
+        "na2b6feb9eade",
+        "nf160cabe8248",
+        "nab36140b7cf1"
+      ]
+    },
+    {
+      "url": "https://apps.apple.com/jp/app/id6800746478",
+      "access": "Full public HTML fetched; version history and branded HLS media found"
+    },
+    {
+      "url": "https://itunes.apple.com/lookup?id=6800746478&country=jp",
+      "access": "Live JSON API fetched",
+      "raw_response_sha256": "2c3f558b3ea205f213e2993bfc88e49d4be5a174664cffcb4472568d84dce230",
+      "version": "1.19.0",
+      "current_version_release_date": "2026-11-05T00:09:09Z",
+      "minimum_os_version": "17.0"
+    }
+  ],
+  "new_primary_findings": [
+    {
+      "priority": "high",
+      "topic": "Reference baseline moved to1.19.0",
+      "evidence": "Live iTunes lookup on Nov10 reports1.19.0, Nov5; existing Nov1 docs targeted1.18.0.",
+      "changes": [
+        "Settings overview now consists of summary tiles opening dedicated item screens.",
+        "Selectable counted transport modes exclude specified segments from traveled/discovered distance, titles and area badge credit while preserving original record and map lines. Vehicle-only area badges are pale/pass-through.",
+        "Full-auto beta groups a day into one record; map can pause.",
+        "Optional transport-specific map colors.",
+        "Dark-mode night-flight palette uses gold paths; frequently traveled lines brighter.",
+        "Spot category/caption editable afterwards via photo-card pencil.",
+        "Area badge groups remember expansion and offer expand-all/collapse-all.",
+        "Release notes mention dual-pane behavior for a named folding iPhone; product/hardware behavior not independently verified."
+      ]
+    },
+    {
+      "priority": "high",
+      "topic": "Notebook semantic gap remains evidence-backed; exact UI unknown",
+      "evidence": "Current App Store version history contains 1.18 notebook behavior, confirmed via full HTML fetch.",
+      "confirmed": [
+        "Unlimited pages per day; creation allowed on days without walks.",
+        "Five paper aspect sizes; only3:4 and16:9 explicitly named publicly.",
+        "New paper initially contains day routes/spots/stickers/area badges/murmurs.",
+        "Walk-card action opens its content through notebook decoration.",
+        "Handwriting-style and rounded writing; decorative tape/hand-drawn elements.",
+        "Center/neighbor-edge alignment and near-horizontal rotation snap.",
+        "When nothing selected, two-finger spread or paper double tap zooms the canvas.",
+        "Tape thickness handle, independent drawn-line edge dimensions and all-item opacity.",
+        "Images and short-video sharing."
+      ],
+      "unverified": [
+        "Exact page-picker/navigation placement and names",
+        "Other three aspect sizes",
+        "Exact font family/weights and layout metrics",
+        "Complete notebook editor visual hierarchy",
+        "Notebook full-operation footage"
+      ]
+    },
+    {
+      "priority": "medium",
+      "topic": "Fresh external image evidence is platform-ambiguous",
+      "evidence": "App-liv article updated2026-11-05; three actual UI images and one promo composite individually inspected.",
+      "implication": "Useful structural/semantic cross-check; do not overwrite supplied iOS screenshot specifications with likely cross-platform UI."
+    }
+  ],
+  "implementation_audit_read_only": [
+    {
+      "file": "ios/PlainWalk/NativeCollectionsView.swift",
+      "lines": "271-335,412",
+      "finding": "notes keyed by day, fixed0.75 canvas aspect, one note/day, serif/sans/mono choices, PNG sharing. This does not satisfy1.18 multi-page/five-aspect behavior."
+    },
+    {
+      "file": "web/src/app.js",
+      "lines": "1324-1360",
+      "finding": "Web notes keyed by day and canvas720x960; same multi-page/aspect gap."
+    },
+    {
+      "file": "ios/PlainWalk/NativeSettingsView.swift",
+      "finding": "Current implementation is a single long settings screen; current1.19 official notes describe summary tiles plus detail pages. Supplied iOS screenshots depict older long-list layout, so target version must be recorded before visual parity claims."
+    }
+  ],
+  "images": [
+    {
+      "local_path": "/workspace/scratch/plainwalk-research-images-2026-11-10/app-liv-1.png",
+      "download_url": "https://cdn.app-liv.jp/v1/600x0/filters:no_upscale()/r/cms/assets/images/2026/11/3b3e43ff-8c47-4189-860d-3dfb3cfb7216.png",
+      "sha256": "2fb1bbaa09101b9d2b96b46aefb528e90c491464e05032e59ae9bdad64f3ff9a",
+      "dimensions": [
+        479,
+        981
+      ],
+      "individually_opened": true,
+      "classification": "full app UI; platform/version not stated",
+      "observation": "Empty map; spacious canvas; bottom-left stacked statistics; raised central recording circle; locate/layers right; fixed three tabs. Walker glyph and absent hamburger differ from supplied iOS reference. Do not treat as exact iOS layout."
+    },
+    {
+      "local_path": "/workspace/scratch/plainwalk-research-images-2026-11-10/app-liv-2.png",
+      "download_url": "https://cdn.app-liv.jp/v1/600x0/filters:no_upscale()/r/cms/assets/images/2026/11/6f74b1bf-f757-47bb-96d8-f09db27df09f.png",
+      "sha256": "92394248145112ca72fc2143e87df18c3918319ce13e230d1ec48c1207666b0c",
+      "dimensions": [
+        600,
+        1222
+      ],
+      "individually_opened": true,
+      "classification": "full app UI; platform/version not stated",
+      "observation": "Walking statistics: ring/level header, large tabular-looking numeric distance with small unit, milestone line and novelty ratio, secondary 2x3 metrics card, today steps card. Screenshot width alone cannot establish iOS point sizing/font family."
+    },
+    {
+      "local_path": "/workspace/scratch/plainwalk-research-images-2026-11-10/app-liv-3.png",
+      "download_url": "https://cdn.app-liv.jp/v1/600x0/filters:no_upscale()/r/cms/assets/images/2026/11/cfc5c3c0-f1a6-42df-a091-fced46ceb19d.png",
+      "sha256": "dd6fb4f79fc970e2f306dc5d83d333554387a16c92f59b4cf81f6882f373e25f",
+      "dimensions": [
+        393,
+        707
+      ],
+      "individually_opened": true,
+      "classification": "marketing composite with Android-styled phone frame; not full-screen capture",
+      "observation": "Photo card on neutral background, timestamp/caption/category, delete/close/download controls embedded in promotional framing. Not usable for iOS native margins."
+    },
+    {
+      "local_path": "/workspace/scratch/plainwalk-research-images-2026-11-10/app-liv-4.png",
+      "download_url": "https://cdn.app-liv.jp/v1/600x0/filters:no_upscale()/r/cms/assets/images/2026/11/d92f107d-f5d8-41fb-8df0-3bca48513ed7.png",
+      "sha256": "36701923205707ace2f87a371eec26bd364d17885013ee75e7efd5bcddb4958d",
+      "dimensions": [
+        479,
+        981
+      ],
+      "individually_opened": true,
+      "classification": "full app UI; platform/version not stated",
+      "observation": "Populated records: three weekly columns with previous-week values; dot calendar with ring selection; weekly review row; two shortcut cards; month aggregate uses discovery/new distance; route thumbnail/elapsed/date/new-distance/progress bar; persistent tabs. Some title regions redacted by publisher."
+    },
+    {
+      "local_path": "/workspace/scratch/plainwalk-research-images-2026-11-10/official-note-body-1.png",
+      "download_url": "https://assets.st-note.com/img/1791790919-V3iIFLh2eOGr5MzgBpntJDAd.png?width=1200",
+      "sha256": "caedb7bc5d2c8f249f066258eab5698354ac8ef41ba8a278d252d71e7ce29398",
+      "dimensions": [
+        1200,
+        1125
+      ],
+      "individually_opened": true,
+      "classification": "official marketing composite containing iPhone UI; not flat screenshot",
+      "observation": "Left proof map overlays precise black route on labeled streets; right map displays straight-line destination bearing and remaining distance, black location dot and large faint accuracy/heading highlight. Enlarged circular callout is marketing decoration."
+    },
+    {
+      "local_path": "/workspace/scratch/plainwalk-research-images-2026-11-10/official-note-body-2.png",
+      "download_url": "https://assets.st-note.com/img/1791790983-1oVIy7OapgAlr2Ldw3HMcXQT.png?width=1200",
+      "sha256": "c53866539b7ac93c3466d3626b0387ef8487adedb08e46bea0173403cbb5ce2a",
+      "dimensions": [
+        1200,
+        1125
+      ],
+      "individually_opened": true,
+      "classification": "official marketing composite containing iPhone lock screen and replay UI",
+      "observation": "Lock-screen Live Activity shows recording/distance/discovery/duration; right replay panel shows date, large total discovered distance, white route card. Marketing shadows/phone perspective must not be copied into in-app UI."
+    }
+  ],
+  "video": {
+    "master_url": "https://apptrailers.itunes.apple.com/itunes-assets/PurpleVideo221/v4/a8/de/88/a8de8830-c202-12f4-e153-85395089f563/P1526588113_default.m3u8",
+    "variant_url": "https://apptrailers.itunes.apple.com/itunes-assets/PurpleVideo221/v4/a8/de/88/a8de8830-c202-12f4-e153-85395089f563/P1526588113_Anull_video_gr240_sdr_1172x502.m3u8",
+    "local_path": "/workspace/scratch/plainwalk-research-images-2026-11-10/store-preview.mp4",
+    "sha256": "16485f992dcf5c47b6eaa340d562814632bb200b2b17e7d9d6a51d3b8a52ee8b",
+    "duration_seconds": 24,
+    "dimensions": [
+      1172,
+      502
+    ],
+    "inspection": "Downloaded playable MP4 stream; ffprobe verified24s; four frame samples at6-second intervals individually viewed together. Audio not inspected; full temporal playback not performed.",
+    "sample_image": "/workspace/scratch/plainwalk-research-images-2026-11-10/store-preview-samples.png",
+    "classification": "Official App Store page Uber brand animation; changing street lines around central PlainWalk logo. No app interaction/UI tutorial.",
+    "conclusion": "Playable branding media obtained, but full-operation footage remains unverified."
+  },
+  "secondary_source": {
+    "url": "https://app-liv.jp/5354980/",
+    "review_updated": "2026-11-05",
+    "warning": "Claims cross-platform shared maps; conflicts with current official FAQ saying shared maps iPhone-only. Prefer official source; do not implement/account it as verified Android parity."
+  },
+  "limits": [
+    "Six source images individually opened: three flat app screenshots, three promotional composites. None shows the notebook editor.",
+    "No full-operation YouTube/Shorts/Instagram video actually viewed; broad searches yielded no trustworthy direct footage.",
+    "No proprietary APK/source/assets extracted or integrated.",
+    "Cannot certify exact font/point spacing or map alignment from resized/composited images with different data, OS, region and platform.",
+    "Official article images precede1.19; do not confuse new metadata with current screenshots."
+  ]
+}

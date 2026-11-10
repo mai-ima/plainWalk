@@ -196,6 +196,24 @@ private struct NativeImportPayload: @unchecked Sendable {
         guard !readFailure else{throw NativeError.message("元の保存ファイルを保護しています。正常なバックアップを取り込んでください。")}
         var next=library;change(&next);try NativeStore.validate(next);try store.write("library",next);library=next;rebuildLibrary()
     }
+    func saveNotebookPage(_ page: NativeNotebookPage, expected: [String:Any]?) throws {
+        var next=library
+        try NativeNotebookPages.save(&next,page:page,expected:expected)
+        try commitNotebookLibrary(next)
+    }
+    func deleteNotebookPage(_ page: NativeNotebookPage) throws {
+        var next=library
+        try NativeNotebookPages.delete(&next,page:page)
+        try commitNotebookLibrary(next)
+    }
+    /// Notebook edits do not change any walk, exploration cell, or photo pin.
+    /// Persist before publishing, without rebuilding every saved route summary.
+    private func commitNotebookLibrary(_ next: [String:Any]) throws {
+        guard !readFailure else {throw NativeError.message("元の保存ファイルを保護しています。正常なバックアップを取り込んでください。")}
+        try NativeStore.validate(next)
+        try store.write("library",next)
+        library=next;libraryRevision+=1
+    }
     private func resetLibrary() throws {
         guard active == nil, recorder.session == nil, !activeReadFailure else {
             throw NativeError.message("記録中・一時停止中のさんぽを保存するか破棄してから、リセットしてください。")
@@ -435,9 +453,7 @@ private struct NativeImportPayload: @unchecked Sendable {
                     return !ids.contains(id)
                 }
             }
-            var notes = merged["notes"] as? [String:Any] ?? [:]
-            for (key,value) in incoming["notes"] as? [String:Any] ?? [:] where notes[key] == nil { notes[key] = value }
-            merged["notes"] = notes
+            NativeNotebookPages.merge(incoming,into:&merged)
         }
         try NativeStore.validate(merged)
         try store.write("library", merged)
@@ -447,10 +463,38 @@ private struct NativeImportPayload: @unchecked Sendable {
     }
     #if DEBUG
     static func stateSelfTest() throws -> Bool {
+        _ = try NativeNotebookPages.selfTest()
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent("native-state-" + UUID().uuidString, isDirectory: true)
         defer { try? FileManager.default.removeItem(at: folder) }
         let store = NativeStore(directory: folder)
         try store.write("library", NativeStore.emptyLibrary)
+        // Failed notebook persistence must retain both the visible page and draft
+        // base, allowing the exact same edit to be retried after disk recovery.
+        let notebookStore=NativeStore(directory:folder.appendingPathComponent("notebooks",isDirectory:true))
+        try notebookStore.write("library",NativeStore.emptyLibrary)
+        let notebookModel=NativeAppModel(store:notebookStore,runtimeServicesEnabled:false)
+        let notebookPage=NativeNotebookPages.create(day:"2026-11-10")
+        try notebookModel.saveNotebookPage(notebookPage,expected:nil)
+        var notebookDraft=notebookPage.value;notebookDraft["text"]="retained unsaved draft";notebookDraft["future"]=["preserved":true]
+        let editedPage=NativeNotebookPage(id:notebookPage.id,day:notebookPage.day,value:notebookDraft)
+        try FileManager.default.removeItem(at:notebookStore.url("library"))
+        try FileManager.default.createDirectory(at:notebookStore.url("library"),withIntermediateDirectories:true)
+        do {
+            try notebookModel.saveNotebookPage(editedPage,expected:notebookPage.value)
+            throw NativeError.message("Notebook save unexpectedly succeeded with a blocked destination.")
+        } catch {
+            guard NativeNotebookPages.page(notebookModel.library,id:notebookPage.id,day:notebookPage.day)?.value["text"] as? String == "" else {throw error}
+        }
+        try FileManager.default.removeItem(at:notebookStore.url("library"))
+        try notebookModel.saveNotebookPage(editedPage,expected:notebookPage.value)
+        let notebookReload=NativeAppModel(store:notebookStore,runtimeServicesEnabled:false)
+        guard NativeNotebookPages.page(notebookReload.library,id:notebookPage.id,day:notebookPage.day)?.value["text"] as? String == "retained unsaved draft" else {throw NativeError.message("Notebook retry lost the unsaved draft.")}
+        let nonwalkingDay="2010-01-02"
+        let blankA=NativeNotebookPages.create(day:nonwalkingDay),blankB=NativeNotebookPages.create(day:nonwalkingDay)
+        try notebookReload.saveNotebookPage(blankA,expected:nil)
+        try notebookReload.saveNotebookPage(blankB,expected:nil)
+        let blankReload=NativeAppModel(store:notebookStore,runtimeServicesEnabled:false)
+        guard Set(NativeNotebookPages.list(blankReload.library,day:nonwalkingDay).map(\.id)) == Set([blankA.id,blankB.id]),blankReload.walks.isEmpty else {throw NativeError.message("Explicit blank pages on a nonwalking day were lost after relaunch.")}
         let recovery: [String:Any] = [
             "id": "recovered-walk", "name": "Preserved name", "note": "Preserved note", "futureMetadata": ["keep": true],
             "start": 1_000.0, "pauseAt": 3_000.0, "pausedMs": 500.0,

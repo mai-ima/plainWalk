@@ -2270,3 +2270,15 @@ body.dark #sheet.reference-sheet #sheetClose {
     monospace;
   box-shadow: 0 2px 12px #0002;
 }
+
+.notebook-page-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.notebook-page-add > svg {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+}

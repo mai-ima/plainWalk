@@ -308,6 +308,16 @@
       "scroll": "noteControls"
     },
     {
+      "key": "noteSecondPage",
+      "title": "同じ日の2枚目のノート",
+      "category": "制作・写真",
+      "group": "creation",
+      "state": "合成データ・追加ページを選択",
+      "expectedText": "同じ日の2枚目",
+      "capture": "noteSecondPage",
+      "marker": "capture:noteSecondPage"
+    },
+    {
       "key": "photoSelected",
       "title": "写真を選択した状態",
       "category": "制作・写真",

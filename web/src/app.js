@@ -6,6 +6,7 @@ import { formatDistance, distanceUnit as getDistanceUnit } from "./units.js";
 import { layersHTML, settingsHTML } from "./reference-ui.js";
 import { companionSVG } from "./companion.js";
 import { drawNotebook, hitItem, loadImage, lassoCutout } from "./notebook.js";
+import { legacyNoteID, notebookSourceID, notebookPages, notebookPage, notebookContent, sameNotebookContent, putNotebookPage, removeNotebookPage, mergeNotebookLibraries } from "./notebook-pages.js";
 import { makeIndex, collectAreas, areaSVG } from "./areas.js";
 import { readVideo, openCamera, captureTwoSeconds } from "./media.js";
 import { parseCube, applyEffect } from "./effects.js";
@@ -22,6 +23,8 @@ import {
   parseTrack,
   gpx,
   validateBackup,
+  validateNotes,
+  validateNotePages,
   cellKeys,
 } from "./core.js";
 const $ = (s) => document.querySelector(s),
@@ -206,6 +209,7 @@ let view = {
   y: project({ lat: 35.6762, lon: 139.6503 })[1],
   zoom: 16,
 };
+let noteOriginal = null, noteLoaded = null, noteFlowActive = false, noteBusy = false, pendingNoteNavigation = null, noteConfirmationStack = null;
 let noteDraft = null,
   noteSelected = null,
   noteDrag = null,
@@ -946,7 +950,12 @@ function sheet(title, html) {
   $("#app").inert = true;
   $("#sheetClose").focus({ preventScroll: true });
 }
-function sheetBack() {
+function sheetBack(force = false) {
+  if (noteBusy && noteFlowActive) return;
+  if (force !== true && $("#noteCanvas") && noteIsDirty()) {
+    requestNoteNavigation(() => sheetBack(true));
+    return;
+  }
   const previous = sheetStack.pop();
   if (!previous) {
     closeSheet();
@@ -964,15 +973,25 @@ function sheetBack() {
   $("#sheetBack").hidden = !sheetStack.length;
   $("#sheet").scrollTop = previous.scroll;
   if ($("#noteCanvas")) {
-    paintNote();
-    updateNoteControls();
+    const day = $("#noteDate")?.value;
+    const pageID = $("#noteCanvas").dataset.notePage;
+    if (day && pageID && (noteDraft?.day !== day || noteDraft?.id !== pageID)) loadNotePage(day, pageID);
+    showNote();
+    $("#sheet").scrollTop = previous.scroll;
   }
   if ($("#lassoCanvas")) paintLasso();
   $("#sheetBack").hidden
     ? $("#sheetClose").focus({ preventScroll: true })
     : $("#sheetBack").focus({ preventScroll: true });
 }
-function closeSheet() {
+function closeSheet(force = false) {
+  if (noteBusy && noteFlowActive) return;
+  if (force !== true && noteFlowActive && noteIsDirty()) {
+    requestNoteNavigation(() => closeSheet(true));
+    return;
+  }
+  noteFlowActive = false;
+  pendingNoteNavigation = null;
   photoImportQueue = null;
   photoLoadRevision++;
   stopCamera();
@@ -1085,7 +1104,7 @@ function renderRecords() {
 }
 function renderProfile() {
   $("#contentPage").innerHTML =
-    `<h1 class="page-title">プロフィール</h1><div class="profile-avatar">${companionSVG(config.locationMark === "dot" ? "black" : config.locationMark || "black")}</div><h2 class="profile-name">あなたの白地図</h2><p class="center subtle">いつもの一歩が、ちいさな冒険に。</p><div class="center"><span class="pill">${levelName()} · 開拓 ${fmt(exp.total)} ${distanceUnit()}</span></div><div class="stats-row" style="margin:28px 0"><div><b>${data.walks.length}</b><small>さんぽ</small></div><div><b>${new Set(data.walks.map((w) => dateKey(w.start))).size}</b><small>歩いた日</small></div><div><b>${fmt(exp.total)}</b><small>総開拓距離 ${distanceUnit()}</small></div></div><section class="card">${row("stats", "歩行の統計", "chart")}${row("badges", "エリアと開拓のバッジ", "badge")}${row("spots", "ここいいな", "camera")}${row("stickers", "ステッカー", "badge")}${row("doodles", "らくがき", "pen")}${row("sharedMaps", "共有の白地図", "map")}${row("bookmarks", "気になる場所", "flag")}${row("flags", "目的地の旗", "flag")}${row("notes", "ノート", "note")}</section><section class="card">${row("layers", "地図の見た目", "layers", "配色・線・写真ピン・相棒を、自由に。")}${row("settings", "設定", "settings")}${row("photoImport", "写真を取り込む", "camera")}${row("backup", "データのバックアップ", "download")}${row("about", "この Web 版について", "info")}</section><p class="center caption-note">PlainWalk Web · 非公式・無料<br>記録はこのブラウザの中に。</p>`;
+    `<h1 class="page-title">プロフィール</h1><div class="profile-avatar">${companionSVG(config.locationMark === "dot" ? "black" : config.locationMark || "black")}</div><h2 class="profile-name">あなたの白地図</h2><p class="center subtle">いつもの一歩が、ちいさな冒険に。</p><div class="center"><span class="pill">${levelName()} · 開拓 ${fmt(exp.total)} ${distanceUnit()}</span></div><div class="stats-row" style="margin:28px 0"><div><b>${data.walks.length}</b><small>さんぽ</small></div><div><b>${new Set(data.walks.map((w) => dateKey(w.start))).size}</b><small>歩いた日</small></div><div><b>${fmt(exp.total)}</b><small>総開拓距離 ${distanceUnit()}</small></div></div><section class="card">${row("stats", "歩行の統計", "chart")}${row("badges", "エリアと開拓のバッジ", "badge")}${row("spots", "ここいいな", "camera")}${row("stickers", "ステッカー", "badge")}${row("doodles", "らくがき", "pen")}${row("sharedMaps", "共有の白地図", "map")}${row("bookmarks", "気になる場所", "flag")}${row("flags", "目的地の旗", "flag")}${row("noteLibrary", "ノート", "note")}</section><section class="card">${row("layers", "地図の見た目", "layers", "配色・線・写真ピン・相棒を、自由に。")}${row("settings", "設定", "settings")}${row("photoImport", "写真を取り込む", "camera")}${row("backup", "データのバックアップ", "download")}${row("about", "この Web 版について", "info")}</section><p class="center caption-note">PlainWalk Web · 非公式・無料<br>記録はこのブラウザの中に。</p>`;
 }
 function levelName() {
   const levels = [
@@ -1318,23 +1337,106 @@ function spotDetail(spotId) {
     `${p.video ? `<video class="spot-preview" src="${esc(p.video)}" poster="${esc(p.photo)}" playsinline controls></video>` : p.photo ? `<img class="spot-preview" src="${esc(p.photo)}" alt="${esc(p.text)}">` : ""}<p>${esc(p.emoji || "♡")} ${esc(p.text)}</p><p class="subtle">${new Date(p.t).toLocaleString("ja-JP")}<br>${p.lat.toFixed(5)}, ${p.lon.toFixed(5)}</p><button class="primary" data-spot-view="${esc(p.id)}">地図で見る</button>${p.photo ? `<button class="secondary" data-spot-download="${esc(p.id)}">写真を保存</button>` : ""}${p.video ? `<button class="secondary" data-video-download="${esc(p.id)}">動画を保存</button>` : ""}<button class="secondary danger-button" data-spot-delete="${esc(p.id)}">このピンを削除</button>`,
   );
 }
-function notes(day = today()) {
-  noteDraft = {
-    day,
-    paper: "plain",
-    font: "serif",
-    layout: [],
-    ...structuredClone(data.notes[day] || {}),
-  };
+function loadNotePage(day, pageID) {
+  const page = notebookPage(data, day, pageID);
+  noteDraft = { day, id: pageID, paper: "plain", font: "serif", text: "", stickers: "", layout: [], ...page };
+  noteLoaded = page ? structuredClone(page) : null;
+  noteOriginal = structuredClone(noteDraft);
   noteSelected = null;
+  noteFlowActive = true;
+}
+function notes(day = today(), pageID) {
+  const selected = pageID || notebookPages(data, day)[0]?.id || legacyNoteID(day);
+  loadNotePage(day, selected);
   showNote();
 }
+function noteIsDirty() {
+  captureNoteDraft();
+  return !!noteDraft && !!noteOriginal && !sameNotebookContent(noteDraft, noteOriginal);
+}
+async function commitNotebook(candidate) {
+  const notes = validateNotes(candidate.notes), notePages = validateNotePages(candidate.notePages);
+  if (Object.keys(notes).length + Object.keys(notePages).length > 20000) throw Error("ノートのページ数が大きすぎます。");
+  // Publish the new notebook containers only after the atomic storage write.
+  // Walks are unchanged, so notebook saves do not resample all recorded roads.
+  await write("library", { ...data, notes, notePages });
+  data.notes = notes;
+  data.notePages = notePages;
+  trace.record("storage", { source: "notebook", status: "saved" });
+}
+async function saveCurrentNote() {
+  if (!noteDraft || noteBusy) return false;
+  captureNoteDraft();
+  noteBusy = true;
+  $("#sheetBody").inert = true;
+  try {
+    const currentPage = notebookPage(data, noteDraft.day, noteDraft.id);
+    let draft = structuredClone(noteDraft);
+    // Another import/cutout may have changed this page while the editor was open.
+    // Keep both versions rather than overwriting the newer stored content.
+    const changedElsewhere = !!currentPage !== !!noteLoaded || (currentPage && (notebookSourceID(currentPage) !== notebookSourceID(noteLoaded) || !sameNotebookContent(currentPage, noteLoaded)));
+    if (changedElsewhere && noteIsDirty()) draft = { ...notebookContent(draft), day: draft.day, id: id(), created: Date.now() };
+    else if (changedElsewhere && !noteIsDirty()) { loadNotePage(draft.day, draft.id); return true; }
+    await commitNotebook(putNotebookPage(data, draft));
+    loadNotePage(draft.day, draft.id);
+    return true;
+  } catch (error) {
+    trace.record("storage", { source: "notebook", status: "failed" });
+    toast("保存できませんでした。ページと編集中の内容はそのままです。空き容量を確認してください。", 10000);
+    throw error;
+  } finally { noteBusy = false; $("#sheetBody").inert = false; }
+}
+function requestNoteNavigation(next) {
+  if (noteBusy) return;
+  if (!noteIsDirty()) { next(); return; }
+  const priorStack = [...sheetStack];
+  pendingNoteNavigation = () => { sheetStack = priorStack; noteConfirmationStack = null; next(); };
+  noteConfirmationStack = priorStack;
+  sheet("ノートの変更を保存しますか？", '<p>編集中のページに変更があります。</p><button class="primary" data-action="noteSaveAndLeave">保存して続ける</button><button class="secondary danger-button" data-action="noteDiscardAndLeave">変更を破棄して続ける</button><button class="secondary" data-action="noteContinueEditing">編集を続ける</button>');
+}
+function returnToNote() {
+  if (noteConfirmationStack) sheetStack = noteConfirmationStack;
+  noteConfirmationStack = null;
+  if (noteDraft) $("#sheetTitle").textContent = `${noteDraft.day} のノート`;
+  showNote();
+}
+function noteLibrary() {
+  const pages = notebookPages(data);
+  openPage("ノート", `<button class="primary notebook-page-add" data-day-note="${today()}">${icon("note")}今日のノートを書く</button><p class="caption-note">歩かなかった日にも、何ページでも書き残せます。</p>${pages.length ? pages.map(page => `<button class="walk-card" data-day-note="${esc(page.day)}" data-note-page="${esc(page.id)}">${icon("note")}<span class="stack grow"><strong>${esc(page.day)}</strong><small>${esc((page.text || "白いページ").slice(0, 60))}</small></span><span class="chevron">›</span></button>`).join("") : '<div class="empty-state">まだノートがありません。<br>今日のひとことから始めてみましょう。</div>'}`);
+}
+async function switchNotePage(day, pageID) {
+  if (noteBusy || !noteDraft) return;
+  const oldDay = noteDraft.day, oldID = noteDraft.id;
+  try {
+    if (noteIsDirty() && !(await saveCurrentNote())) return;
+    notes(day, pageID);
+  } catch (error) {
+    if ($("#notePage")) $("#notePage").value = oldID;
+    if ($("#noteDate")) $("#noteDate").value = oldDay;
+    throw error;
+  }
+}
+async function newNotePage() {
+  if (noteBusy || !noteDraft) return;
+  if (noteIsDirty() && !(await saveCurrentNote())) return;
+  const page = { id: id(), day: noteDraft.day, text: "", stickers: "", paper: "plain", font: "serif", layout: [], created: Date.now() };
+  noteBusy = true;
+  $("#sheetBody").inert = true;
+  try {
+    await commitNotebook(putNotebookPage(data, page));
+    loadNotePage(page.day, page.id);
+    showNote();
+  } finally { noteBusy = false; $("#sheetBody").inert = false; }
+}
+
 function showNote() {
   if (!noteDraft) return;
   const day = noteDraft.day;
+  let pages = notebookPages(data, day);
+  if (!pages.some(page => page.id === noteDraft.id)) pages = [...pages, noteDraft];
   sheet(
     `${day} のノート`,
-    `<label class="form-label">今日のひとこと</label><textarea id="dailyNote" maxlength="5000" placeholder="今日、どんな道を歩きましたか？">${esc(noteDraft.text || "")}</textarea><div class="segmented">${["🌿", "☕", "🐈", "✦", "🌼", "☁"].map((e) => `<button data-sticker="${e}" aria-label="${e} のステッカー">${e}</button>`).join("")}</div><div id="noteStickers" hidden>${esc(noteDraft.stickers || "")}</div><div class="two-buttons"><button data-action="notePhoto">${icon("camera")}写真を貼る</button><button data-action="noteRoute">${icon("map")}道を貼る</button><button data-action="noteCutout">${icon("badge")}ステッカーを作る</button><button data-save-note="${day}">${icon("note")}保存</button></div><canvas id="noteCanvas" width="720" height="960" aria-label="ノート。写真やステッカーをドラッグして配置できます。"></canvas><p class="caption-note">写真やステッカーをタップして選択し、ドラッグで配置できます。</p><div id="noteItemControls" hidden><label class="form-label">大きさ<input id="noteItemSize" type="range" min="40" max="600" value="180"></label><label class="form-label">回転<input id="noteItemRotation" type="range" min="-180" max="180" value="0"></label><label class="form-label">仕上げ<select id="noteItemFinish"><option value="plain">そのまま</option><option value="foil">箔</option><option value="holo">ホログラム</option></select></label><div class="two-buttons"><button data-action="noteItemFront">手前へ</button><button data-action="noteItemDelete">取り除く</button></div></div><div style="display:flex;gap:10px"><label class="form-label" style="flex:1">紙<select id="notePaper">${[
+    `<div class="two-buttons"><label class="form-label">日付<input type="date" id="noteDate" value="${esc(day)}" min="0001-01-01" max="9999-12-31"></label><label class="form-label">ページ<select id="notePage" aria-label="ノートのページ">${pages.map((page, index) => `<option value="${esc(page.id)}" ${page.id === noteDraft.id ? "selected" : ""}>${index + 1} / ${pages.length} ページ${page.text ? ` · ${esc(page.text.slice(0, 12))}` : ""}</option>`).join("")}</select></label></div><button class="secondary notebook-page-add" data-action="noteNewPage">${icon("plus")}新しいページ</button><label class="form-label">今日のひとこと</label><textarea id="dailyNote" maxlength="5000" placeholder="今日、どんな道を歩きましたか？">${esc(noteDraft.text || "")}</textarea><div class="segmented">${["🌿", "☕", "🐈", "✦", "🌼", "☁"].map((e) => `<button data-sticker="${e}" aria-label="${e} のステッカー">${e}</button>`).join("")}</div><div id="noteStickers" hidden>${esc(noteDraft.stickers || "")}</div><div class="two-buttons"><button data-action="notePhoto">${icon("camera")}写真を貼る</button><button data-action="noteRoute">${icon("map")}道を貼る</button><button data-action="noteCutout">${icon("badge")}ステッカーを作る</button><button data-save-note="${day}">${icon("note")}保存</button></div><canvas id="noteCanvas" data-note-page="${esc(noteDraft.id)}" width="720" height="960" aria-label="ノート。写真やステッカーをドラッグして配置できます。"></canvas><p class="caption-note">写真やステッカーをタップして選択し、ドラッグで配置できます。</p><div id="noteItemControls" hidden><label class="form-label">大きさ<input id="noteItemSize" type="range" min="40" max="600" value="180"></label><label class="form-label">回転<input id="noteItemRotation" type="range" min="-180" max="180" value="0"></label><label class="form-label">仕上げ<select id="noteItemFinish"><option value="plain">そのまま</option><option value="foil">箔</option><option value="holo">ホログラム</option></select></label><div class="two-buttons"><button data-action="noteItemFront">手前へ</button><button data-action="noteItemDelete">取り除く</button></div></div><div style="display:flex;gap:10px"><label class="form-label" style="flex:1">紙<select id="notePaper">${[
       ["plain", "白い紙"],
       ["grid", "方眼"],
       ["lined", "罫線"],
@@ -1357,7 +1459,7 @@ function showNote() {
       )
       .join(
         "",
-      )}</select></label></div><button class="primary" data-save-note="${day}">ノートを保存</button><button class="secondary" data-share-note="${day}">画像にして保存</button><button class="secondary" data-action="clearStickers">絵文字のステッカーを外す</button>`,
+      )}</select></label></div><button class="primary" data-save-note="${day}">ノートを保存</button><button class="secondary" data-share-note="${day}">画像にして保存</button><button class="secondary" data-action="clearStickers">絵文字のステッカーを外す</button><button class="secondary danger-button" data-action="noteDeletePage">このページを削除</button>`,
   );
   paintNote();
   updateNoteControls();
@@ -1664,7 +1766,7 @@ async function handleImport(file) {
     pendingImport = incoming;
     sheet(
       "バックアップを取り込む",
-      `<p>${incoming.walks.length} 回のさんぽ、${incoming.spots.length} 件のピン、${incoming.flags.length} 本の旗を確認しました。</p><p class="subtle">今あるデータに追加します。同じ ID の記録は重複させません。新しく加わるさんぽは ${newWalks.length} 回です。ノートは未登録の日付だけ追加します。</p><button class="primary" data-action="restore">確認して取り込む</button>`,
+      `<p>${incoming.walks.length} 回のさんぽ、${incoming.spots.length} 件のピン、${incoming.flags.length} 本の旗を確認しました。</p><p class="subtle">今あるデータに追加します。同じ ID の記録は重複させません。新しく加わるさんぽは ${newWalks.length} 回です。同じ日の異なるノートも別ページとして残し、同じ内容は重複させません。</p><button class="primary" data-action="restore">確認して取り込む</button>`,
     );
     return;
   }
@@ -1708,7 +1810,9 @@ async function restore() {
       ),
     );
   data.walks.sort((a, b) => a.start - b.start);
-  data.notes = { ...incoming.notes, ...data.notes };
+  const notebooks = mergeNotebookLibraries(data, incoming);
+  data.notes = notebooks.notes;
+  data.notePages = notebooks.notePages;
   try {
     await save();
     pendingImport = null;
@@ -1788,7 +1892,7 @@ async function exportCard(walkId) {
 }
 async function exportNote(day) {
   captureNoteDraft();
-  const note = noteDraft?.day === day ? noteDraft : { day, ...data.notes[day] },
+  const note = noteDraft?.day === day ? noteDraft : notebookPages(data, day)[0] || { day },
     canvas = document.createElement("canvas");
   await drawNotebook(canvas, note);
   canvas.toBlob(
@@ -1967,6 +2071,42 @@ const actions = {
   flags,
   spots,
   notes: () => notes(),
+  noteLibrary,
+  noteNewPage: newNotePage,
+  noteDeletePage: () => {
+    captureNoteDraft();
+    noteConfirmationStack = [...sheetStack];
+    sheet("このページを削除しますか？", '<p>このページの文章と配置した素材を削除します。同じ日のほかのページと歩数は残ります。</p><button class="primary danger-button" data-action="noteConfirmDelete">ページを削除する</button><button class="secondary" data-action="noteContinueEditing">キャンセル</button>');
+  },
+  noteConfirmDelete: async () => {
+    if (noteBusy || !noteDraft) return;
+    const day = noteDraft.day, pageID = noteDraft.id;
+    noteBusy = true;
+    $("#sheetBody").inert = true;
+    try {
+      const currentPage = notebookPage(data, day, pageID);
+      if (!!currentPage !== !!noteLoaded || (currentPage && (notebookSourceID(currentPage) !== notebookSourceID(noteLoaded) || !sameNotebookContent(currentPage, noteLoaded))))
+        throw Error("このページは別の操作で変更されました。下書きは残しています。ページを開き直して確認してください。");
+      await commitNotebook(removeNotebookPage(data, day, pageID));
+      const next = notebookPages(data, day)[0];
+      if (next) { loadNotePage(day, next.id); returnToNote(); }
+      else { noteFlowActive = false; noteDraft = null; closeSheet(true); noteLibrary(); }
+    } catch (error) { returnToNote(); throw error; }
+    finally { noteBusy = false; $("#sheetBody").inert = false; }
+  },
+  noteSaveAndLeave: async () => {
+    const next = pendingNoteNavigation;
+    try {
+      if (await saveCurrentNote()) { pendingNoteNavigation = null; next?.(); }
+    } catch (error) { returnToNote(); throw error; }
+  },
+  noteDiscardAndLeave: () => {
+    const next = pendingNoteNavigation;
+    pendingNoteNavigation = null;
+    noteDraft = structuredClone(noteOriginal);
+    next?.();
+  },
+  noteContinueEditing: () => { pendingNoteNavigation = null; returnToNote(); },
   weeklyReview: () => {
     const start = new Date();
     start.setDate(start.getDate() - start.getDay());
@@ -2310,7 +2450,7 @@ async function handleClick(e) {
     return;
   }
   if (d.dayNote) {
-    notes(d.dayNote);
+    notes(d.dayNote, d.notePage);
     return;
   }
   if (d.saveWalk) {
@@ -2472,13 +2612,10 @@ async function handleClick(e) {
     return;
   }
   if (d.saveNote) {
-    captureNoteDraft();
-    data.notes[d.saveNote] = {
-      ...data.notes[d.saveNote],
-      ...structuredClone(noteDraft),
-    };
-    await save();
-    toast("ノートを保存しました。");
+    if (await saveCurrentNote()) {
+      showNote();
+      toast("ノートを保存しました。");
+    }
     return;
   }
   if (d.shareNote) {
@@ -2562,6 +2699,19 @@ document.addEventListener("change", async (e) => {
       const src = await resizePhoto(el.files[0]);
       if (el.dataset.cutout === "yes") await cutoutPhoto(src);
       else await addNoteImage(src);
+    }
+    if (el.id === "notePage") {
+      await switchNotePage(noteDraft.day, el.value);
+      return;
+    }
+    if (el.id === "noteDate") {
+      const day = el.value;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || new Date(`${day}T00:00:00Z`).toJSON()?.slice(0, 10) !== day) {
+        el.value = noteDraft.day;
+        return;
+      }
+      await switchNotePage(day);
+      return;
     }
     if (["notePaper", "noteFont", "noteItemFinish"].includes(el.id)) {
       captureNoteDraft();

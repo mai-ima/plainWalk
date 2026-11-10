@@ -81,7 +81,7 @@ import UniformTypeIdentifiers
     #if DEBUG
     @ViewBuilder private func captureScreen(_ key:String)->some View {
         switch key {
-        case "spotDetail","stickerPicker","bookmarkDetail","paperEditor","paperDetail","doodleEditor","doodleDetail","badgeDetail":
+        case "spotDetail","stickerPicker","bookmarkDetail","paperEditor","paperDetail","doodleEditor","doodleDetail","badgeDetail","noteSecondPage":
             nativeCaptureCollectionScreen(key,model:model,onContentReady:{captureContentReady=true})
         case "walkRename","day","week","walkPhoto","trackEditor":
             nativeCaptureRecordScreen(key,model:model)

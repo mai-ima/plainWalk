@@ -1,4 +1,5 @@
 import Foundation
+import CoreFoundation
 
 /// Keeps the existing on-device JSON keys, preserving unrecognized fields for compatible backups.
 struct NativeStore {
@@ -42,37 +43,68 @@ struct NativeStore {
             }
         }
         try validateNotes(library["notes"])
+        try validateNotePages(library["notePages"], legacyCount: (library["notes"] as? [String:Any])?.count ?? 0)
         try validateCollections(library)
     }
 
-    private static func validateNotes(_ raw: Any?) throws {
-        guard let raw, !(raw is NSNull) else {return}
-        guard let notes=raw as? [String:Any], notes.count<=20_000 else {throw NativeError.message("ノートの形式が不正です。")}
+    private static func validNotebookDay(_ day: String, formatter: DateFormatter) -> Bool {
+        guard day.range(of:"^[0-9]{4}-[0-9]{2}-[0-9]{2}$",options:.regularExpression) != nil,
+              let date=formatter.date(from:day) else { return false }
+        return formatter.string(from:date)==day
+    }
+    private static func notebookDateFormatter() -> DateFormatter {
         let formatter=DateFormatter()
         formatter.locale=Locale(identifier:"en_US_POSIX");formatter.calendar=Calendar(identifier:.gregorian)
         formatter.timeZone=TimeZone(secondsFromGMT:0);formatter.dateFormat="yyyy-MM-dd";formatter.isLenient=false
+        return formatter
+    }
+    private static func validateNotes(_ raw: Any?) throws {
+        guard let raw, !(raw is NSNull) else {return}
+        guard let notes=raw as? [String:Any], notes.count<=20_000 else {throw NativeError.message("ノートの形式が不正です。")}
+        let formatter=notebookDateFormatter()
         for (day,rawNote) in notes {
-            guard day.range(of:"^[0-9]{4}-[0-9]{2}-[0-9]{2}$",options:.regularExpression) != nil,
-                  let date=formatter.date(from:day),formatter.string(from:date)==day,
-                  let note=rawNote as? [String:Any] else {throw NativeError.message("ノートの日付が不正です。")}
-            guard (note["text"] as? String ?? "").utf16.count<=5_000,
-                  (note["stickers"] as? String ?? "").utf16.count<=1_000 else {throw NativeError.message("ノートの文字数が大きすぎます。")}
-            let rawLayout: Any = note["layout"] is NSNull ? [[String:Any]]() : (note["layout"] ?? [[String:Any]]())
-            guard let layout=rawLayout as? [[String:Any]],layout.count<=20 else {throw NativeError.message("ノートの素材が多すぎます。")}
-            for item in layout {
-                guard item["id"] is String,let kind=item["type"] as? String,["photo","sticker","route","emoji"].contains(kind),
-                      nativeNumber(item["x"]) != nil,nativeNumber(item["y"]) != nil,
-                      let width=nativeNumber(item["width"]),(10...1_000).contains(width),
-                      let ratio=nativeNumber(item["ratio"]),(0.01...100).contains(ratio) else {throw NativeError.message("ノートの配置が不正です。")}
-                if let rotation=item["rotation"],nativeNumber(rotation)==nil {throw NativeError.message("ノートの角度が不正です。")}
-                if kind != "emoji" {
-                    guard let image=item["src"] as? String,image.utf16.count<=5_000_000,
-                          image.range(of:"^data:image/(jpeg|png|webp);base64,",options:.regularExpression) != nil else {throw NativeError.message("ノートの画像が不正です。")}
-                }
+            guard validNotebookDay(day,formatter:formatter),let note=rawNote as? [String:Any] else {throw NativeError.message("ノートの日付が不正です。")}
+            if let deleted=note["pageDeleted"] {
+                guard let number=deleted as? NSNumber,CFGetTypeID(number)==CFBooleanGetTypeID() else {throw NativeError.message("ノートの削除状態が不正です。")}
             }
-            if let rawSteps=note["steps"] {
-                guard let steps=nativeNumber(rawSteps),steps.rounded(.towardZero)==steps,(0...100_000).contains(steps) else {throw NativeError.message("歩数の形式が不正です。")}
+            try validateNotebookContent(note)
+        }
+    }
+    private static func validateNotePages(_ raw: Any?, legacyCount: Int) throws {
+        guard let raw, !(raw is NSNull) else {return}
+        guard let pages=raw as? [String:Any],pages.count+legacyCount<=20_000 else {throw NativeError.message("ノートの形式が不正か、ページが多すぎます。")}
+        let formatter=notebookDateFormatter()
+        for (id,rawPage) in pages {
+            guard !id.isEmpty,id.utf16.count<=200,!id.hasPrefix("legacy:"),
+                  !["__proto__","constructor","prototype"].contains(id),
+                  let page=rawPage as? [String:Any],page["id"] as? String==id,
+                  let day=page["day"] as? String,validNotebookDay(day,formatter:formatter),
+                  page["pageDeleted"] == nil,page["steps"] == nil else {throw NativeError.message("ノートのページ ID または日付が不正です。")}
+            if let rawCreated=page["created"] {guard nativeTime(rawCreated) != nil else {throw NativeError.message("ノートの作成日時が不正です。")}}
+            try validateNotebookContent(page)
+        }
+    }
+    private static func validateNotebookContent(_ note: [String:Any]) throws {
+        if let rawSource=note[NativeNotebookPages.importSourceKey] {
+            guard let source=rawSource as? String,!source.isEmpty,source.utf16.count<=200 else {throw NativeError.message("ノートの取り込み元 ID が不正です。")}
+        }
+        guard (note["text"] as? String ?? "").utf16.count<=5_000,
+        (note["stickers"] as? String ?? "").utf16.count<=1_000 else {throw NativeError.message("ノートの文字数が大きすぎます。")}
+        let rawLayout: Any = note["layout"] is NSNull ? [[String:Any]]() : (note["layout"] ?? [[String:Any]]())
+        guard let layout=rawLayout as? [[String:Any]],layout.count<=20 else {throw NativeError.message("ノートの素材が多すぎます。")}
+        for item in layout {
+            guard item["id"] is String,let kind=item["type"] as? String,["photo","sticker","route","emoji"].contains(kind),
+            nativeNumber(item["x"]) != nil,nativeNumber(item["y"]) != nil,
+            let width=nativeNumber(item["width"]),(10...1_000).contains(width),
+            let ratio=nativeNumber(item["ratio"]),(0.01...100).contains(ratio) else {throw NativeError.message("ノートの配置が不正です。")}
+            if let rotation=item["rotation"],nativeNumber(rotation)==nil {throw NativeError.message("ノートの角度が不正です。")}
+            if kind != "emoji" {
+                guard let image=item["src"] as? String,image.utf16.count<=5_000_000,
+                image.range(of:"^data:image/(jpeg|png|webp);base64,",options:.regularExpression) != nil else {throw NativeError.message("ノートの画像が不正です。")}
             }
+        }
+        if let rawSteps=note["steps"] {
+            guard let steps=nativeNumber(rawSteps),steps.rounded(.towardZero)==steps,(0...100_000).contains(steps) else {throw NativeError.message("歩数の形式が不正です。")}
         }
     }
 
@@ -136,6 +168,21 @@ struct NativeStore {
         jump["points"]=[["lat":35.0,"lon":139.0,"t":1_000.0],["lat":36.0,"lon":139.0,"t":2_000.0,"break":true]]
         valid["walks"]=[jump];try validate(valid)
         invalid=emptyLibrary;invalid["notes"]=["2026-02-30":["text":"invalid date"]];try mustReject(invalid)
+        let notebook=NativeNotebookPages.create(day:"2026-11-10")
+        valid=emptyLibrary;valid["notePages"]=[notebook.id:notebook.value];try validate(valid)
+        for badValue in [true,"yesterday",1e20] as [Any] {
+            var page=notebook.value;page["created"]=badValue
+            invalid=emptyLibrary;invalid["notePages"]=[notebook.id:page];try mustReject(invalid)
+        }
+        for (key,value) in [("steps",123 as Any),("pageDeleted",false as Any),(NativeNotebookPages.importSourceKey,42 as Any)] {
+            var page=notebook.value;page[key]=value
+            invalid=emptyLibrary;invalid["notePages"]=[notebook.id:page];try mustReject(invalid)
+        }
+        for id in ["__proto__","constructor","prototype","legacy:2026-11-10"] {
+            var page=notebook.value;page["id"]=id
+            invalid=emptyLibrary;invalid["notePages"]=[id:page];try mustReject(invalid)
+        }
+        invalid=emptyLibrary;invalid["notes"]=["2026-11-10":["pageDeleted":1]];try mustReject(invalid)
         invalid=emptyLibrary;invalid["doodles"]=[["id":"doodle","name":"invalid","created":1_000.0,"points":[["lat":200.0,"lon":139.0]]]];try mustReject(invalid)
         return true
     }

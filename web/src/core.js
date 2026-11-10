@@ -345,6 +345,8 @@ export function validateBackup(v) {
           p.photo.length > 5000000))
     )
       throw Error("ピンの形式が不正です。");
+  if (Object.keys(v.notes || {}).length + Object.keys(v.notePages || {}).length > 20000)
+    throw Error("ノートのページ数が大きすぎます。");
   return {
     ...v,
     version: 1,
@@ -357,6 +359,7 @@ export function validateBackup(v) {
     spots: v.spots,
     flags: v.flags,
     notes: validateNotes(v.notes),
+    notePages: validateNotePages(v.notePages),
     ...validateCollections(v),
   };
 }
@@ -375,6 +378,10 @@ export function validateNotes(notes) {
       new Date(`${day}T00:00:00Z`).toJSON()?.slice(0, 10) !== day ||
       !note || typeof note !== "object" || Array.isArray(note))
       throw Error("ノートの日付が不正です。");
+    if (note.pageDeleted !== undefined && typeof note.pageDeleted !== "boolean")
+      throw Error("ノートの削除状態が不正です。");
+    if (note._plainwalkImportSourceID !== undefined && (typeof note._plainwalkImportSourceID !== "string" || !note._plainwalkImportSourceID.length || note._plainwalkImportSourceID.length > 200))
+      throw Error("ノートの取込元 ID が不正です。");
     const text = String(note.text || ""),
       stickers = String(note.stickers || "");
     if (text.length > 5000 || stickers.length > 1000)
@@ -426,6 +433,22 @@ export function validateNotes(notes) {
         throw Error("歩数の形式が不正です。");
       result[day].steps = note.steps;
     }
+  }
+  return result;
+}
+
+export function validateNotePages(pages) {
+  if (pages == null) return {};
+  if (typeof pages !== "object" || Array.isArray(pages) || Object.keys(pages).length > 20000)
+    throw Error("ノートのページ形式が不正です。");
+  const result = {};
+  for (const [id, page] of Object.entries(pages)) {
+    if (!id.length || id.length > 200 || id.startsWith("legacy:") || ["__proto__", "prototype", "constructor"].includes(id) || !page || typeof page !== "object" || Array.isArray(page) || page.id !== id || typeof page.day !== "string" || page.pageDeleted !== undefined || page.steps !== undefined)
+      throw Error("ノートのページ ID または形式が不正です。");
+    const value = validateNotes({ [page.day]: page })[page.day];
+    if (page.created !== undefined && (!Number.isFinite(page.created) || Math.abs(page.created) > 8640000000000000))
+      throw Error("ノートの作成日時が不正です。");
+    result[id] = { ...value, id };
   }
   return result;
 }

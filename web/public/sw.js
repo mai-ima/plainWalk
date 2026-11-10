@@ -1,4 +1,4 @@
-const CACHE = "plainwalk-v7";
+const CACHE = "plainwalk-v8";
 const FILES = [
   "./",
   "./index.html",
@@ -16,6 +16,7 @@ const FILES = [
   "./photo-metadata.js",
   "./areas.js",
   "./notebook.js",
+  "./notebook-pages.js",
   "./reference-ui.js",
   "./companion.js",
   "./data/japan-municipalities.geojson",

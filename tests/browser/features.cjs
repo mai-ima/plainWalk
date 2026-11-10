@@ -66,12 +66,15 @@ const assert = require("node:assert/strict");
     .click();
   await page.getByRole("button", { name: "プロフィール", exact: true }).click();
   await page.getByRole("button", { name: "ノート", exact: true }).click();
+  await page.getByRole("heading", { name: "ノート", exact: true }).waitFor();
+  await page.getByRole("button", { name: "今日のノートを書く", exact: true }).click();
   await page.locator("#dailyNote").fill("今日の道。");
   await page
     .getByRole("button", { name: "🌿 のステッカー", exact: true })
     .click();
   await page.getByRole("button", { name: "ノートを保存", exact: true }).click();
   await page.getByRole("button", { name: "閉じる", exact: true }).click();
+  await page.getByRole("button", { name: "戻る", exact: true }).click();
   const downloadEvent = page.waitForEvent("download");
   await page
     .getByRole("button", { name: "データのバックアップ", exact: true })
